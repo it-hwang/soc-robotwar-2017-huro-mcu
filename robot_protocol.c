@@ -22,5 +22,13 @@ void sendDataToRobot(short data) {
 
 LPBIOLOID_PACKET _createPacket(void) {
 	LPBIOLOID_PACKET packet	= malloc(sizeof(BIOLOID_PACKET));
+	
+	packet->startCode0	= 0xff;
+	packet->startCode1	= 0x55;
+	packet->dataLow0	= 0x00;
+	packet->dataLow1	= 0x00;
+	packet->dataHigh0	= 0x00;
+	packet->dataHigh1	= 0x00;
+
 	return packet;
 }
