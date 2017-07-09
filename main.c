@@ -42,6 +42,7 @@ int main(void)
 	return 0;
 }
 
+
 int _initialize(void) {
 	if (open_graphic() < 0)
 		return _ERROR_UNABLE_TO_OPEN_GRAPHIC;
@@ -56,6 +57,7 @@ void _finalize(void) {
 	closeRobotPort();
 	close_graphic();
 }
+
 
 void _displayLogo(void) {
 	printf("                                                              \n");
