@@ -11,7 +11,6 @@ int		initialize(void);
 void	finalize(void);
 
 
-
 int main(void)
 {
 	int errorCode;
