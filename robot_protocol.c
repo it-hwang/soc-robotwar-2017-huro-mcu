@@ -30,6 +30,10 @@ int openRobotPort(void) {
 	return 0;
 }
 
+void closeRobotPort(void) {
+	uart_close();
+}
+
 void sendDataToRobot(short data) {
 	LPBIOLOID_PACKET	packet	= _createPacket();
 
