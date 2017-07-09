@@ -66,6 +66,11 @@ int main(int argc, char **argv)
 	SURFACE* bmpsurf = 0;
 	U16* fpga_videodata = (U16*)malloc(180 * 120 * 2);
 
+	while(1){
+		direct_camera_display_off(void);
+		demo(void);
+	}
+
 	while (b_loop)
 	{
 		int ch = getchar();
