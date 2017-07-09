@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include "robot_protocol.h"
-
+#include "uart_api.h"
 
 #define _UART_BAUD_RATE		57600
 
@@ -17,11 +17,20 @@ LPBIOLOID_PACKET _createPacket(void);
 
 
 void sendDataToRobot(short data) {
+	LPBIOLOID_PACKET	packet	= _createPacket();
 
+	packet->dataLow0	= data & 0xff;
+	packet->dataLow1	= ~(packet->dataLow0);
+	packet->dataHigh0	= (data >> 8) & 0xff;
+	packet->dataHigh1	= ~(packet->dataHigh0);
+
+	uart1_buffer_write(packet, sizeof(BIOLOID_PACKET));
+
+	free(packet);
 }
 
 LPBIOLOID_PACKET _createPacket(void) {
-	LPBIOLOID_PACKET packet	= malloc(sizeof(BIOLOID_PACKET));
+	LPBIOLOID_PACKET	packet	= malloc(sizeof(BIOLOID_PACKET));
 	
 	packet->startCode0	= 0xff;
 	packet->startCode1	= 0x55;
