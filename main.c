@@ -3,7 +3,7 @@
 #include "robot_protocol.h"
 
 #define _ERROR_UNABLE_TO_OPEN_GRAPHIC		0x01
-#define _ERROR_UNABLE_TO_OPEN_ROBOT_PORT		0x02
+#define _ERROR_UNABLE_TO_OPEN_ROBOT_PORT	0x02
 
 void	_displayLogo(void);
 
