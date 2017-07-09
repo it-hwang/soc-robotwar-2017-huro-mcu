@@ -8,6 +8,8 @@
 void	displayLogo(void);
 
 int		initialize(void);
+void	finalize(void);
+
 
 
 int main(void)
@@ -26,6 +28,7 @@ int main(void)
 		return 1;
 	}
 
+	finalize();
 	return 0;
 }
 
@@ -47,4 +50,9 @@ int initialize(void) {
 		return ERROR_UNABLE_TO_OPEN_ROBOT_PORT;
 	
 	return 0;
+}
+
+void finalize(void) {
+	closeRobotPort();
+	close_graphic();
 }
