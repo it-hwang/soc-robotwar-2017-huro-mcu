@@ -1,14 +1,25 @@
+#include <pthread.h>
 #include <stdio.h>
 #include "graphic_api.h"
 #include "robot_protocol.h"
 
 #define _ERROR_UNABLE_TO_OPEN_GRAPHIC		0x01
 #define _ERROR_UNABLE_TO_OPEN_ROBOT_PORT	0x02
+#define _ERROR_UNABLE_TO_CREATE_THREAD		0x03
 
-void	_displayLogo(void);
+int		main(void);
 
 int		_initialize(void);
 void	_finalize(void);
+
+void	_loop(void* data);
+void	_startMainThread(void);
+void	_stopMainThread(void);
+pthread_t	_mainThread;
+int			_mainThreadId;
+
+void	_displayLogo(void);
+
 
 
 int main(void)
