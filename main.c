@@ -42,16 +42,6 @@ int main(void)
 	return 0;
 }
 
-void _displayLogo(void) {
-	printf("                                                              \n");
-	printf("                                                              \n");
-	printf("           *****************************************          \n");
-	printf("                             Grobot                           \n");
-	printf("             Welcome to Eagle Robot Platform Board            \n");
-	printf("           *****************************************          \n");
-	printf("                                                              \n");
-}
-
 int _initialize(void) {
 	if (open_graphic() < 0)
 		return _ERROR_UNABLE_TO_OPEN_GRAPHIC;
@@ -65,4 +55,14 @@ int _initialize(void) {
 void _finalize(void) {
 	closeRobotPort();
 	close_graphic();
+}
+
+void _displayLogo(void) {
+	printf("                                                              \n");
+	printf("                                                              \n");
+	printf("           *****************************************          \n");
+	printf("                             Grobot                           \n");
+	printf("             Welcome to Eagle Robot Platform Board            \n");
+	printf("           *****************************************          \n");
+	printf("                                                              \n");
 }
