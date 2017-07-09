@@ -45,14 +45,8 @@ static void demo(void)
 	while (i--)
 	{
 		clear_screen();
-		x = rand() % 300;
-		y = rand() % 460;
-		draw_rectfill(x, y, 20, 20, MAKE_COLORREF(255, 0, 0));
-		x = rand() % 300;
-		y = rand() % 460;
-		draw_rectfill(x, y, 20, 20, MAKE_COLORREF(0, 255, 0));
 		read_fpga_video_data(fpga_videodata);
-		draw_fpga_video_data(fpga_videodata, 10, 10);
+		draw_fpga_video_data_full(fpga_videodata);
 		flip();
 		printf("%d\n", i);
 	}
