@@ -4,5 +4,6 @@ main
 main.dbg
 main.elf
 main.o
+processor.o
 robot_protocol.o
 uart_api.o
