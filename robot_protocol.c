@@ -3,6 +3,8 @@
 #include "uart_api.h"
 
 #define _UART_BAUD_RATE		57600
+#define _UART_BITS			8
+#define _UART_STOPS			1
 
 typedef struct _BIOLOID_PACKET {
 	unsigned char	startCode0;		// start code 0			(1byte)
@@ -16,6 +18,18 @@ typedef struct _BIOLOID_PACKET {
 LPBIOLOID_PACKET _createPacket(void);
 
 
+int openRobotPort(void) {
+	int status;
+
+	status = uart_open();
+	if (status < 0)
+		return status;
+	
+	uart_config(UART1, _UART_BAUD_RATE, _UART_BITS, UART_PARNONE, _UART_STOPS);
+
+	return 0;
+}
+
 void sendDataToRobot(short data) {
 	LPBIOLOID_PACKET	packet	= _createPacket();
 
@@ -24,7 +38,7 @@ void sendDataToRobot(short data) {
 	packet->dataHigh0	= (data >> 8) & 0xff;
 	packet->dataHigh1	= ~(packet->dataHigh0);
 
-	uart1_buffer_write(packet, sizeof(BIOLOID_PACKET));
+	uart1_buffer_write((unsigned char*)packet, sizeof(BIOLOID_PACKET));
 
 	free(packet);
 }
