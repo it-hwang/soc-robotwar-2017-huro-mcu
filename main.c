@@ -2,36 +2,36 @@
 #include "graphic_api.h"
 #include "robot_protocol.h"
 
-#define ERROR_UNABLE_TO_OPEN_GRAPHIC		0x01
-#define ERROR_UNABLE_TO_OPEN_ROBOT_PORT		0x02
+#define _ERROR_UNABLE_TO_OPEN_GRAPHIC		0x01
+#define _ERROR_UNABLE_TO_OPEN_ROBOT_PORT		0x02
 
-void	displayLogo(void);
+void	_displayLogo(void);
 
-int		initialize(void);
-void	finalize(void);
+int		_initialize(void);
+void	_finalize(void);
 
 
 int main(void)
 {
 	int errorCode;
 
-	displayLogo();
+	_displayLogo();
 
-	errorCode = initialize();
-	if (errorCode == ERROR_UNABLE_TO_OPEN_GRAPHIC) {
+	errorCode = _initialize();
+	if (errorCode == _ERROR_UNABLE_TO_OPEN_GRAPHIC) {
 		printf("[Error] Unable to open graphic.\n");
 		return 1;
 	}
-	else if (errorCode == ERROR_UNABLE_TO_OPEN_ROBOT_PORT) {
+	else if (errorCode == _ERROR_UNABLE_TO_OPEN_ROBOT_PORT) {
 		printf("[Error] Unable to open robot port.\n");
 		return 1;
 	}
 
-	finalize();
+	_finalize();
 	return 0;
 }
 
-void displayLogo(void) {
+void _displayLogo(void) {
 	printf("                                                              \n");
 	printf("                                                              \n");
 	printf("           *****************************************          \n");
@@ -41,17 +41,17 @@ void displayLogo(void) {
 	printf("                                                              \n");
 }
 
-int initialize(void) {
+int _initialize(void) {
 	if (open_graphic() < 0)
-		return ERROR_UNABLE_TO_OPEN_GRAPHIC;
+		return _ERROR_UNABLE_TO_OPEN_GRAPHIC;
 	
 	if (openRobotPort() < 0)
-		return ERROR_UNABLE_TO_OPEN_ROBOT_PORT;
+		return _ERROR_UNABLE_TO_OPEN_ROBOT_PORT;
 	
 	return 0;
 }
 
-void finalize(void) {
+void _finalize(void) {
 	closeRobotPort();
 	close_graphic();
 }
