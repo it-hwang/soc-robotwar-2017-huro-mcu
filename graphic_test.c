@@ -67,8 +67,8 @@ int main(int argc, char **argv)
 	U16* fpga_videodata = (U16*)malloc(180 * 120 * 2);
 
 	while(1){
-		direct_camera_display_off(void);
-		demo(void);
+		direct_camera_display_off();
+		demo();
 	}
 
 	while (b_loop)
