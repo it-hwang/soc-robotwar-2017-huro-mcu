@@ -9,7 +9,10 @@
 
 U16 _pixels[_SCREEN_HEIGHT][_SCREEN_WIDTH];
 
-void _loop(void);
+inline void _readFpgaVideoData(U16* pBuffer);
+inline void _drawFpgaVideoData(U16* pBuffer);
+
+void _improveSomeObstacle(void);
 
 
 int openProcessor(void) {
@@ -35,26 +38,42 @@ int runProcessor(void) {
 	
 	int i;
 	for (i = 0; i < 100; ++i) {
-		clear_screen();
-		read_fpga_video_data((U16*)&_pixels);
-		_loop();
-		draw_fpga_video_data_full((U16*)&_pixels);
-		flip();
+		_improveSomeObstacle();
 	}
 
 	direct_camera_display_on();
 	return 0;
 }
 
-void _loop(void) {
+void _readFpgaVideoData(U16* pBuffer) {
+	read_fpga_video_data(pBuffer);
+}
+
+void _drawFpgaVideoData(U16* pBuffer) {
+	clear_screen();
+	draw_fpga_video_data_full(pBuffer);
+	flip();
+}
+
+U16 _getPixel(U16* pBuffer, int width, int height, int x, int y) {
+	return pBuffer[y * width + x];
+}
+
+void _setPixel(U16* pBuffer, int width, int height, int x, int y, U16 value) {
+	pBuffer[y * width + x] = value;
+}
+
+void _improveSomeObstacle(void) {
 	///////////////////////////////////////////////////////////////////////////
 	/*
 		이 부분에서 영상처리를 수행합니다.
 	*/
 	///////////////////////////////////////////////////////////////////////////
+	_readFpgaVideoData((U16*)_pixels);
+
 	int x;
 	int y;
-        
+
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
 			U16 c = _pixels[y][x];
@@ -73,4 +92,6 @@ void _loop(void) {
 	//sendDataToRobot(command);
 	//printf("send command to robot: %d\n", command);
 	//waitDataFromRobot();
+
+	_drawFpgaVideoData((U16*)_pixels);
 }
