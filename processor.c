@@ -7,9 +7,9 @@
 #define _SCREEN_WIDTH		180
 #define _SCREEN_HEIGHT		120
 
-U16		_pixels[_SCREEN_HEIGHT][_SCREEN_WIDTH];
+U16 _pixels[_SCREEN_HEIGHT][_SCREEN_WIDTH];
 
-void	_loop(void);
+void _loop(void);
 
 
 int openProcessor(void) {
@@ -57,10 +57,10 @@ void _loop(void) {
         
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			U16	c	= _pixels[y][x];
-			U8	r	= (c >> 8) & 0xf8;
-			U8	g	= (c >> 3) & 0xfc;
-			U8	b	= (c << 3) & 0xf8;
+			U16 c = _pixels[y][x];
+			U8 r = (c >> 8) & 0xf8;
+			U8 g = (c >> 3) & 0xfc;
+			U8 b = (c << 3) & 0xf8;
 			
 			if ((x == _SCREEN_WIDTH / 2) ||
 				(y == _SCREEN_HEIGHT / 2))

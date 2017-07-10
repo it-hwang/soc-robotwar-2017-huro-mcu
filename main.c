@@ -6,10 +6,10 @@
 
 #define _BLOCK_TIMEOUT_MILLISECONDS		3000
 
-int		main(void);
+int main(void);
 
-void	_displayLogo(void);
-int		_blockRunning(unsigned int milliseconds);
+void _displayLogo(void);
+int _blockRunning(unsigned int milliseconds);
 
 
 int main(void)
