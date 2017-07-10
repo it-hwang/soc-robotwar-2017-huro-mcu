@@ -48,7 +48,7 @@ void sendDataToRobot(short data) {
 	free(packet);
 }
 
-LPBIOLOID_PACKET _createPacket(void) {
+BIOLOID_PACKET* _createPacket(void) {
 	BIOLOID_PACKET* packet = malloc(sizeof(BIOLOID_PACKET));
 	
 	packet->startCode0 = 0xff;
