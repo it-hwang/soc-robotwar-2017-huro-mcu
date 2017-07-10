@@ -9,11 +9,11 @@
 struct termios _originalTermios;
 
 
-void reset_terminal_mode(void) {
+void resetTerminalMode(void) {
     tcsetattr(0, TCSANOW, &_originalTermios);
 }
 
-void set_conio_terminal_mode(void) {
+void setConioTerminalMode(void) {
     struct termios newTermios;
 
     /* take two copies - one for now, one for later */
@@ -21,7 +21,7 @@ void set_conio_terminal_mode(void) {
     memcpy(&newTermios, &_originalTermios, sizeof(newTermios));
 
     /* register cleanup handler, and set the new terminal mode */
-    atexit(reset_terminal_mode);
+    atexit(resetTerminalMode);
     cfmakeraw(&newTermios);
     tcsetattr(0, TCSANOW, &newTermios);
 }
