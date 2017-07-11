@@ -48,6 +48,10 @@ typedef struct {
     };
 } COLOR_RGAB5515;
 
+inline void rgb565ToRgba(COLOR_RGB565* source, COLOR_RGBA* target);
+inline void rgbaToRgb565(COLOR_RGBA* source, COLOR_RGB565* target);
+inline void rgba5515ToRgba(COLOR_RGAB5515* source, COLOR_RGBA* target);
+inline void rgbaToRgba5515(COLOR_RGBA* source, COLOR_RGAB5515* target);
 
 
 #endif // __COLOR_H__
