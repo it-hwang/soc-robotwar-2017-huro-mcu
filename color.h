@@ -13,6 +13,19 @@ typedef enum {
     COLOR_YELLOW
 } COLOR;
 
+typedef struct {
+    union {
+        struct {
+            uint16_t b : 5;
+            uint16_t a : 1;
+            uint16_t g : 5;
+            uint16_t r : 5;
+        };
+        uint16_t data16;
+    };
+} RGAB5515;
+
+
 
 
 #endif // __COLOR_H__
