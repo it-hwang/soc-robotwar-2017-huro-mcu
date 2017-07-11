@@ -3,11 +3,12 @@
 #include "processor.h"
 #include "graphic_api.h"
 #include "robot_protocol.h"
+#include "color.h"
 
 #define _SCREEN_WIDTH		180
 #define _SCREEN_HEIGHT		120
 
-U16 _pixels[_SCREEN_HEIGHT][_SCREEN_WIDTH];
+RGAB5515 _pixels[_SCREEN_HEIGHT][_SCREEN_WIDTH];
 
 inline void _readFpgaVideoData(U16* pBuffer);
 inline void _drawFpgaVideoData(U16* pBuffer);
@@ -76,16 +77,13 @@ void _improveSomeObstacle(void) {
 
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			U16 c = _pixels[y][x];
-			U8 r = (c >> 8) & 0xf8;
-			U8 g = (c >> 3) & 0xfc;
-			U8 b = (c << 3) & 0xf8;
+			RGAB5515 c = _pixels[y][x];
 			
 			if ((x == _SCREEN_WIDTH / 2) ||
 				(y == _SCREEN_HEIGHT / 2))
-				r = 0xff;
+				c.r = 0xff >> 3;
 
-			_pixels[y][x] = MAKE_RGB565(r, g, b);
+			_pixels[y][x] = c;
 		}
 	}
 	
