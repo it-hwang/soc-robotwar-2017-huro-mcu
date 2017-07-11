@@ -96,7 +96,7 @@ void _displayKeypoints(void) {
 			input.data16 = _pixels[y][x];
 			rgab5515ToRgba(&input, &rgba);
 
-			if (rgba.a == 0xff) {
+			if (rgba.a) {
 				rgba.r = 0x00;
 				rgba.g = 0xff;
 				rgba.b = 0x00;
