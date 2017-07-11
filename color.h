@@ -50,8 +50,14 @@ typedef struct {
 
 inline void rgb565ToRgba(COLOR_RGB565* source, COLOR_RGBA* target);
 inline void rgbaToRgb565(COLOR_RGBA* source, COLOR_RGB565* target);
-inline void rgba5515ToRgba(COLOR_RGAB5515* source, COLOR_RGBA* target);
-inline void rgbaToRgba5515(COLOR_RGBA* source, COLOR_RGAB5515* target);
+inline void rgab5515ToRgba(COLOR_RGAB5515* source, COLOR_RGBA* target);
+inline void rgbaToRgab5515(COLOR_RGBA* source, COLOR_RGAB5515* target);
 
+/*
+#define rgb565ToRgba(source, target) target.data32 = ((uint32_t)source.r << 27) | ((uint32_t)source.g << 18) | ((uint32_t)source.b << 11)
+#define rgbaToRgb565(source, target) target.data16 = (((uint16_t)source.r & 0xf8) << 8) | (((uint16_t)source.g & 0xfc) << 3) | (((uint16_t)source.b) >> 8)
+#define rgab5515ToRgba(source, target) target.data32 = ((uint32_t)source.r << 27) | ((uint32_t)source.g << 18) | ((uint32_t)source.b << 11) | ((uint32_t)source.a)
+#define rgbaToRgab5515(source, target) target.data16 = (((uint16_t)source.r & 0xf8) << 8) | (((uint16_t)source.g & 0xf8) << 4) | (((uint16_t)source.a) << 5) | (((uint16_t)source.b) >> 3)
+*/
 
 #endif // __COLOR_H__
