@@ -65,22 +65,15 @@ void _setPixel(U16* pBuffer, int width, int height, int x, int y, U16 value) {
 	pBuffer[y * width + x] = value;
 }
 
-void _improveSomeObstacle(void) {
-	///////////////////////////////////////////////////////////////////////////
-	/*
-		이 부분에서 영상처리를 수행합니다.
-	*/
-	///////////////////////////////////////////////////////////////////////////
-	_readFpgaVideoData((U16*)_pixels);
-	
+// [임시 함수] 특징점 옮기기
+void _moveKeypoints() {
 	int x;
 	int y;
 	
-	// [임시 코드] 특징점 옮기기
+	COLOR_RGAB5515 input;
+	COLOR_RGAB5515 output;
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			COLOR_RGAB5515 input;
-			COLOR_RGAB5515 output;
 			input.data16 = _pixels[(y+4)%_SCREEN_HEIGHT][(x+2)%_SCREEN_WIDTH];
 			output.data16 = _pixels[y][x];
 
@@ -89,23 +82,43 @@ void _improveSomeObstacle(void) {
 			_pixels[y][x] = output.data16;
 		}
 	}
+}
 
+void _displayKeypoints(void) {
+	int x;
+	int y;
+
+	COLOR_RGAB5515 input;
+	COLOR_RGBA rgba;
+	COLOR_RGB565 output;
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			COLOR_RGAB5515 input;
-			COLOR_RGB565 output;
-
 			input.data16 = _pixels[y][x];
-			
-			if (input.a == 1) {
-				input.r = 0x00 >> 3;
-				input.g = 0xff >> 2;
-				input.b = 0x00 >> 3;
+			rgab5515ToRgba(&input, &rgba);
+
+			if (rgba.a == 0xff) {
+				rgba.r = 0x00;
+				rgba.g = 0xff;
+				rgba.b = 0x00;
 			}
 
-			_pixels[y][x] = input.data16;
+			rgbaToRgb565(&rgba, &output);
+
+			_pixels[y][x] = output.data16;
 		}
 	}
+}
+
+void _improveSomeObstacle(void) {
+	///////////////////////////////////////////////////////////////////////////
+	/*
+		이 부분에서 영상처리를 수행합니다.
+	*/
+	///////////////////////////////////////////////////////////////////////////
+	_readFpgaVideoData((U16*)_pixels);
+	
+	_moveKeypoints();
+	_displayKeypoints();
 	
 	//sendDataToRobot(command);
 	//printf("send command to robot: %d\n", command);
