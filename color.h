@@ -17,14 +17,24 @@ typedef struct {
     union {
         struct {
             uint16_t b : 5;
+            uint16_t g : 6;
+            uint16_t r : 5;
+        };
+        uint16_t data16;
+    };
+} COLOR_RGB565;
+
+typedef struct {
+    union {
+        struct {
+            uint16_t b : 5;
             uint16_t a : 1;
             uint16_t g : 5;
             uint16_t r : 5;
         };
         uint16_t data16;
     };
-} RGAB5515;
-
+} COLOR_RGAB5515;
 
 
 
