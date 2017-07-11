@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "processor.h"
 #include "graphic_api.h"
@@ -8,7 +9,7 @@
 #define _SCREEN_WIDTH		180
 #define _SCREEN_HEIGHT		120
 
-RGAB5515 _pixels[_SCREEN_HEIGHT][_SCREEN_WIDTH];
+U16 _pixels[_SCREEN_HEIGHT][_SCREEN_WIDTH];
 
 inline void _readFpgaVideoData(U16* pBuffer);
 inline void _drawFpgaVideoData(U16* pBuffer);
@@ -71,19 +72,38 @@ void _improveSomeObstacle(void) {
 	*/
 	///////////////////////////////////////////////////////////////////////////
 	_readFpgaVideoData((U16*)_pixels);
-
+	
 	int x;
 	int y;
+	
+	// [임시 코드] 특징점 옮기기
+	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
+		for (x = 0; x < _SCREEN_WIDTH; ++x) {
+			COLOR_RGAB5515 input;
+			COLOR_RGAB5515 output;
+			input.data16 = _pixels[(y+4)%_SCREEN_HEIGHT][(x+2)%_SCREEN_WIDTH];
+			output.data16 = _pixels[y][x];
+
+			output.a = input.a;
+
+			_pixels[y][x] = output.data16;
+		}
+	}
 
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			RGAB5515 c = _pixels[y][x];
-			
-			if ((x == _SCREEN_WIDTH / 2) ||
-				(y == _SCREEN_HEIGHT / 2))
-				c.r = 0xff >> 3;
+			COLOR_RGAB5515 input;
+			COLOR_RGB565 output;
 
-			_pixels[y][x] = c;
+			input.data16 = _pixels[y][x];
+			
+			if (input.a == 1) {
+				input.r = 0x00 >> 3;
+				input.g = 0xff >> 2;
+				input.b = 0x00 >> 3;
+			}
+
+			_pixels[y][x] = input.data16;
 		}
 	}
 	
