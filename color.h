@@ -16,6 +16,18 @@ typedef enum {
 typedef struct {
     union {
         struct {
+            uint8_t a;
+            uint8_t b;
+            uint8_t g;
+            uint8_t r;
+        };
+        uint32_t data32;
+    };
+} COLOR_RGBA;
+
+typedef struct {
+    union {
+        struct {
             uint16_t b : 5;
             uint16_t g : 6;
             uint16_t r : 5;
