@@ -39,7 +39,7 @@ int runProcessor(void) {
 	direct_camera_display_off();
 	
 	int i;
-	for (i = 0; i < 100; ++i) {
+	for (i = 0; i < 10000; ++i) {
 		_improveSomeObstacle();
 	}
 
@@ -65,46 +65,26 @@ void _setPixel(U16* pBuffer, int width, int height, int x, int y, U16 value) {
 	pBuffer[y * width + x] = value;
 }
 
-// [임시 함수] 특징점 옮기기
-void _moveKeypoints() {
-	int x;
-	int y;
-	
-	COLOR_RGAB5515 input;
-	COLOR_RGAB5515 output;
-	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
-		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			input.data16 = _pixels[(y+4)%_SCREEN_HEIGHT][(x+2)%_SCREEN_WIDTH];
-			output.data16 = _pixels[y][x];
-
-			output.a = input.a;
-
-			_pixels[y][x] = output.data16;
-		}
-	}
-}
-
 void _displayKeypoints(void) {
 	int x;
 	int y;
+	bool isKeypoint;
 
-	COLOR_RGAB5515 input;
-	COLOR_RGBA rgba;
-	COLOR_RGB565 output;
-	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
-		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			input.data16 = _pixels[y][x];
-			rgab5515ToRgba(&input, &rgba);
+	//COLOR_RGAB5515 input;
+	for (y = 0; y < _SCREEN_HEIGHT-4; ++y) {
+		for (x = 0; x < _SCREEN_WIDTH-2; ++x) {
+			//input.data16 = _pixels[y][x];
+			// TODO : 임시 작성 코드이므로, 수정이 필요합니다.
+			isKeypoint = _pixels[(y+4)][(x+2)] & 0x0020;
 
-			if (rgba.a) {
-				rgba.r = 0x00;
-				rgba.g = 0xff;
-				rgba.b = 0x00;
+			if (isKeypoint) {
+				//input.r = 0x00;
+				//input.g = 0xff;
+				//input.b = 0x00;
+				_pixels[y][x] = 0x07e0;
 			}
 
-			rgbaToRgb565(&rgba, &output);
-
-			_pixels[y][x] = output.data16;
+			//_pixels[y][x] = input.data16;
 		}
 	}
 }
@@ -117,7 +97,6 @@ void _improveSomeObstacle(void) {
 	///////////////////////////////////////////////////////////////////////////
 	_readFpgaVideoData((U16*)_pixels);
 	
-	_moveKeypoints();
 	_displayKeypoints();
 	
 	//sendDataToRobot(command);

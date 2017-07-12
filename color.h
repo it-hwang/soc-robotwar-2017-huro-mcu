@@ -62,7 +62,7 @@ inline void rgbaToRgab5515(COLOR_RGBA* source, COLOR_RGAB5515* target);
 */
 
 bool createColorTable(const char* filename, uint8_t nBytesPerPixel,
-					  COLOR (*pFunc)
+					  COLOR (*pFunc)(uint8_t));
 void* loadColorTable(const char* filename);
 
 #endif // __COLOR_H__
