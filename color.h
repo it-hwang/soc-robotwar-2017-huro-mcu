@@ -24,7 +24,7 @@ typedef struct {
 		};
 		uint32_t data32;
 	};
-} COLOR_RGBA;
+} *LPRGBA;
 
 typedef struct {
 	union {
@@ -35,7 +35,7 @@ typedef struct {
 		};
 		uint16_t data16;
 	};
-} COLOR_RGB565;
+} *LPRGB565;
 
 typedef struct {
 	union {
@@ -47,12 +47,12 @@ typedef struct {
 		};
 		uint16_t data16;
 	};
-} COLOR_RGAB5515;
+} *LPRGAB5515;
 
-inline void rgb565ToRgba(COLOR_RGB565* source, COLOR_RGBA* target);
-inline void rgbaToRgb565(COLOR_RGBA* source, COLOR_RGB565* target);
-inline void rgab5515ToRgba(COLOR_RGAB5515* source, COLOR_RGBA* target);
-inline void rgbaToRgab5515(COLOR_RGBA* source, COLOR_RGAB5515* target);
+inline void rgb565ToRgba(LPRGB565 source, LPRGBA target);
+inline void rgbaToRgb565(LPRGBA source, LPRGB565 target);
+inline void rgab5515ToRgba(LPRGAB5515 source, LPRGBA target);
+inline void rgbaToRgab5515(LPRGBA source, LPRGAB5515 target);
 
 /*
 #define rgb565ToRgba(source, target) target.data32 = ((uint32_t)source.r << 27) | ((uint32_t)source.g << 18) | ((uint32_t)source.b << 11)
