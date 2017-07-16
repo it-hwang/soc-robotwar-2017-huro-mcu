@@ -7,7 +7,7 @@
 #define _SCREEN_WIDTH		180
 #define _SCREEN_HEIGHT		120
 
-U16 _pixels[_SCREEN_HEIGHT][_SCREEN_WIDTH];
+U16* _pixels;
 
 inline void _readFpgaVideoData(U16* pBuffer);
 inline void _drawFpgaVideoData(U16* pBuffer);
@@ -24,6 +24,7 @@ int openProcessor(void) {
 		closeProcessor();
 		return PROCESSOR_ROBOT_PORT_ERROR;
 	}
+	_pixels = (U16*)malloc(_SCREEN_WIDTH * _SCREEN_HEIGHT * sizeof(U16));
 
 	return 0;
 }
@@ -31,6 +32,7 @@ int openProcessor(void) {
 void closeProcessor(void) {
 	close_graphic();
 	closeRobotPort();
+	free(_pixels);
 }
 
 int runProcessor(void) {
@@ -69,14 +71,14 @@ void _improveSomeObstacle(void) {
 		이 부분에서 영상처리를 수행합니다.
 	*/
 	///////////////////////////////////////////////////////////////////////////
-	_readFpgaVideoData((U16*)_pixels);
+	_readFpgaVideoData(_pixels);
 
 	int x;
 	int y;
 
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			U16 c = _pixels[y][x];
+			U16 c = _pixels[y * _SCREEN_WIDTH + x];
 			U8 r = (c >> 8) & 0xf8;
 			U8 g = (c >> 3) & 0xfc;
 			U8 b = (c << 3) & 0xf8;
@@ -85,7 +87,7 @@ void _improveSomeObstacle(void) {
 				(y == _SCREEN_HEIGHT / 2))
 				r = 0xff;
 
-			_pixels[y][x] = MAKE_RGB565(r, g, b);
+			_pixels[y * _SCREEN_WIDTH + x] = MAKE_RGB565(r, g, b);
 		}
 	}
 	
@@ -93,5 +95,5 @@ void _improveSomeObstacle(void) {
 	//printf("send command to robot: %d\n", command);
 	//waitDataFromRobot();
 
-	_drawFpgaVideoData((U16*)_pixels);
+	_drawFpgaVideoData(_pixels);
 }
