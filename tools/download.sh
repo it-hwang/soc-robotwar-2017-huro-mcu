@@ -17,7 +17,7 @@ fi
 speed=$2
 
 
-function isReadyForCommand {
+function hasErrorForCommand {
     devName=$1
 
     exec 3<>$devName
@@ -27,15 +27,15 @@ function isReadyForCommand {
     if [[ $result == "" ]]
     then
         exec 3>&-
-        return 0
+        return 1
     fi
     read -t 1 result<&3
     exec 3>&-
     if [[ $result != "root: not found" ]]
     then
-        return 0
+        return 2
     fi
-    return 1
+    return 0
 }
 
 
@@ -46,19 +46,49 @@ then
     echo "$error"
     exit 1
 fi
-echo "root" > /dev/ttyS2
+echo "root" > $devName
 
-isReadyForCommand $devName
-if [[ $? == 0 ]]
-then
-    echo "SoC board failed to enter download mode."
-    exit 1
-fi
+nTries=10
+isSuccess=false
+while [ $isSuccess == false ]
+do
+    hasErrorForCommand $devName
+    if [ $? == 0 ]
+    then
+        isSuccess=true
+    elif [ $? == 1 ] || [ $nTries <= 0 ]
+    then
+        echo "SoC board failed to enter download mode."
+        isSuccess=false
+    else
+        let nTries=nTries-1
+        isSuccess=false
+        continue
+    fi
+
+    if [ $isSuccess == false ]
+    then
+        while :
+        do
+            echo "Would you like to try again? (y or n)"
+            read WORD
+            case $WORD in
+                y|Y)
+                    nTries=10
+                    break
+                    ;;
+                n|N)
+                    exit 1
+                    ;;
+            esac
+        done
+    fi
+done
 echo "usb_download" > $devName
 
 echo "Download program to SoC Board..."
 isSuccess=false
-while [[ $isSuccess == false ]]
+while [ $isSuccess == false ]
 do
     result="$(./tools/RemoteManCLI.exe -target usb -rfw /mnt/f0/main main -run 0 -q <<< q)"
 
@@ -77,7 +107,7 @@ do
         isSuccess=false
     fi
 
-    if [[ $isSuccess == false ]]
+    if [ $isSuccess == false ]
     then
         while :
         do
