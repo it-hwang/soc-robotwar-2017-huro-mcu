@@ -53,15 +53,17 @@ isSuccess=false
 while [ $isSuccess == false ]
 do
     hasErrorForCommand $devName
-    if [ $? == 0 ]
+    result=$?
+    if [ $result == 0 ]
     then
         isSuccess=true
-    elif [ $? == 1 ] || [ $nTries <= 0 ]
+    elif [ $result == 1 ] || [ $nTries -le 0 ]
     then
         echo "SoC board failed to enter download mode."
         isSuccess=false
     else
         let nTries=nTries-1
+        sleep 0.1
         isSuccess=false
         continue
     fi
