@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 #include "processor.h"
@@ -9,7 +10,7 @@
 #define _SCREEN_WIDTH		180
 #define _SCREEN_HEIGHT		120
 
-U16 _pixels[_SCREEN_HEIGHT][_SCREEN_WIDTH];
+U16* _pixels;
 
 inline void _readFpgaVideoData(U16* pBuffer);
 inline void _drawFpgaVideoData(U16* pBuffer);
@@ -26,6 +27,7 @@ int openProcessor(void) {
 		closeProcessor();
 		return PROCESSOR_ROBOT_PORT_ERROR;
 	}
+	_pixels = (U16*)malloc(_SCREEN_WIDTH * _SCREEN_HEIGHT * sizeof(U16));
 
 	return 0;
 }
@@ -33,6 +35,7 @@ int openProcessor(void) {
 void closeProcessor(void) {
 	close_graphic();
 	closeRobotPort();
+	free(_pixels);
 }
 
 int runProcessor(void) {
@@ -57,51 +60,35 @@ void _drawFpgaVideoData(U16* pBuffer) {
 	flip();
 }
 
-U16 _getPixel(U16* pBuffer, int width, int height, int x, int y) {
-	return pBuffer[y * width + x];
-}
-
-void _setPixel(U16* pBuffer, int width, int height, int x, int y, U16 value) {
-	pBuffer[y * width + x] = value;
-}
-
-void _displayKeypoints(void) {
-	int x;
-	int y;
-	bool isKeypoint;
-
-	//COLOR_RGAB5515 input;
-	for (y = 0; y < _SCREEN_HEIGHT-4; ++y) {
-		for (x = 0; x < _SCREEN_WIDTH-2; ++x) {
-			//input.data16 = _pixels[y][x];
-			// TODO : 임시 작성 코드이므로, 수정이 필요합니다.
-			isKeypoint = _pixels[(y+4)][(x+2)] & 0x0020;
-
-			if (isKeypoint) {
-				//input.r = 0x00;
-				//input.g = 0xff;
-				//input.b = 0x00;
-				_pixels[y][x] = 0x07e0;
-			}
-
-			//_pixels[y][x] = input.data16;
-		}
-	}
-}
-
 void _improveSomeObstacle(void) {
 	///////////////////////////////////////////////////////////////////////////
 	/*
 		이 부분에서 영상처리를 수행합니다.
 	*/
 	///////////////////////////////////////////////////////////////////////////
-	_readFpgaVideoData((U16*)_pixels);
-	
-	_displayKeypoints();
+	_readFpgaVideoData(_pixels);
+
+	int x;
+	int y;
+
+	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
+		for (x = 0; x < _SCREEN_WIDTH; ++x) {
+			U16 c = _pixels[y * _SCREEN_WIDTH + x];
+			U8 r = (c >> 8) & 0xf8;
+			U8 g = (c >> 3) & 0xfc;
+			U8 b = (c << 3) & 0xf8;
+			
+			if ((x == _SCREEN_WIDTH / 2) ||
+				(y == _SCREEN_HEIGHT / 2))
+				r = 0xff;
+
+			_pixels[y * _SCREEN_WIDTH + x] = MAKE_RGB565(r, g, b);
+		}
+	}
 	
 	//sendDataToRobot(command);
 	//printf("send command to robot: %d\n", command);
 	//waitDataFromRobot();
 
-	_drawFpgaVideoData((U16*)_pixels);
+	_drawFpgaVideoData(_pixels);
 }
