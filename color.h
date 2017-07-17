@@ -63,6 +63,6 @@ inline void rgbaToRgab5515(LPRGBA source, LPRGAB5515 target);
 
 bool createColorTable(const char* filename, size_t pixelSize,
 					  COLOR (*pFunc)(uint32_t), bool overwrite);
-void* loadColorTable(const char* filename);
+void* loadColorTable(const char* filename, size_t pixelSize);
 
 #endif // __COLOR_H__

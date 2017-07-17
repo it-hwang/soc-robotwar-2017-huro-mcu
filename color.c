@@ -68,3 +68,18 @@ bool createColorTable(const char* filename, size_t pixelSize,
 	free(cache);
 	return true;
 }
+
+void* loadColorTable(const char* filename, size_t pixelSize) {
+	FILE* inputFile;
+	inputFile = fopen(filename, "r");
+	if (inputFile == NULL)
+		return NULL;
+
+	uint32_t nPixels = pow(2, pixelSize * 8);
+	LPCOLOR cache = (LPCOLOR)malloc(nPixels * pixelSize);
+
+	fread(cache, sizeof(COLOR), nPixels, inputFile);
+
+	fclose(inputFile);
+	return cache;
+}
