@@ -51,7 +51,7 @@ void _displayLogo(void) {
 }
 
 int _blockRunning(unsigned int milliseconds) {
-	printf("Start program after %d seconds.\n", milliseconds);
+	printf("Start program after %.0f seconds.\n", (float)milliseconds / 1000);
 	printf("1. Start immediately\n");
 	printf("If you want to interrupt, please press any key except '1' key.\n");
 	printf("\n");

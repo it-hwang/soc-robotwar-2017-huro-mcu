@@ -42,7 +42,7 @@ int runProcessor(void) {
 	direct_camera_display_off();
 	
 	int i;
-	for (i = 0; i < 10000; ++i) {
+	for (i = 0; i < 100; ++i) {
 		_improveSomeObstacle();
 	}
 
@@ -73,16 +73,25 @@ void _improveSomeObstacle(void) {
 
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			U16 c = _pixels[y * _SCREEN_WIDTH + x];
-			U8 r = (c >> 8) & 0xf8;
-			U8 g = (c >> 3) & 0xfc;
-			U8 b = (c << 3) & 0xf8;
+			//U16 c = _pixels[y * _SCREEN_WIDTH + x];
+			//LPRGAB5515 input = &_pixels[y * _SCREEN_WIDTH + x];
+			LPRGB565 output = &_pixels[y * _SCREEN_WIDTH + x];
+			//U16 c = _pixels[y * _SCREEN_WIDTH + x];
+			//U8 r = (c >> 8) & 0xf8;
+			//U8 g = (c >> 3) & 0xfc;
+			//U8 b = (c << 3) & 0xf8;
+			//U8 r = input->r << 3;
+			//U8 g = input->g << 3;
+			//U8 b = input->b << 3;
 			
 			if ((x == _SCREEN_WIDTH / 2) ||
-				(y == _SCREEN_HEIGHT / 2))
-				r = 0xff;
+				(y == _SCREEN_HEIGHT / 2)) {
+				output->r = 0xff;
+				output->g = 0x00;
+				output->b = 0x00;
+			}
 
-			_pixels[y * _SCREEN_WIDTH + x] = MAKE_RGB565(r, g, b);
+			//_pixels[y * _SCREEN_WIDTH + x] = MAKE_RGB565(r, g, b);
 		}
 	}
 	
