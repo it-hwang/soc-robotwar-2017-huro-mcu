@@ -1,5 +1,6 @@
 // 설정을 이 파일에 넣어서 기본 설정을 덮어씁니다.
 {
+    "terminal.integrated.shell.windows": "cmd.exe",
     "cygwin.home": "D:\\cygwin",
 
     "serial.port": "COM3",
