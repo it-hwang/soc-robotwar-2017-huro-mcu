@@ -15,7 +15,6 @@
 
 U16* _pixels;
 LPCOLOR _colorCache;
-U16 _pixelCache[10];
 
 inline void _readFpgaVideoData(U16* pBuffer);
 inline void _drawFpgaVideoData(U16* pBuffer);
@@ -72,35 +71,10 @@ int openProcessor(void) {
 	}
 	_pixels = (U16*)malloc(_SCREEN_WIDTH * _SCREEN_HEIGHT * sizeof(U16));
 
-	createColorTable("/mnt/f0/data/main.ctb", sizeof(U16), getColorFunc, false);
-	_colorCache = loadColorTable("/mnt/f0/data/main.ctb", sizeof(U16));
-
-	LPRGB565 pixel;
-
-	pixel = &_pixelCache[COLOR_BLACK];
-	pixel->r = 0x00;
-	pixel->g = 0x00;
-	pixel->b = 0x00;
-	pixel = &_pixelCache[COLOR_BLUE];
-	pixel->r = 0x00;
-	pixel->g = 0x00;
-	pixel->b = 0xff;
-	pixel = &_pixelCache[COLOR_GREEN];
-	pixel->r = 0x00;
-	pixel->g = 0xff;
-	pixel->b = 0x00;
-	pixel = &_pixelCache[COLOR_RED];
-	pixel->r = 0xff;
-	pixel->g = 0x00;
-	pixel->b = 0x00;
-	pixel = &_pixelCache[COLOR_WHITE];
-	pixel->r = 0xff;
-	pixel->g = 0xff;
-	pixel->b = 0xff;
-	pixel = &_pixelCache[COLOR_YELLOW];
-	pixel->r = 0xff;
-	pixel->g = 0xff;
-	pixel->b = 0x00;
+	createColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16), getColorFunc, false);
+	_colorCache = loadColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16));
+	
+	initColorToRgb565Table();
 
 	return 0;
 }
@@ -147,68 +121,13 @@ void _improveSomeObstacle(void) {
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
 			U16 pixel = _pixels[y * _SCREEN_WIDTH + x];
-			//LPRGAB5515 input = &_pixels[y * _SCREEN_WIDTH + x];
+			
 			LPRGB565 output = &_pixels[y * _SCREEN_WIDTH + x];
-			//U16 c = _pixels[y * _SCREEN_WIDTH + x];
-			//U8 r = (c >> 8) & 0xf8;
-			//U8 g = (c >> 3) & 0xfc;
-			//U8 b = (c << 3) & 0xf8;
-			//U8 r = input->r << 3;
-			//U8 g = input->g << 3;
-			//U8 b = input->b << 3;
-			COLOR color = _colorCache[pixel];
 			
-			output->data16 = _pixelCache[color];
-			
-			/*
-			switch (color) {
-				case COLOR_BLACK:
-					output->r = 0x00;
-					output->g = 0x00;
-					output->b = 0x00;
-					break;
-				case COLOR_BLUE:
-					output->r = 0x00;
-					output->g = 0x00;
-					output->b = 0xff;
-					break;
-				case COLOR_GREEN:
-					output->r = 0x00;
-					output->g = 0xff;
-					output->b = 0x00;
-					break;
-				case COLOR_RED:
-					output->r = 0xff;
-					output->g = 0x00;
-					output->b = 0x00;
-					break;
-				case COLOR_WHITE:
-					output->r = 0xff;
-					output->g = 0xff;
-					output->b = 0xff;
-					break;
-				case COLOR_YELLOW:
-					output->r = 0xff;
-					output->g = 0xff;
-					output->b = 0x00;
-					break;
-				default:
-					output->r = 0x80;
-					output->g = 0x80;
-					output->b = 0x80;
-			}
-			*/
+			COLOR color = getColorFromTable(_colorCache, pixel);
 
-			/*
-			if ((x == _SCREEN_WIDTH / 2) ||
-				(y == _SCREEN_HEIGHT / 2)) {
-				output->r = 0xff;
-				output->g = 0x00;
-				output->b = 0x00;
-			}
-			*/
-
-			//_pixels[y * _SCREEN_WIDTH + x] = MAKE_RGB565(r, g, b);
+			colorToRgb565(color, output);
+		
 		}
 	}
 	
