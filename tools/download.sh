@@ -2,7 +2,7 @@
 
 if [[ ! $1 =~ ^COM[0-9]+$ ]]
 then
-	echo "Invalid parameter#1: Please check port number."
+	echo "Invalid parameter#1: Please check port number. $1"
 	exit 1
 fi
 portNo=${1:3}
@@ -38,6 +38,20 @@ function hasErrorForCommand {
 	return 0
 }
 
+function writeCommand {
+	devName=$1
+	commandLine=$2
+
+	exec 3<>$devName
+	for i in $(seq 1 ${#commandLine})
+	do
+		letter=${commandLine:i-1:1}
+		printf "$letter" >&3
+	done
+	printf "\r" >&3
+	exec 3>&-
+}
+
 
 echo "SoC board is entering the download mode..."
 error="$(stty -F $devName $speed -parity cs8 -cstopb 2>&1 > /dev/null)"
@@ -46,7 +60,7 @@ then
 	echo "$error"
 	exit 1
 fi
-echo "root" > $devName
+writeCommand $devName "root"
 
 nTries=10
 isSuccess=false
@@ -86,7 +100,7 @@ do
 		done
 	fi
 done
-echo "usb_download" > $devName
+writeCommand $devName "usb_download"
 
 echo "Download program to SoC Board..."
 isSuccess=false

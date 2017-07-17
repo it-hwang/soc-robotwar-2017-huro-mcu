@@ -16,6 +16,22 @@ then
 fi
 speed=$2
 
+
+function writeCommand {
+	devName=$1
+	commandLine=$2
+
+	exec 3<>$devName
+	for i in $(seq 1 ${#commandLine})
+	do
+		letter=${commandLine:i-1:1}
+		printf "$letter" >&3
+	done
+	printf "\r" >&3
+	exec 3>&-
+}
+
+
 stty -F $devName $speed -parity cs8 -cstopb
-echo "root" > $devName
-echo "/mnt/f0/main" > $devName
+writeCommand $devName "root"
+writeCommand $devName "/mnt/f0/main"
