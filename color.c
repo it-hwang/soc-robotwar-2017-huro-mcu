@@ -1,3 +1,7 @@
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "color.h"
 
 
@@ -38,4 +42,29 @@ void rgbaToRgab5515(LPRGBA source, LPRGAB5515 target) {
 	
 	// 위의 명령을 줄여서 다음과 같이 표현합니다.
 	target->data16 = (((uint16_t)source->r & 0xf8) << 8) | (((uint16_t)source->g & 0xf8) << 4) | (((uint16_t)source->a) << 5) | (((uint16_t)source->b) >> 3);
+}
+
+bool createColorTable(const char* filename, size_t pixelSize,
+					  COLOR (*pFunc)(uint32_t), bool overwrite) {
+	bool isExists = access(filename, F_OK) == 0;
+	if (!overwrite && isExists)
+		return false;
+	
+	uint32_t nPixels = pow(2, pixelSize * 8);
+	uint32_t i;
+	LPCOLOR cache = (LPCOLOR)malloc(nPixels * pixelSize);
+	for (i = 0; i < nPixels; ++i) {
+		cache[i] = (*pFunc)(i);
+	}
+
+	FILE* outputFile;
+	outputFile = fopen(filename, "w");
+	if (outputFile == NULL)
+		return false;
+
+	fwrite(cache, sizeof(COLOR), nPixels, outputFile);
+
+	fclose(outputFile);
+	free(cache);
+	return true;
 }

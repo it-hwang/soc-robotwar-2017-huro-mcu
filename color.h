@@ -12,7 +12,7 @@ typedef enum {
 	COLOR_GREEN,
 	COLOR_BLUE,
 	COLOR_YELLOW
-} COLOR;
+} COLOR, *LPCOLOR;
 
 typedef struct {
 	union {
@@ -61,8 +61,8 @@ inline void rgbaToRgab5515(LPRGBA source, LPRGAB5515 target);
 #define rgbaToRgab5515(source, target) target.data16 = (((uint16_t)source.r & 0xf8) << 8) | (((uint16_t)source.g & 0xf8) << 4) | (((uint16_t)source.a) << 5) | (((uint16_t)source.b) >> 3)
 */
 
-bool createColorTable(const char* filename, uint8_t nBytesPerPixel,
-					  COLOR (*pFunc)(uint8_t));
+bool createColorTable(const char* filename, size_t pixelSize,
+					  COLOR (*pFunc)(uint32_t), bool overwrite);
 void* loadColorTable(const char* filename);
 
 #endif // __COLOR_H__
