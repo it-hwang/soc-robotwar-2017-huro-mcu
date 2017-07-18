@@ -76,7 +76,7 @@ int openProcessor(void) {
 	createColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16), getColorFunc, false);
 	_colorCache = loadColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16));
 	_obstacleIdCache = loadObstaclesFile("/mnt/f0/obstacles.txt");
-
+	
 	initColorToRgb565Table();
 
 	return 0;

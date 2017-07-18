@@ -8,7 +8,8 @@
 typedef enum {
     OBSTACLE_ONE,
     OBSTACLE_TWO,
-    OBSTACLE_THREE
+    OBSTACLE_THREE,
+    OBSTACLE_SIZE
 } OBSTACLEID, *LPOBSTACLEID;
 
 typedef struct {
@@ -18,6 +19,6 @@ typedef struct {
 LPOBSTACLEID loadObstaclesFile(const char* fileName);
 
 bool runSolveObstacle(OBSTACLEID obstacleId);
-void registerObstacle(OBSTACLEID obstacleId, bool (*pObstacleFunc)(void));
+void registerObstacle(OBSTACLEID obstacleId, bool (*pFunc)(void));
 
 #endif //__OBSTACLE_MANAGER_H__
