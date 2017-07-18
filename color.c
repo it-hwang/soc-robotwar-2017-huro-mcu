@@ -47,8 +47,28 @@ void rgbaToRgab5515(LPRGBA source, LPRGAB5515 target) {
 }
 
 void colorToRgb565(COLOR source, LPRGB565 target) {
-
 	*target = _colorToRgb565Table[source];
+}
+
+
+uint32_t rgb565ToRgbaData(LPRGB565 pSource) {
+	return ((uint32_t)pSource->r << 27) | ((uint32_t)pSource->g << 18) | ((uint32_t)pSource->b << 11);
+}
+
+uint32_t rgab5515ToRgbaData(LPRGAB5515 pSource) {
+	return ((uint32_t)pSource->r << 27) | ((uint32_t)pSource->g << 19) | ((uint32_t)pSource->b << 11) | ((uint32_t)pSource->a * 0xff);
+}
+
+uint16_t rgbaToRgb565Data(LPRGBA pSource) {
+	return (((uint16_t)pSource->r & 0xf8) << 8) | (((uint16_t)pSource->g & 0xfc) << 3) | (((uint16_t)pSource->b) >> 3);
+}
+
+uint16_t rgbaToRgab5515Data(LPRGBA pSource) {
+	return (((uint16_t)pSource->r & 0xf8) << 8) | (((uint16_t)pSource->g & 0xf8) << 4) | (((uint16_t)pSource->a) << 5) | (((uint16_t)pSource->b) >> 3);
+}
+
+uint16_t colorToRgb565Data(COLOR source) {
+	return _colorToRgb565Table[source].data16;
 }
 
 bool createColorTableFile(const char* filename, size_t pixelSize,

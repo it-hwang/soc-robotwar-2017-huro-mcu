@@ -56,6 +56,12 @@ inline void rgab5515ToRgba(LPRGAB5515 source, LPRGBA target);
 inline void rgbaToRgab5515(LPRGBA source, LPRGAB5515 target);
 inline COLOR getColorFromTable(LPCOLOR colorTable, uint16_t pixel);
 inline void colorToRgb565(COLOR source, LPRGB565 target);
+
+inline uint32_t rgb565ToRgbaData(LPRGB565 pSource);
+inline uint32_t rgab5515ToRgbaData(LPRGAB5515 pSource);
+inline uint16_t rgbaToRgb565Data(LPRGBA pSource);
+inline uint16_t rgbaToRgab5515Data(LPRGBA pSource);
+inline uint16_t colorToRgb565Data(COLOR source);
 /*
 #define rgb565ToRgba(source, target) target.data32 = ((uint32_t)source.r << 27) | ((uint32_t)source.g << 18) | ((uint32_t)source.b << 11)
 #define rgbaToRgb565(source, target) target.data16 = (((uint16_t)source.r & 0xf8) << 8) | (((uint16_t)source.g & 0xfc) << 3) | (((uint16_t)source.b) >> 8)

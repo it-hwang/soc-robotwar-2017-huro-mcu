@@ -13,11 +13,11 @@
 #define _SCREEN_WIDTH		180
 #define _SCREEN_HEIGHT		120
 
-U16* _pixels;
+uint16_t* _pixels;
 LPCOLOR _colorCache;
 
-inline void _readFpgaVideoData(U16* pBuffer);
-inline void _drawFpgaVideoData(U16* pBuffer);
+inline void _readFpgaVideoData(uint16_t* pBuffer);
+inline void _drawFpgaVideoData(uint16_t* pBuffer);
 
 void _improveSomeObstacle(void);
 
@@ -69,10 +69,10 @@ int openProcessor(void) {
 		closeProcessor();
 		return PROCESSOR_ROBOT_PORT_ERROR;
 	}
-	_pixels = (U16*)malloc(_SCREEN_WIDTH * _SCREEN_HEIGHT * sizeof(U16));
+	_pixels = (uint16_t*)malloc(_SCREEN_WIDTH * _SCREEN_HEIGHT * sizeof(uint16_t));
 
-	createColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16), getColorFunc, false);
-	_colorCache = loadColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16));
+	createColorTableFile("/mnt/f0/data/main.ctb", sizeof(uint16_t), getColorFunc, false);
+	_colorCache = loadColorTableFile("/mnt/f0/data/main.ctb", sizeof(uint16_t));
 	
 	initColorToRgb565Table();
 
@@ -97,11 +97,11 @@ int runProcessor(void) {
 	return 0;
 }
 
-void _readFpgaVideoData(U16* pBuffer) {
+void _readFpgaVideoData(uint16_t* pBuffer) {
 	read_fpga_video_data(pBuffer);
 }
 
-void _drawFpgaVideoData(U16* pBuffer) {
+void _drawFpgaVideoData(uint16_t* pBuffer) {
 	clear_screen();
 	draw_fpga_video_data_full(pBuffer);
 	flip();
@@ -120,14 +120,13 @@ void _improveSomeObstacle(void) {
 
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			U16 pixel = _pixels[y * _SCREEN_WIDTH + x];
-			
-			LPRGB565 output = &_pixels[y * _SCREEN_WIDTH + x];
-			
+			uint16_t pixel = _pixels[y * _SCREEN_WIDTH + x];
 			COLOR color = getColorFromTable(_colorCache, pixel);
 
-			colorToRgb565(color, output);
-		
+			LPRGB565 output = &_pixels[y * _SCREEN_WIDTH + x];
+			output->data16 = colorToRgb565Data(color);
+
+			//colorToRgb565(color, output);
 		}
 	}
 	
