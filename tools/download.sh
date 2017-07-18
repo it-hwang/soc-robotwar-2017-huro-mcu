@@ -16,6 +16,12 @@ then
 fi
 speed=$2
 
+if [ -e $devName ]
+then
+	echo "The device can not be found: $devName"
+	exit 1
+fi
+
 
 function hasErrorForCommand {
 	devName=$1
