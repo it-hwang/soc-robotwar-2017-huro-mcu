@@ -1,0 +1,23 @@
+#ifndef __OBSTACLE_MANAGER_H__
+#define __OBSTACLE_MANAGER_H__
+
+#include <stdbool.h>
+#include <stdint.h>
+
+//장애물 번호 정의
+typedef enum {
+    OBSTACLE_ONE,
+    OBSTACLE_TWO,
+    OBSTACLE_THREE
+} OBSTACLEID, *LPOBSTACLEID;
+
+typedef struct {
+    bool (*pObstacleFunc)(void);
+}OBSTACLE,*LPOBSTACLE;
+
+LPOBSTACLEID loadObstaclesFile(const char* fileName);
+
+bool runSolveObstacle(OBSTACLEID obstacleId);
+void registerObstacle(OBSTACLEID obstacleId, bool (*pObstacleFunc)(void));
+
+#endif //__OBSTACLE_MANAGER_H__

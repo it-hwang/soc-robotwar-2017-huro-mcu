@@ -6,6 +6,7 @@
 #include "graphic_api.h"
 #include "robot_protocol.h"
 #include "color.h"
+#include "obstacle_manager.h"
 
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
@@ -15,6 +16,7 @@
 
 U16* _pixels;
 LPCOLOR _colorCache;
+LPOBSTACLEID _obstacleIdCache;
 
 inline void _readFpgaVideoData(U16* pBuffer);
 inline void _drawFpgaVideoData(U16* pBuffer);
@@ -73,7 +75,8 @@ int openProcessor(void) {
 
 	createColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16), getColorFunc, false);
 	_colorCache = loadColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16));
-	
+	_obstacleIdCache = loadObstaclesFile("/mnt/f0/obstacles.txt");
+
 	initColorToRgb565Table();
 
 	return 0;
