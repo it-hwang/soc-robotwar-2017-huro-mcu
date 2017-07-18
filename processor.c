@@ -8,6 +8,7 @@
 #include "color.h"
 #include "obstacle_manager.h"
 
+
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
@@ -22,7 +23,7 @@ inline void _readFpgaVideoData(U16* pBuffer);
 inline void _drawFpgaVideoData(U16* pBuffer);
 
 void _improveSomeObstacle(void);
-
+void _defineObstacle(void);
 
 COLOR getColorFunc(uint32_t pixel) {
 	uint32_t rgbaData;
@@ -76,7 +77,8 @@ int openProcessor(void) {
 	createColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16), getColorFunc, false);
 	_colorCache = loadColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16));
 	_obstacleIdCache = loadObstaclesFile("/mnt/f0/obstacles.txt");
-	
+
+	_defineObstacle();
 	initColorToRgb565Table();
 
 	return 0;
@@ -98,6 +100,11 @@ int runProcessor(void) {
 
 	direct_camera_display_on();
 	return 0;
+}
+
+void _defineObstacle(void) {
+	//registerObstacle(OBSTACLE_ONE, helloWorld);
+	//registerObstacle(OBSTACLE_TWO, goodbyeWorld);
 }
 
 void _readFpgaVideoData(U16* pBuffer) {

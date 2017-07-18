@@ -18,7 +18,7 @@ typedef struct {
 
 LPOBSTACLEID loadObstaclesFile(const char* fileName);
 
-bool runSolveObstacle(OBSTACLEID obstacleId);
-void registerObstacle(OBSTACLEID obstacleId, bool (*pFunc)(void));
+inline bool runSolveObstacle(OBSTACLEID obstacleId);
+inline void registerObstacle(OBSTACLEID obstacleId, bool (*pFunc)(void));
 
 #endif //__OBSTACLE_MANAGER_H__

@@ -29,13 +29,10 @@ LPOBSTACLEID loadObstaclesFile(const char* fileName) {
 }
 
 bool runSolveObstacle(OBSTACLEID obstacleId) {
-    
-    return false;
+    return _definedObstacleList[obstacleId].pObstacleFunc();
 }
 
 void registerObstacle(OBSTACLEID obstacleId, bool (*pFunc)(void)) {
-    free(_definedObstacleList[obstacleId].pObstacleFunc);
-
     _definedObstacleList[obstacleId].pObstacleFunc = pFunc;
 }
 
