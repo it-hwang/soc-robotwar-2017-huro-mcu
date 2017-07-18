@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include "obstacle_manager.h"
 
-OBSTACLE _definedObstacleList[OBSTACLE_SIZE];
+Obstacle_t _definedObstacleList[OBSTACLE_SIZE];
 
-LPOBSTACLEID loadObstaclesFile(const char* fileName) {
+ObstacleId_t* loadObstaclesFile(const char* fileName) {
     FILE* inputFile;
 	inputFile = fopen(fileName, "r");
 	if (inputFile == NULL)
@@ -18,21 +18,21 @@ LPOBSTACLEID loadObstaclesFile(const char* fileName) {
 
     fclose(inputFile);
 
-    LPOBSTACLEID cache = (LPOBSTACLEID)malloc(fileSize * sizeof(OBSTACLEID));
+    ObstacleId_t* cache = (ObstacleId_t*)malloc(fileSize * sizeof(ObstacleId_t));
     
     uint32_t i;
     for(i = 0; i < fileSize; ++i) {
-        cache[i] = (OBSTACLEID)fileData[i];
+        cache[i] = (ObstacleId_t)fileData[i];
     }
 
     return cache;
 }
 
-bool runSolveObstacle(OBSTACLEID obstacleId) {
+bool runSolveObstacle(ObstacleId_t obstacleId) {
     return _definedObstacleList[obstacleId].pObstacleFunc();
 }
 
-void registerObstacle(OBSTACLEID obstacleId, bool (*pFunc)(void)) {
+void registerObstacle(ObstacleId_t obstacleId, bool (*pFunc)(void)) {
     _definedObstacleList[obstacleId].pObstacleFunc = pFunc;
 }
 

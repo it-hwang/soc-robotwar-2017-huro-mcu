@@ -8,7 +8,6 @@
 #include "color.h"
 #include "obstacle_manager.h"
 
-
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
@@ -17,7 +16,7 @@
 
 U16* _pixels;
 LPCOLOR _colorCache;
-LPOBSTACLEID _obstacleIdCache;
+ObstacleId_t* _obstacleIdCache;
 
 inline void _readFpgaVideoData(U16* pBuffer);
 inline void _drawFpgaVideoData(U16* pBuffer);
@@ -79,6 +78,7 @@ int openProcessor(void) {
 	_obstacleIdCache = loadObstaclesFile("/mnt/f0/obstacles.txt");
 
 	_defineObstacle();
+
 	initColorToRgb565Table();
 
 	return 0;

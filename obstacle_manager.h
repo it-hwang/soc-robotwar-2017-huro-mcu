@@ -10,15 +10,15 @@ typedef enum {
     OBSTACLE_TWO,
     OBSTACLE_THREE,
     OBSTACLE_SIZE
-} OBSTACLEID, *LPOBSTACLEID;
+} ObstacleId_t;
 
 typedef struct {
     bool (*pObstacleFunc)(void);
-}OBSTACLE,*LPOBSTACLE;
+}Obstacle_t;
 
-LPOBSTACLEID loadObstaclesFile(const char* fileName);
+ObstacleId_t* loadObstaclesFile(const char* fileName);
 
-inline bool runSolveObstacle(OBSTACLEID obstacleId);
-inline void registerObstacle(OBSTACLEID obstacleId, bool (*pFunc)(void));
+inline bool runSolveObstacle(ObstacleId_t obstacleId);
+inline void registerObstacle(ObstacleId_t obstacleId, bool (*pFunc)(void));
 
 #endif //__OBSTACLE_MANAGER_H__
