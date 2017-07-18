@@ -6,9 +6,9 @@ Obstacle_t _definedObstacleList[OBSTACLE_SIZE];
 
 ObstacleId_t* loadObstaclesFile(const char* fileName) {
     FILE* inputFile;
-	inputFile = fopen(fileName, "r");
-	if (inputFile == NULL)
-		return NULL;
+    inputFile = fopen(fileName, "r");
+    if (inputFile == NULL)
+        return NULL;
 
     uint32_t fileSize = 0;
     uint32_t fileData[50];
