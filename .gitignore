@@ -1,9 +1,5 @@
-graphic_api.o
+# ignore build outputs.
+*.o
+*.dbg
+*.elf
 main
-main.dbg
-main.elf
-main.o
-processor.o
-robot_protocol.o
-terminal.o
-uart_api.o

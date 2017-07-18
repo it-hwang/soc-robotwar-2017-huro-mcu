@@ -14,7 +14,7 @@ OBJDUMP	= $(CROSS_COMPILE)objdump
 RANLIB	= $(CROSS_COMPILE)ranlib
 ELF2FLT	= $(CROSS_COMPILE)elf2flt
 
-CFLAGS	= -O2 -Wall -Wstrict-prototypes -Dlinux -D__linux__ -Dunix -D__uClinux__ -DEMBED
+CFLAGS	= -O2 -Wall -Wstrict-prototypes -Dlinux -D__linux__ -Dunix -D__uClinux__ -DEMBED -fshort-enums
 
 COMPILER_PREFIX=/usr/local/ae32000-elf-uclibc-tools
 LDFLAGS = -r -Xlinker -T$(COMPILER_PREFIX)/lib/ae32000-elf2flt.ld
@@ -27,7 +27,7 @@ export AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP RANLIB CFLAGS
 
 PROJ = main
 
-OBJS = main.o uart_api.o robot_protocol.o graphic_api.o terminal.o processor.o
+OBJS = main.o uart_api.o robot_protocol.o graphic_api.o terminal.o processor.o color.o
 
 
 all: $(PROJ)
