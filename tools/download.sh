@@ -16,7 +16,7 @@ then
 fi
 speed=$2
 
-if [ -e $devName ]
+if [ ! -c $devName ]
 then
 	echo "The device can not be found: $devName"
 	exit 1
