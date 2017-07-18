@@ -5,6 +5,7 @@
 #include "color.h"
 
 LPRGB565 _colorToRgb565Table;
+void _registerColor(COLOR color, uint8_t r, uint8_t g, uint8_t b);
 
 void rgb565ToRgba(LPRGB565 source, LPRGBA target) {
 	//target->r = source->r << 3;
@@ -92,42 +93,25 @@ LPCOLOR loadColorTableFile(const char* filename, size_t pixelSize) {
 
 void initColorToRgb565Table(void) {
 	LPRGB565 cache = (LPRGB565)malloc(SIZE_OF_COLOR * sizeof(uint16_t));
-
-	RGBA rgba;
-
-	rgba.r = 0x00;
-	rgba.g = 0x00;
-	rgba.b = 0x00;
-	rgbaToRgb565(&rgba, &cache[COLOR_BLACK]);
-
-	rgba.r = 0x00;
-	rgba.g = 0x00;
-	rgba.b = 0xff;
-	rgbaToRgb565(&rgba, &cache[COLOR_BLUE]);
-
-	rgba.r = 0x00;
-	rgba.g = 0xff;
-	rgba.b = 0x00;
-	rgbaToRgb565(&rgba, &cache[COLOR_GREEN]);
-
-	rgba.r = 0xff;
-	rgba.g = 0x00;
-	rgba.b = 0x00;
-	rgbaToRgb565(&rgba, &cache[COLOR_RED]);
-
-	rgba.r = 0xff;
-	rgba.g = 0xff;
-	rgba.b = 0xff;
-	rgbaToRgb565(&rgba, &cache[COLOR_WHITE]);
-
-	rgba.r = 0xff;
-	rgba.g = 0xff;
-	rgba.b = 0x00;
-	rgbaToRgb565(&rgba, &cache[COLOR_YELLOW]);
-
 	_colorToRgb565Table = cache;
+
+	_registerColor(COLOR_BLACK, 0x00, 0x00, 0x00);
+	_registerColor(COLOR_WHITE, 0xff, 0xff, 0xff);
+	_registerColor(COLOR_RED, 0xff, 0x00, 0x00);
+	_registerColor(COLOR_GREEN, 0x00, 0xff, 0x00);
+	_registerColor(COLOR_BLUE, 0x00, 0x00, 0xff);
+	_registerColor(COLOR_YELLOW, 0xff, 0xff, 0x00);
 }
 
 COLOR getColorFromTable(LPCOLOR colorTable, uint16_t pixel) {
 	return colorTable[pixel];
+}
+
+
+void _registerColor(COLOR color, uint8_t r, uint8_t g, uint8_t b) {
+	RGBA rgba;
+	rgba.r = r;
+	rgba.g = g;
+	rgba.b = b;
+	rgbaToRgb565(&rgba, &_colorToRgb565Table[color]);
 }
