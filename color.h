@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "graphic_interface.h"
+
 #define COLOR_USE_TYPE_CHECKING     true
 
 typedef enum {
@@ -48,6 +50,12 @@ typedef union {
 
 typedef Color_t* ColorTable_t;
 
+typedef struct {
+    Color_t* pixels;
+    PixelCoordinate_t width;
+    PixelCoordinate_t height;
+} ColorScreen_t;
+
 
 uint16_t colorToRgb565DataTable[SIZE_OF_COLOR];
 
@@ -79,7 +87,7 @@ uint16_t colorToRgb565DataTable[SIZE_OF_COLOR];
     }
 
     static inline Color_t getColorFromTable(ColorTable_t colorTable,
-                                            uint32_t pixelData) {
+                                            PixelData_t pixelData) {
         return colorTable[pixelData];
     }
 
@@ -115,8 +123,15 @@ uint16_t colorToRgb565DataTable[SIZE_OF_COLOR];
 
 void initColorLib(void);
 
-bool createColorTableFile(const char* filePath, size_t pixelDataSize,
-                          Color_t (*pFunc)(uint32_t), bool overwrite);
-ColorTable_t loadColorTableFile(const char* filePath, size_t pixelDataSize);
+bool createColorTableFile(const char* filePath, Color_t (*pFunc)(PixelData_t),
+                          bool overwrite);
+ColorTable_t loadColorTableFile(const char* filePath);
+
+ColorScreen_t* createColorScreen(PixelCoordinate_t width,
+                                 PixelCoordinate_t height);
+void destroyColorScreen(ColorScreen_t* pScreen);
+bool readColorFromScreen(ColorScreen_t* pScreen, Screen_t* pSource,
+                         ColorTable_t colorTable);
+bool writeColorToScreen(ColorScreen_t* pScreen, Screen_t* pTarget);
 
 #endif // __COLOR_H__
