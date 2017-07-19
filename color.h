@@ -87,20 +87,28 @@ uint16_t colorToRgb565DataTable[SIZE_OF_COLOR];
         return colorToRgb565DataTable[color];
     }
 #else
-    #define rgb565ToRgbaData(pRgb565)   ((uint32_t)pRgb565->r << 27) | \
-                                        ((uint32_t)pRgb565->g << 18) | \
-                                        ((uint32_t)pRgb565->b << 11)
-    #define rgab5515ToRgbaData(pRgab5515)   ((uint32_t)pRgab5515->r << 27) | \
-                                            ((uint32_t)pRgab5515->g << 19) | \
-                                            ((uint32_t)pRgab5515->b << 11) | \
-                                            ((uint32_t)pRgab5515->a)
-    #define rgbaToRgb565Data(pRgba)        (((uint16_t)pRgba->r & 0xf8) << 8) |\
-                                        (((uint16_t)pRgba->g & 0xfc) << 3) |\
-                                        (((uint16_t)pRgba->b) >> 3)
-    #define rgbaToRgab5515Data(pRgba)   (((uint16_t)pRgba->r & 0xf8) << 8) |\
-                                        (((uint16_t)pRgba->g & 0xf8) << 4) |\
-                                        (((uint16_t)pRgba->a) << 5) |\
-                                        (((uint16_t)pRgba->b) >> 3)
+    #define rgb565ToRgbaData(pRgb565) \
+                ((uint32_t)((Rgb565_t*)pRgb565)->r << 27) | \
+                ((uint32_t)((Rgb565_t*)pRgb565)->g << 18) | \
+                ((uint32_t)((Rgb565_t*)pRgb565)->b << 11)
+
+    #define rgab5515ToRgbaData(pRgab5515) \
+                ((uint32_t)((Rgab5515_t*)pRgab5515)->r << 27) |\
+                ((uint32_t)((Rgab5515_t*)pRgab5515)->g << 19) |\
+                ((uint32_t)((Rgab5515_t*)pRgab5515)->b << 11) |\
+                ((uint32_t)((Rgab5515_t*)pRgab5515)->a)
+
+    #define rgbaToRgb565Data(pRgba) \
+                (((uint16_t)((Rgba_t*)pRgba)->r & 0xf8) << 8) |\
+                (((uint16_t)((Rgba_t*)pRgba)->g & 0xfc) << 3) |\
+                (((uint16_t)((Rgba_t*)pRgba)->b) >> 3)
+
+    #define rgbaToRgab5515Data(pRgba) \
+                (((uint16_t)((Rgba_t*)pRgba)->r & 0xf8) << 8) |\
+                (((uint16_t)((Rgba_t*)pRgba)->g & 0xf8) << 4) |\
+                (((uint16_t)((Rgba_t*)pRgba)->a) << 5) |\
+                (((uint16_t)((Rgba_t*)pRgba)->b) >> 3)
+
     #define getColorFromTable(colorTable, pixelData)    colorTable[pixelData]
     #define colorToRgb565Data(color)    colorToRgb565DataTable[color]
 #endif
