@@ -3,7 +3,6 @@
 #include "graphic_interface.h"
 #include "graphic_api.h"
 
-
 const PixelCoordinate_t DEFAULT_SCREEN_WIDTH = 180;
 const PixelCoordinate_t DEFAULT_SCREEN_HEIGHT = 120;
 
