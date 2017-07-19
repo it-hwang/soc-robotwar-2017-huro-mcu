@@ -125,6 +125,12 @@ void initColorToRgb565Table(void) {
 	rgba.b = 0x00;
 	rgbaToRgb565(&rgba, &cache[COLOR_YELLOW]);
 
+	rgba.r = 0xfe;
+	rgba.g = 0xc6;
+	rgba.b = 0x8e;
+	rgbaToRgb565(&rgba, &cache[COLOR_ORANGE]);
+
+
 	_colorToRgb565Table = cache;
 }
 

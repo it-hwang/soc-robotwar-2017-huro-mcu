@@ -27,9 +27,9 @@ COLOR getColorFunc(uint32_t pixel) {
 	LPRGBA rgba = &rgbaData;
 	rgab5515ToRgba(&pixel, rgba);
 
-	float r = rgba->r;
-	float g = rgba->g;
-	float b = rgba->b;
+	float r = (float)rgba->r / 255;
+	float g = (float)rgba->g / 255;
+	float b = (float)rgba->b / 255;
 	float h;	// hue
 	float s;	// saturation
 	float i;	// intensity
@@ -39,26 +39,31 @@ COLOR getColorFunc(uint32_t pixel) {
 
 	i = (r + g + b) / 3;
 	if (c == 0) h = 0;
-	else if (max == r) h = 60 * fmodf(((g - b) / c), 6);
+	else if (max == r) h = 60 * fmodf(((g - b) / c), 6); //fmodf is %
 	else if (max == g) h = 60 * (((b - r) / c) + 2);
 	else if (max == b) h = 60 * (((r - g) / c) + 4);
+	
 	else h = 0;
 	if (c == 0) s = 0;
 	else s = 1 - min / i;
 
-	if (i < 0.2)
+	if (i < 0.2 )
 		return COLOR_BLACK;
-	else if (i > 0.8 && s < 0.2)
+	else if (i > 0.15 && s < 0.15)
 		return COLOR_WHITE;
-	else if (h >= 300 || h < 60)
+	else if (h >= 282  ||(h>=0 && h<6))
 		return COLOR_RED;
-	else if (h >= 60 && h < 180)
+	else if (h >= 80 && h < 200)
 		return COLOR_GREEN;
-	else if (h >= 180 && h < 300)
+	else if (h >= 200 && h < 282)
 		return COLOR_BLUE;
-
-	return COLOR_YELLOW;
+    else if(h>=35 && h<80)
+		return COLOR_YELLOW;
+	else if(h>=6 && h<35)
+		 return COLOR_ORANGE;
 }
+
+
 
 int openProcessor(void) {
 	if (open_graphic() < 0) {
@@ -124,7 +129,8 @@ void _improveSomeObstacle(void) {
 			
 			LPRGB565 output = &_pixels[y * _SCREEN_WIDTH + x];
 			
-			COLOR color = getColorFromTable(_colorCache, pixel);
+			//COLOR color = getColorFromTable(_colorCache, pixel);
+			COLOR color = getColorFunc(pixel);
 
 			colorToRgb565(color, output);
 		
