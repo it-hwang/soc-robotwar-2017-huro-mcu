@@ -34,4 +34,6 @@ function writeCommand {
 
 stty -F $devName $speed -parity cs8 -cstopb
 writeCommand $devName "root"
-writeCommand $devName "/mnt/f0/main"
+writeCommand $devName "cd /mnt/f0"
+writeCommand $devName "./main"
+writeCommand $devName "1"	# direct start command
