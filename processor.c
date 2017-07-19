@@ -16,7 +16,7 @@
 
 U16* _pixels;
 LPCOLOR _colorCache;
-ObstacleId_t* _obstacleIdCache;
+ObstacleId_t* _obstacleSequence;
 
 inline void _readFpgaVideoData(U16* pBuffer);
 inline void _drawFpgaVideoData(U16* pBuffer);
@@ -75,7 +75,7 @@ int openProcessor(void) {
 
 	createColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16), getColorFunc, false);
 	_colorCache = loadColorTableFile("/mnt/f0/data/main.ctb", sizeof(U16));
-	_obstacleIdCache = loadObstaclesFile("/mnt/f0/obstacles.txt");
+	_obstacleSequence = loadObstaclesFile("/mnt/f0/obstacles.txt");
 
 	_defineObstacle();
 
