@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -7,14 +8,16 @@
 #include "robot_protocol.h"
 #include "color.h"
 
-#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
-#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
+#define _COLOR_TABLE_FILE_PATH	"/mnt/f0/data/main.ctb"
 
 #define _SCREEN_WIDTH		180
 #define _SCREEN_HEIGHT		120
 
-uint16_t* _pixels;
-LPCOLOR _colorCache;
+#define _MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+#define _MAX(X,Y) ((X) > (Y) ? (X) : (Y))
+
+uint16_t* _pBuffer;
+ColorTable_t _colorTable;
 
 inline void _readFpgaVideoData(uint16_t* pBuffer);
 inline void _drawFpgaVideoData(uint16_t* pBuffer);
@@ -22,19 +25,21 @@ inline void _drawFpgaVideoData(uint16_t* pBuffer);
 void _improveSomeObstacle(void);
 
 
-COLOR getColorFunc(uint32_t pixel) {
+Color_t convertPixelDataToColor(uint32_t pixelData) {
+	uint16_t rgab5515Data = pixelData;
 	uint32_t rgbaData;
-	LPRGBA rgba = &rgbaData;
-	rgab5515ToRgba(&pixel, rgba);
+	Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+	Rgba_t* pRgba = (Rgba_t*)&rgbaData;
+	pRgba->data = rgab5515ToRgbaData(*pRgab5515);
 
-	float r = rgba->r;
-	float g = rgba->g;
-	float b = rgba->b;
+	float r = (float)pRgba->r / 255;
+	float g = (float)pRgba->g / 255;
+	float b = (float)pRgba->b / 255;
 	float h;	// hue
 	float s;	// saturation
 	float i;	// intensity
-	float max = MAX(MAX(r, g), b);
-	float min = MIN(MIN(r, g), b);
+	float max = _MAX(_MAX(r, g), b);
+	float min = _MIN(_MIN(r, g), b);
 	float c = max - min;
 
 	i = (r + g + b) / 3;
@@ -69,12 +74,12 @@ int openProcessor(void) {
 		closeProcessor();
 		return PROCESSOR_ROBOT_PORT_ERROR;
 	}
-	_pixels = (uint16_t*)malloc(_SCREEN_WIDTH * _SCREEN_HEIGHT * sizeof(uint16_t));
+	_pBuffer = (uint16_t*)malloc(_SCREEN_WIDTH * _SCREEN_HEIGHT * sizeof(uint16_t));
 
-	createColorTableFile("/mnt/f0/data/main.ctb", sizeof(uint16_t), getColorFunc, false);
-	_colorCache = loadColorTableFile("/mnt/f0/data/main.ctb", sizeof(uint16_t));
+	createColorTableFile(_COLOR_TABLE_FILE_PATH, sizeof(uint16_t), convertPixelDataToColor, false);
+	_colorTable = loadColorTableFile(_COLOR_TABLE_FILE_PATH, sizeof(uint16_t));
 	
-	initColorToRgb565Table();
+	initColorLib();
 
 	return 0;
 }
@@ -82,7 +87,7 @@ int openProcessor(void) {
 void closeProcessor(void) {
 	close_graphic();
 	closeRobotPort();
-	free(_pixels);
+	free(_pBuffer);
 }
 
 int runProcessor(void) {
@@ -113,20 +118,19 @@ void _improveSomeObstacle(void) {
 		이 부분에서 영상처리를 수행합니다.
 	*/
 	///////////////////////////////////////////////////////////////////////////
-	_readFpgaVideoData(_pixels);
+	_readFpgaVideoData(_pBuffer);
 
 	int x;
 	int y;
 
 	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
 		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			uint16_t pixel = _pixels[y * _SCREEN_WIDTH + x];
-			COLOR color = getColorFromTable(_colorCache, pixel);
+			int index = y * _SCREEN_WIDTH + x;
+			uint16_t pixelData = _pBuffer[index];
+			Color_t color = getColorFromTable(_colorTable, pixelData);
 
-			LPRGB565 output = &_pixels[y * _SCREEN_WIDTH + x];
-			output->data16 = colorToRgb565Data(color);
-
-			//colorToRgb565(color, output);
+			Rgb565_t* pOutput = (Rgb565_t*)&_pBuffer[index];
+			pOutput->data = colorToRgb565Data(color);
 		}
 	}
 	
@@ -134,5 +138,5 @@ void _improveSomeObstacle(void) {
 	//printf("send command to robot: %d\n", command);
 	//waitDataFromRobot();
 
-	_drawFpgaVideoData(_pixels);
+	_drawFpgaVideoData(_pBuffer);
 }
