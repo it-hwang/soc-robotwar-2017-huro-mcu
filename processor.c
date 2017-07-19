@@ -9,6 +9,7 @@
 #include "graphic_api.h"
 #include "robot_protocol.h"
 #include "color.h"
+#include "obstacle_manager.h"
 
 #define _DATA_DIR_PATH          "data"
 #define _COLOR_TABLE_FILE_PATH  "data/main.ctb"
@@ -19,14 +20,16 @@
 #define _MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define _MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
+ObstacleId_t* _obstacleSequence;
+
 uint16_t* _pBuffer;
 ColorTable_t _colorTable;
 
 inline void _readFpgaVideoData(uint16_t* pBuffer);
 inline void _drawFpgaVideoData(uint16_t* pBuffer);
 
+void _defineObstacle(void);
 void _improveSomeObstacle(void);
-
 
 Color_t convertPixelDataToColor(uint32_t pixelData) {
     uint16_t rgab5515Data = pixelData;
@@ -79,11 +82,13 @@ int openProcessor(void) {
     }
     _pBuffer = (uint16_t*)malloc(_SCREEN_WIDTH * _SCREEN_HEIGHT * sizeof(uint16_t));
 
+    initColorLib();
     mkdir(_DATA_DIR_PATH, 0755);
     createColorTableFile(_COLOR_TABLE_FILE_PATH, sizeof(uint16_t), convertPixelDataToColor, false);
     _colorTable = loadColorTableFile(_COLOR_TABLE_FILE_PATH, sizeof(uint16_t));
     
-    initColorLib();
+	_defineObstacle();
+	_obstacleSequence = loadObstaclesFile("/mnt/f0/obstacles.txt");
 
     return 0;
 }
@@ -106,8 +111,13 @@ int runProcessor(void) {
     return 0;
 }
 
-void _readFpgaVideoData(uint16_t* pBuffer) {
-    read_fpga_video_data(pBuffer);
+void _defineObstacle(void) {
+	//registerObstacle(OBSTACLE_ONE, helloWorld);
+	//registerObstacle(OBSTACLE_TWO, goodbyeWorld);
+}
+
+void _readFpgaVideoData(U16* pBuffer) {
+	read_fpga_video_data(pBuffer);
 }
 
 void _drawFpgaVideoData(uint16_t* pBuffer) {
