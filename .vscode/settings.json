@@ -7,14 +7,5 @@
     "serial.speed": "115200",
 
     // Windows 10 호환성 설정
-    "terminal.integrated.shell.windows": "cmd.exe",
-    "files.associations": {
-        "color.h": "c",
-        "stdint.h": "c",
-        "stdbool.h": "c",
-        "amazon2_sdk.h": "c",
-        "stat.h": "c",
-        "processor.h": "c",
-        "robot_protocol.h": "c"
-    }
+    "terminal.integrated.shell.windows": "cmd.exe"
 }
