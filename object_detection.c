@@ -10,6 +10,7 @@ typedef struct {
     int y;
 } Location_t;
 
+void _sortArray(uint16_t* array, int size);
 
 ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                                     Color_t flagColor) {
@@ -29,20 +30,36 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
 
             if(color == flagColor) {
                 if(x > 0 && y > 0){
-                    uint16_t up = labeledPixels[y-1][x];
-                    uint16_t left = labeledPixels[y][x-1];
-                    uint16_t upLeft = labeledPixels[y-1][x-1];
-                    uint16_t upRight = labeledPixels[y-1][x+1];
-
+                    uint16_t adjacencyLabels[4];
+                    /*adjacencyLabels[0] = labeledPixels[y-1][x];
+                    adjacencyLabels[1] = labeledPixels[y][x-1];
+                    adjacencyLabels[2] = labeledPixels[y-1][x-1];
+                    adjacencyLabels[3] = labeledPixels[y-1][x+1];
+                    */
                     
                 }
             }
         }
     }
-    
+
     return NULL;
 }
 
+void _sortArray(uint16_t* array, int size) {
+    int i;
+    int j;
+    int temp;
+
+    for(i = 1; i < size; ++i) {
+        temp = array[i];
+        for(j = i; j > 0; --j) {
+            if(array[j-1] > temp) {
+                array[j] = array[j-1];
+                array[j-1] = temp;
+            }
+        }
+    }
+}
 /*
 ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                                     Color_t flagColor) {
