@@ -13,6 +13,7 @@
 
 #define _DATA_DIR_PATH          "data"
 #define _COLOR_TABLE_FILE_PATH  "data/main.ctb"
+#define _ORANGE_TABLE_FILE_PATH "data/orange.ctb"
 
 #define _SCREEN_WIDTH       180
 #define _SCREEN_HEIGHT      120
@@ -24,6 +25,7 @@ ObstacleId_t* _obstacleSequence;
 
 uint16_t* _pBuffer;
 ColorTable_t _colorTable;
+ColorTable_t _orangeTable;
 
 inline void _readFpgaVideoData(uint16_t* pBuffer);
 inline void _drawFpgaVideoData(uint16_t* pBuffer);
@@ -31,7 +33,7 @@ inline void _drawFpgaVideoData(uint16_t* pBuffer);
 void _defineObstacle(void);
 void _improveSomeObstacle(void);
 
-Color_t convertPixelDataToColor(uint32_t pixelData) {
+Color_t convertPixelDataToColorOther(uint32_t pixelData) {
     uint16_t rgab5515Data = pixelData;
     uint32_t rgbaData;
     Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
@@ -61,16 +63,51 @@ Color_t convertPixelDataToColor(uint32_t pixelData) {
 		return COLOR_BLACK;
 	else if (i > 0.15 && s < 0.15)
 		return COLOR_WHITE;
-	else if (h >= 282  ||(h>=0 && h<6))
+	else if (h >= 282  ||h<10)
 		return COLOR_RED;
-	else if (h >= 80 && h < 200)
+	else if (h >= 100 && h < 200)
 		return COLOR_GREEN;
 	else if (h >= 200 && h < 282)
 		return COLOR_BLUE;
-    else if(h>=35 && h<80)
+    else if(h>=10 && h<100)
 		return COLOR_YELLOW;
-	else if(h>=6 && h<35)
+}
+Color_t convertPixelDataToColorOrange(uint32_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    uint32_t rgbaData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    Rgba_t* pRgba = (Rgba_t*)&rgbaData;
+    pRgba->data = rgab5515ToRgbaData(pRgab5515);
+
+    float r = (float)pRgba->r / 255;
+    float g = (float)pRgba->g / 255;
+    float b = (float)pRgba->b / 255;
+    float h;    // hue
+    float s;    // saturation
+    float i;    // intensity
+    float max = _MAX(_MAX(r, g), b);
+    float min = _MIN(_MIN(r, g), b);
+    float c = max - min;
+
+    i = (r + g + b) / 3;
+    if (c == 0) h = 0;
+    else if (max == r) h = 60 * fmodf(((g - b) / c), 6);
+    else if (max == g) h = 60 * (((b - r) / c) + 2);
+    else if (max == b) h = 60 * (((r - g) / c) + 4);
+    else h = 0;
+    if (c == 0) s = 0;
+    else s = 1 - min / i;
+
+	if (i < 0.2 )
+		return COLOR_BLACK;
+	else if (i > 0.15 && s < 0.15)
+		return COLOR_WHITE;
+	else if(h>=3 && h<58)
 		 return COLOR_ORANGE;
+    else if (h >= 200 && h < 282)
+		return COLOR_BLUE;
+    else
+        return COLOR_WHITE;
 }
 
 
@@ -87,8 +124,11 @@ int openProcessor(void) {
 
     initColorLib();
     mkdir(_DATA_DIR_PATH, 0755);
-    createColorTableFile(_COLOR_TABLE_FILE_PATH, sizeof(uint16_t), convertPixelDataToColor, false);
+    createColorTableFile(_COLOR_TABLE_FILE_PATH, sizeof(uint16_t), convertPixelDataToColorOther, true);
     _colorTable = loadColorTableFile(_COLOR_TABLE_FILE_PATH, sizeof(uint16_t));
+    
+    createColorTableFile(_ORANGE_TABLE_FILE_PATH, sizeof(uint16_t), convertPixelDataToColorOrange, true);
+    _orangeTable = loadColorTableFile(_ORANGE_TABLE_FILE_PATH, sizeof(uint16_t));
     
 	_defineObstacle();
 	_obstacleSequence = loadObstaclesFile("/mnt/f0/obstacles.txt");
@@ -130,37 +170,6 @@ void _drawFpgaVideoData(uint16_t* pBuffer) {
 }
 
 void _improveSomeObstacle(void) {
-<<<<<<< HEAD
-	///////////////////////////////////////////////////////////////////////////
-	/*
-		이 부분에서 영상처리를 수행합니다.
-	*/
-	///////////////////////////////////////////////////////////////////////////
-	_readFpgaVideoData(_pixels);
-
-	int x;
-	int y;
-
-	for (y = 0; y < _SCREEN_HEIGHT; ++y) {
-		for (x = 0; x < _SCREEN_WIDTH; ++x) {
-			U16 pixel = _pixels[y * _SCREEN_WIDTH + x];
-			
-			LPRGB565 output = &_pixels[y * _SCREEN_WIDTH + x];
-			
-			//COLOR color = getColorFromTable(_colorCache, pixel);
-			COLOR color = getColorFunc(pixel);
-
-			colorToRgb565(color, output);
-		
-		}
-	}
-	
-	//sendDataToRobot(command);
-	//printf("send command to robot: %d\n", command);
-	//waitDataFromRobot();
-
-	_drawFpgaVideoData(_pixels);
-=======
     ///////////////////////////////////////////////////////////////////////////
     /*
         이 부분에서 영상처리를 수행합니다.
@@ -175,7 +184,8 @@ void _improveSomeObstacle(void) {
         for (x = 0; x < _SCREEN_WIDTH; ++x) {
             int index = y * _SCREEN_WIDTH + x;
             uint16_t pixelData = _pBuffer[index];
-            Color_t color = getColorFromTable(_colorTable, pixelData);
+            //Color_t color = getColorFromTable(_colorTable, pixelData);
+            Color_t color = getColorFromTable(_orangeTable, pixelData);
 
             Rgb565_t* pOutput = (Rgb565_t*)&_pBuffer[index];
             pOutput->data = colorToRgb565Data(color);
@@ -187,5 +197,4 @@ void _improveSomeObstacle(void) {
     //waitDataFromRobot();
 
     _drawFpgaVideoData(_pBuffer);
->>>>>>> develop
 }
