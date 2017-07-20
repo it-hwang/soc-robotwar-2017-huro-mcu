@@ -135,7 +135,7 @@ void _improveSomeObstacle(void) {
     ///////////////////////////////////////////////////////////////////////////
     _readFpgaVideoData(_pBuffer);
 
-	detectObjectsLocation(_pBuffer, _colorTable, COLOR_BLUE);
+    detectObjectsLocation(_pBuffer, _colorTable, COLOR_BLUE);
 
     /*int x;
     int y;
