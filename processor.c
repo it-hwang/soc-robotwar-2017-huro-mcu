@@ -10,6 +10,7 @@
 #include "robot_protocol.h"
 #include "color.h"
 #include "obstacle_manager.h"
+#include "object_detection.h"
 
 #define _DATA_DIR_PATH          "data"
 #define _COLOR_TABLE_FILE_PATH  "data/main.ctb"
@@ -134,7 +135,9 @@ void _improveSomeObstacle(void) {
     ///////////////////////////////////////////////////////////////////////////
     _readFpgaVideoData(_pBuffer);
 
-    int x;
+	detectObjectsLocation(_pBuffer, _colorTable, COLOR_BLUE);
+
+    /*int x;
     int y;
 
     for (y = 0; y < _SCREEN_HEIGHT; ++y) {
@@ -146,7 +149,7 @@ void _improveSomeObstacle(void) {
             Rgb565_t* pOutput = (Rgb565_t*)&_pBuffer[index];
             pOutput->data = colorToRgb565Data(color);
         }
-    }
+    }*/
     
     //sendDataToRobot(command);
     //printf("send command to robot: %d\n", command);
