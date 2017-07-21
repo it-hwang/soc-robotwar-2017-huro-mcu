@@ -32,65 +32,89 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
             Color_t color = getColorFromTable(colorTable, pixelData);
 
             if(color == flagColor) {
-                if(x > 0 && y > 0){
-                    uint16_t adjacencyLabels[4];
-                    uint8_t listSize;
-                    adjacencyLabels[0] = labeledPixels[y-1][x];
-                    adjacencyLabels[1] = labeledPixels[y][x-1];
-                    adjacencyLabels[2] = labeledPixels[y-1][x-1];
-                    adjacencyLabels[3] = labeledPixels[y-1][x+1];
-                    
-                    _sortArray(adjacencyLabels, 4);
-                    
-                    listSize = _searchAdjacencyLabel(adjacencyLabels, 4);
+                uint16_t adjacencyLabels[4];
+                uint8_t listSize;
+                adjacencyLabels[0] = labeledPixels[y-1][x];
+                adjacencyLabels[1] = labeledPixels[y][x-1];
+                adjacencyLabels[2] = labeledPixels[y-1][x-1];
+                adjacencyLabels[3] = labeledPixels[y-1][x+1];
 
-                    if(listSize == 0) {
-                        ++lastLabel;
+                if (y == 0) {
+                    adjacencyLabels[0] = 0;
+                    adjacencyLabels[2] = 0;
+                    adjacencyLabels[3] = 0;
+                }
+                if (x == 0) {
+                    adjacencyLabels[1] = 0;
+                    adjacencyLabels[2] = 0;
+                }
+                if (x == _WIDTH - 1) {
+                    adjacencyLabels[3] = 0;
+                }
+                
+                _sortArray(adjacencyLabels, 4);
+                
+                listSize = _searchAdjacencyLabel(adjacencyLabels, 4);
 
-                        if(lastLabel >= _LABEL_SIZE) {
-                            return NULL;
+                if(listSize == 0) {
+                    ++lastLabel;
+
+                    if(lastLabel >= _LABEL_SIZE) {
+                        return NULL;
+                    }
+
+                    labeledPixels[y][x] = lastLabel;
+                    ++labelCntList[lastLabel];
+
+                } else {
+                    labeledPixels[y][x] = adjacencyLabels[0];
+                    ++labelCntList[adjacencyLabels[0]];
+                    
+                    uint16_t finalLabel = adjacencyLabels[0];
+                    while(equalLabelList[finalLabel] != 0) {
+                        finalLabel = equalLabelList[finalLabel];
+                        //printf("final label indexing... %d\n", finalLabel);
+                    }
+                    //printf("final label %d\n", finalLabel);
+
+                    int i;
+                    for(i = 1; i < listSize; ++i) {
+                        int listIndex = adjacencyLabels[i];
+                        while(equalLabelList[listIndex] != 0) {
+                            listIndex = equalLabelList[listIndex];
                         }
 
-                        labeledPixels[y][x] = lastLabel;
-                        ++labelCntList[lastLabel];
-
-                    } else {
-                        labeledPixels[y][x] = adjacencyLabels[0];
-                        ++labelCntList[adjacencyLabels[0]];
-                        
-                        uint16_t finalLabel = adjacencyLabels[0];
-                        while(equalLabelList[finalLabel] != 0) {
-                            finalLabel = equalLabelList[finalLabel];
-                            //printf("final label indexing... %d\n", finalLabel);
-                        }
-                        //printf("final label %d\n", finalLabel);
-
-                        int i;
-                        for(i = 1; i < listSize; ++i) {
-                            int listIndex = i;
-                            while(equalLabelList[listIndex] != 0) {
-                                listIndex = equalLabelList[listIndex];
+                        if(listIndex != finalLabel) {
+                            if(listIndex > finalLabel) {
+                                equalLabelList[listIndex] = finalLabel;
+                            } else {
+                                equalLabelList[finalLabel] = listIndex;
+                                finalLabel = listIndex;
                             }
-                            
-                            if(listIndex != finalLabel) {
-                                if(listIndex > finalLabel) {
-                                    equalLabelList[listIndex] = finalLabel;
-                                } else {
-                                    equalLabelList[finalLabel] = listIndex;
-                                    finalLabel = listIndex;
-                                }
-                               // printf("change label %d to %d\n", listIndex , equalLabelList[listIndex]);
-                            }
+                            // printf("change label %d to %d\n", listIndex , equalLabelList[listIndex]);
                         }
                     }
                 }
             }
+        }
+    }
 
+    for(y = 0; y < _HEIGHT; ++y) {
+        for(x = 0; x < _WIDTH; ++x) {
+            int index = y * _WIDTH + x;
+           
             uint16_t outputLabel = labeledPixels[y][x];
             Rgb565_t* pOutput = (Rgb565_t*)&pixels[index];
+
+            int listIndex = outputLabel;
+            while(equalLabelList[listIndex] != 0) {
+                listIndex = equalLabelList[listIndex];
+            }
+
             if(outputLabel != 0) {
-                int outputColor = (equalLabelList[outputLabel] % 3) + 2;
+                int outputColor = (listIndex % 3) + 2;
                 pOutput->data = colorToRgb565Data((Color_t)outputColor);
+                //printf("%d\n", listIndex);
             }else {
                 pOutput->data = colorToRgb565Data(COLOR_WHITE);
             }
