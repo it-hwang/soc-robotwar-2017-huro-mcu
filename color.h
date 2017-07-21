@@ -66,6 +66,10 @@ uint16_t colorToRgb565DataTable[SIZE_OF_COLOR];
                ((uint32_t)pRgb565->b << 11);
     }
 
+    static inline uint16_t rgb565ToRgab5515Data(Rgb565_t* pRgb565) {
+        return ((uint16_t)pRgb565->data & 0xffdf)
+    }
+
     static inline uint32_t rgab5515ToRgbaData(Rgab5515_t* pRgab5515) {
         return ((uint32_t)pRgab5515->r << 27) |
                ((uint32_t)pRgab5515->g << 19) |
@@ -73,13 +77,15 @@ uint16_t colorToRgb565DataTable[SIZE_OF_COLOR];
                ((uint32_t)pRgab5515->a);
     }
 
-    static inline uint16_t rgb565ToRgab5515Data(Rgb565_t* pRgb565) {
-        return ((uint16_t)pRgb565->data & 0xffdf)
-    }
-
     static inline uint16_t rgab5515ToRgb565Data(Rgab5515_t* pRgab5515) {
         return ((uint16_t)pRgab5515->data & 0xffdf |
                (((uint16_t)pRgab5515->data >> 1) & 0x0020));
+    }
+
+    static inline uint8_t rgab5515ToGrayData(Rgab5515_t* pRgab5515) {
+        return (uint8_t)(((float)((uint8_t)pRgab5515->r << 3) * 0.2126) +
+                         ((float)((uint8_t)pRgab5515->g << 3) * 0.7152) +
+                         ((float)((uint8_t)pRgab5515->b << 3) * 0.0722));
     }
 
     static inline uint16_t rgbaToRgb565Data(Rgba_t* pRgba) {
@@ -109,18 +115,23 @@ uint16_t colorToRgb565DataTable[SIZE_OF_COLOR];
                 ((uint32_t)((Rgb565_t*)pRgb565)->g << 18) |\
                 ((uint32_t)((Rgb565_t*)pRgb565)->b << 11)
 
+    #define rgb565ToRgab5515Data(pRgb565) \
+                ((uint16_t)pRgb565->data & 0xffdf)
+
     #define rgab5515ToRgbaData(pRgab5515) \
                 ((uint32_t)((Rgab5515_t*)pRgab5515)->r << 27) |\
                 ((uint32_t)((Rgab5515_t*)pRgab5515)->g << 19) |\
                 ((uint32_t)((Rgab5515_t*)pRgab5515)->b << 11) |\
                 ((uint32_t)((Rgab5515_t*)pRgab5515)->a)
 
-    #define rgb565ToRgab5515Data(pRgb565) \
-                ((uint16_t)pRgb565->data & 0xffdf)
-
     #define rgab5515ToRgb565Data(pRgab5515) \
                 ((uint16_t)pRgab5515->data & 0xffdf |\
                 (((uint16_t)pRgab5515->data >> 1) & 0x0020))
+
+    #define rgab5515ToGrayData(pRgab5515) \
+                ((uint8_t)(((float)((uint8_t)pRgab5515->r << 3) * 0.2126) +\
+                           ((float)((uint8_t)pRgab5515->g << 3) * 0.7152) +\
+                           ((float)((uint8_t)pRgab5515->b << 3) * 0.0722)))
 
     #define rgbaToRgb565Data(pRgba) \
                 (((uint16_t)((Rgba_t*)pRgba)->r & 0xf8) << 8) |\
