@@ -67,9 +67,18 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
 
                         int i;
                         for(i = 1; i < listSize; ++i) {
-                            int listIndex = adjacencyLabels[i];
+                            int listIndex = i;
+                            while(equalLabelList[listIndex] != 0) {
+                                listIndex = equalLabelList[listIndex];
+                            }
+                            
                             if(listIndex != finalLabel) {
-                                equalLabelList[listIndex] = finalLabel;
+                                if(listIndex > finalLabel) {
+                                    equalLabelList[listIndex] = finalLabel;
+                                } else {
+                                    equalLabelList[finalLabel] = listIndex;
+                                    finalLabel = listIndex;
+                                }
                                // printf("change label %d to %d\n", listIndex , equalLabelList[listIndex]);
                             }
                         }
