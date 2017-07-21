@@ -32,7 +32,7 @@ Screen_t* createScreen(PixelCoordinate_t width, PixelCoordinate_t height) {
 }
 
 Screen_t* createDefaultScreen(void) {
-    return createScreen(DEFAULT_SCREEN_HEIGHT, DEFAULT_SCREEN_WIDTH);
+    return createScreen(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
 }
 
 void destroyScreen(Screen_t* pScreen) {
