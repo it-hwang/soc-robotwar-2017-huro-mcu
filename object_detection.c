@@ -11,6 +11,7 @@ typedef struct {
 } Location_t;
 
 void _sortArray(uint16_t* array, int size);
+uint8_t _searchAdjacencyLabel(uint16_t* array, int size);
 
 ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                                     Color_t flagColor) {
@@ -31,18 +32,63 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
             if(color == flagColor) {
                 if(x > 0 && y > 0){
                     uint16_t adjacencyLabels[4];
-                    /*adjacencyLabels[0] = labeledPixels[y-1][x];
+                    uint8_t listSize;
+                    adjacencyLabels[0] = labeledPixels[y-1][x];
                     adjacencyLabels[1] = labeledPixels[y][x-1];
                     adjacencyLabels[2] = labeledPixels[y-1][x-1];
                     adjacencyLabels[3] = labeledPixels[y-1][x+1];
-                    */
                     
+                    _sortArray(adjacencyLabels, 4);
+                    
+                    listSize = _searchAdjacencyLabel(adjacencyLabels, 4);
+
+                    if(adjacencyLabels[3] == 0) {
+                        ++lastLabel;
+                        labeledPixels[y][x] = lastLabel;
+                        ++labelCntList[lastLabel];
+                    }
                 }
             }
         }
     }
 
+    /*uint16_t abc[4];
+    uint8_t size;
+    abc[0] = 0;
+    abc[1] = 0;
+    abc[2] = 0;
+    abc[3] = 0;
+                    
+    _sortArray(abc, 4);
+                    
+    size = _searchAdjacencyLabel(abc, 4);
+
+    int i;
+    for(i = 0; i < 4; i++) {
+        printf("%d\n", abc[i]);
+    }
+
+    printf("size %d\n", size);
+    */
     return NULL;
+}
+
+uint8_t _searchAdjacencyLabel(uint16_t* array, int size) {
+    int i = 0;
+    int labelSize = 0;
+
+    for(i = 0; i < size; ++i) {
+        if(array[i] != 0) {
+            array[labelSize] = array[i];
+            ++labelSize;
+        }    
+    }
+
+    for(i = labelSize; i < size; ++i) {
+        array[i] = 0;
+    }
+
+    return labelSize; 
 }
 
 void _sortArray(uint16_t* array, int size) {
