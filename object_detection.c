@@ -58,19 +58,21 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                         labeledPixels[y][x] = adjacencyLabels[0];
                         ++labelCntList[adjacencyLabels[0]];
                         
-                        /*uint16_t finalLabel = adjacencyLabels[0];
+                        uint16_t finalLabel = adjacencyLabels[0];
                         while(equalLabelList[finalLabel] != 0) {
                             finalLabel = equalLabelList[finalLabel];
-                            printf("final label indexing... %d\n", finalLabel);
+                            //printf("final label indexing... %d\n", finalLabel);
                         }
-                        printf("final label %d\n", finalLabel);
+                        //printf("final label %d\n", finalLabel);
 
                         int i;
                         for(i = 1; i < listSize; ++i) {
                             int listIndex = adjacencyLabels[i];
-                            equalLabelList[listIndex] = finalLabel;
-                            printf("change label %d to %d\n", listIndex , equalLabelList[i]);
-                        }*/
+                            if(listIndex != finalLabel) {
+                                equalLabelList[listIndex] = finalLabel;
+                               // printf("change label %d to %d\n", listIndex , equalLabelList[listIndex]);
+                            }
+                        }
                     }
                 }
             }
@@ -78,7 +80,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
             uint16_t outputLabel = labeledPixels[y][x];
             Rgb565_t* pOutput = (Rgb565_t*)&pixels[index];
             if(outputLabel != 0) {
-                int outputColor = (outputLabel % 3) + 2;
+                int outputColor = (equalLabelList[outputLabel] % 3) + 2;
                 pOutput->data = colorToRgb565Data((Color_t)outputColor);
             }else {
                 pOutput->data = colorToRgb565Data(COLOR_WHITE);
@@ -86,7 +88,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
         }
     }
 
-    printf("last label %d\n", lastLabel);
+    //printf("last label %d\n", lastLabel);
 
     /*uint16_t abc[4];
     uint8_t size;
