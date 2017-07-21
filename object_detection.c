@@ -4,7 +4,7 @@
 
 #define _WIDTH   180
 #define _HEIGHT  120
-
+#define _LABEL_SIZE 1001
 typedef struct {
     int x;
     int y;
@@ -19,9 +19,11 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
     int y;
 
     uint16_t labeledPixels[_HEIGHT][_WIDTH];
-    uint16_t equalLabelList[1001] = {0,};
-    int labelCntList[1001] = {0,};
+    uint16_t equalLabelList[_LABEL_SIZE] = {0,};
+    int labelCntList[_LABEL_SIZE] = {0,};
     int lastLabel = 0;
+
+    memset(labeledPixels, 0, (_HEIGHT * _WIDTH) * sizeof(uint16_t));
 
     for(y = 0; y < _HEIGHT; ++y) {
         for(x = 0; x < _WIDTH; ++x) {
@@ -42,15 +44,49 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                     
                     listSize = _searchAdjacencyLabel(adjacencyLabels, 4);
 
-                    if(adjacencyLabels[3] == 0) {
+                    if(listSize == 0) {
                         ++lastLabel;
+
+                        if(lastLabel >= _LABEL_SIZE) {
+                            return NULL;
+                        }
+
                         labeledPixels[y][x] = lastLabel;
                         ++labelCntList[lastLabel];
+
+                    } else {
+                        labeledPixels[y][x] = adjacencyLabels[0];
+                        ++labelCntList[adjacencyLabels[0]];
+                        
+                        /*uint16_t finalLabel = adjacencyLabels[0];
+                        while(equalLabelList[finalLabel] != 0) {
+                            finalLabel = equalLabelList[finalLabel];
+                            printf("final label indexing... %d\n", finalLabel);
+                        }
+                        printf("final label %d\n", finalLabel);
+
+                        int i;
+                        for(i = 1; i < listSize; ++i) {
+                            int listIndex = adjacencyLabels[i];
+                            equalLabelList[listIndex] = finalLabel;
+                            printf("change label %d to %d\n", listIndex , equalLabelList[i]);
+                        }*/
                     }
                 }
             }
+
+            uint16_t outputLabel = labeledPixels[y][x];
+            Rgb565_t* pOutput = (Rgb565_t*)&pixels[index];
+            if(outputLabel != 0) {
+                int outputColor = (outputLabel % 3) + 2;
+                pOutput->data = colorToRgb565Data((Color_t)outputColor);
+            }else {
+                pOutput->data = colorToRgb565Data(COLOR_WHITE);
+            }
         }
     }
+
+    printf("last label %d\n", lastLabel);
 
     /*uint16_t abc[4];
     uint8_t size;
@@ -70,6 +106,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
 
     printf("size %d\n", size);
     */
+
     return NULL;
 }
 
