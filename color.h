@@ -73,6 +73,10 @@ uint16_t colorToRgb565DataTable[SIZE_OF_COLOR];
                ((uint32_t)pRgab5515->a);
     }
 
+    static inline uint16_t rgb565ToRgab5515Data(Rgb565_t* pRgb565) {
+        return ((uint16_t)pRgb565->data & 0xffdf)
+    }
+
     static inline uint16_t rgab5515ToRgb565Data(Rgab5515_t* pRgab5515) {
         return ((uint16_t)pRgab5515->data & 0xffdf |
                (((uint16_t)pRgab5515->data >> 1) & 0x0020));
@@ -110,6 +114,9 @@ uint16_t colorToRgb565DataTable[SIZE_OF_COLOR];
                 ((uint32_t)((Rgab5515_t*)pRgab5515)->g << 19) |\
                 ((uint32_t)((Rgab5515_t*)pRgab5515)->b << 11) |\
                 ((uint32_t)((Rgab5515_t*)pRgab5515)->a)
+
+    #define rgb565ToRgab5515Data(pRgb565) \
+                ((uint16_t)pRgb565->data & 0xffdf)
 
     #define rgab5515ToRgb565Data(pRgab5515) \
                 ((uint16_t)pRgab5515->data & 0xffdf |\
