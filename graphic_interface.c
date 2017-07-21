@@ -22,13 +22,7 @@ void closeGraphicInterface(void) {
 
 
 Screen_t* createScreen(PixelCoordinate_t width, PixelCoordinate_t height) {
-    int nPixels = height * width;
-    Screen_t* pScreen = (Screen_t*)malloc(sizeof(Screen_t));
-    pScreen->pixels = (PixelData_t*)malloc(nPixels * sizeof(PixelData_t));
-    pScreen->height = height;
-    pScreen->width = width;
-
-    return pScreen;
+    return createMatrix16(width, height);
 }
 
 Screen_t* createDefaultScreen(void) {
@@ -36,17 +30,16 @@ Screen_t* createDefaultScreen(void) {
 }
 
 void destroyScreen(Screen_t* pScreen) {
-    free(pScreen->pixels);
-    free(pScreen);
+    destroyMatrix16(pScreen);
 }
 
 
 void readFpgaVideoData(Screen_t* pDefaultScreen) {
-    read_fpga_video_data(pDefaultScreen->pixels);
+    read_fpga_video_data(pDefaultScreen->elements);
 }
 
 void displayScreen(Screen_t* pDefaultScreen) {
     clear_screen();
-    draw_fpga_video_data_full(pDefaultScreen->pixels);
+    draw_fpga_video_data_full(pDefaultScreen->elements);
     flip();
 }
