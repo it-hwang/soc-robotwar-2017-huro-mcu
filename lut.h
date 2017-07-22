@@ -19,6 +19,10 @@ typedef struct {
     uint32_t length;
 } LookUpTable32_t;
 
+typedef uint8_t (LookUpTableFunc8_t)(uint32_t);
+typedef uint16_t (LookUpTableFunc16_t)(uint32_t);
+typedef uint32_t (LookUpTableFunc32_t)(uint32_t);
+
 
 LookUpTable8_t* createLookUpTable8(const char* filePath,
     uint8_t (*pFunc)(uint32_t), uint32_t length, bool overwrite);
