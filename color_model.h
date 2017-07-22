@@ -74,7 +74,7 @@ typedef union {
     static inline uint16_t rgbaToRgab5515Data(Rgba_t* pRgba) {
         return (((uint16_t)pRgba->r & 0xf8) << 8) |
                (((uint16_t)pRgba->g & 0xf8) << 4) |
-               (((uint16_t)pRgba->a) << 5) |
+               (((uint16_t)pRgba->a & 0x01) << 5) |
                (((uint16_t)pRgba->b) >> 3);
     }
 #else
@@ -109,7 +109,7 @@ typedef union {
     #define rgbaToRgab5515Data(pRgba) \
                 (((uint16_t)((Rgba_t*)pRgba)->r & 0xf8) << 8) |\
                 (((uint16_t)((Rgba_t*)pRgba)->g & 0xf8) << 4) |\
-                (((uint16_t)((Rgba_t*)pRgba)->a) << 5) |\
+                (((uint16_t)((Rgba_t*)pRgba)->a & 0x01) << 5) |\
                 (((uint16_t)((Rgba_t*)pRgba)->b) >> 3)
 #endif
 
