@@ -11,6 +11,7 @@
 
 ColorTable_t* pCommonColorTable;
 ColorTable_t* pOrangeColorTable;
+LookUpTable16_t* pRgab5515Table;
 LookUpTable8_t* pGrayScaleTable;
 
 
@@ -100,6 +101,55 @@ uint8_t _convertPixelDataToGrayColor(uint32_t pixelData) {
     return rgab5515ToGrayscale(pRgab5515);
 }
 
+uint16_t _convertColorToRgb5515(uint32_t colorData) {
+    Color_t color = colorData;
+    Rgba_t rgba;
+
+    switch (color) {
+        case COLOR_BLACK:
+            rgba.r = 0x00;
+            rgba.g = 0x00;
+            rgba.b = 0x00;
+            break;
+        case COLOR_WHITE:
+            rgba.r = 0xff;
+            rgba.g = 0xff;
+            rgba.b = 0xff;
+            break;
+        case COLOR_RED:
+            rgba.r = 0xff;
+            rgba.g = 0x00;
+            rgba.b = 0x00;
+            break;
+        case COLOR_GREEN:
+            rgba.r = 0x00;
+            rgba.g = 0xff;
+            rgba.b = 0x00;
+            break;
+        case COLOR_BLUE:
+            rgba.r = 0x00;
+            rgba.g = 0x00;
+            rgba.b = 0xff;
+            break;
+        case COLOR_YELLOW:
+            rgba.r = 0xff;
+            rgba.g = 0xff;
+            rgba.b = 0x00;
+            break;
+        case COLOR_ORANGE:
+            rgba.r = 0xff;
+            rgba.g = 0x7f;
+            rgba.b = 0x27;
+            break;
+        default:
+            rgba.r = 0x7f;
+            rgba.g = 0x7f;
+            rgba.b = 0x7f;
+    }
+
+    return rgbaToRgab5515Data(&rgba);
+} 
+
 
 ColorTable_t* _createColorTable(const char* filePath, 
     ColorTableFunc_t* pFunc, bool overwrite) {
@@ -118,14 +168,16 @@ void initializeColor(void) {
         return;
 
     mkdir("./data", 0755);
-    pCommonColorTable = _createColorTable("./data/common_v1.ctb",
+    pCommonColorTable = _createColorTable("./data/common_v1.lut",
                             _convertCommonColorV1, false);
-    pOrangeColorTable = _createColorTable("./data/orange_v1.ctb",
+    pOrangeColorTable = _createColorTable("./data/orange_v1.lut",
                             _convertOrangeColorV1, false);
 
     uint32_t length;
     length = pow(2, sizeof(PixelData_t) * 8);
-    pGrayScaleTable = createLookUpTable8("./data/grayscale.ctb",
+    pRgab5515Table = createLookUpTable16("./data/rgab5515.lut",
+                            _convertColorToRgb5515, MAX_COLOR, false);
+    pGrayScaleTable = createLookUpTable8("./data/grayscale.lut",
                             _convertPixelDataToGrayColor, length, false);
 
     hasInitialized = true;

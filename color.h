@@ -25,6 +25,7 @@ typedef Color_t (ColorTableFunc_t)(PixelData_t);
 
 extern ColorTable_t* pCommonColorTable;
 extern ColorTable_t* pOrangeColorTable;
+extern LookUpTable16_t* pRgab5515Table;
 extern LookUpTable8_t* pGrayScaleTable;
 
 void initializeColor(void);
@@ -33,6 +34,10 @@ void finalizeColor(void);
 static inline Color_t getColorFromTable(ColorTable_t* pColorTable,
                                         PixelData_t pixelData) {
     return pColorTable->elements[pixelData];
+}
+
+static inline PixelData_t colorToRgab5515Data(Color_t color) {
+    return pRgab5515Table->elements[color];
 }
 
 
