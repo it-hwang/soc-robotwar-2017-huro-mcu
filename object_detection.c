@@ -144,11 +144,11 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
             labelCntList[listIndex] += labelCntList[i];
 
             tempLocation->centerX = (prvCnt * tempLocation->centerX 
-                                    + labelLocationInfo[i]->centerX)
+                                    + labelLocationInfo[i].centerX)
                                     / labelCntList[listIndex];
         
             tempLocation->centerY = (prvCnt * tempLocation->centerY 
-                                    + labelLocationInfo[i]->centerY)
+                                    + labelLocationInfo[i].centerY)
                                     / labelCntList[listIndex];
 
             if(tempLocation->minX > labelLocationInfo[i].minX)
@@ -182,8 +182,10 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
             tempObject->minX = labelLocationInfo[listIndex].minX;
             tempObject->minY = labelLocationInfo[listIndex].minY;
             tempObject->maxX = labelLocationInfo[listIndex].maxX;
-            tempObject->maxY = labelLocationInfo[listIndex].maxX;
+            tempObject->maxY = labelLocationInfo[listIndex].maxY;
             tempObject->cnt = labelLocationInfo[listIndex].cnt;
+            tempObject->centerX = labelLocationInfo[listIndex].centerX;
+            tempObject->centerY = labelLocationInfo[listIndex].centerY;
             resultIndex++;
         }
     }
@@ -196,7 +198,32 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
     resultObjectList->size = realLabels;
     resultObjectList->list = resultObjects;
 
-    for(y = 0; y < _HEIGHT; ++y) {
+    for(i = 0; i < resultObjectList->size; ++i) {
+        int x;
+        int y;
+        Object_t object = resultObjectList->list[i];
+        for(y = object.minY; y <= object.maxY; ++y) {
+            for(x = object.minX; x <= object.maxX; ++x) {
+                int index = y * _WIDTH + x;
+                Rgb565_t* pOutput = (Rgb565_t*)&pixels[index];
+
+                if(y == object.minY || y == object.maxY) {
+                    pOutput->data = colorToRgb565Data(COLOR_RED);
+                } else if(x == object.minX || x == object.maxX) {
+                    pOutput->data = colorToRgb565Data(COLOR_RED);
+                }
+            }
+        }
+    }
+
+    /*for(i = 0; i < resultObjectList->size; ++i) {
+        printf("%d minX : %d\n", i, resultObjectList->list[i].minX);
+        printf("%d maxX : %d\n", i, resultObjectList->list[i].maxX);
+        printf("%d minY : %d\n", i, resultObjectList->list[i].minY);
+        printf("%d maxY : %d\n", i, resultObjectList->list[i].maxY);
+    }*/
+
+    /*for(y = 0; y < _HEIGHT; ++y) {
         for(x = 0; x < _WIDTH; ++x) {
             int index = y * _WIDTH + x;
            
@@ -216,7 +243,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                 pOutput->data = colorToRgb565Data(COLOR_WHITE);
             }
         }
-    }
+    }*/
 
     return resultObjectList;
 }
