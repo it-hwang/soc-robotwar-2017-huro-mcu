@@ -91,9 +91,9 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                     if(tempLocation->maxY < y)
                         tempLocation->maxY = y;
                     
-                    tempLocation->centerX = (((currentCnt-1) * tempLocation->centerX)
+                    tempLocation->centerX = ((tempLocation->centerX * (currentCnt-1))
                                             + x) / currentCnt;
-                    tempLocation->centerY = (((currentCnt-1) * tempLocation->centerY)
+                    tempLocation->centerY = ((tempLocation->centerY * (currentCnt-1))
                                             + y) / currentCnt;
                     
                     uint16_t finalLabel = adjacencyLabels[0];
@@ -144,11 +144,13 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
             labelCntList[listIndex] += labelCntList[i];
 
             tempLocation->centerX = (prvCnt * tempLocation->centerX 
-                                    + labelLocationInfo[i].centerX)
+                                    + (labelLocationInfo[i].centerX)
+                                    * labelCntList[i])
                                     / labelCntList[listIndex];
         
             tempLocation->centerY = (prvCnt * tempLocation->centerY 
-                                    + labelLocationInfo[i].centerY)
+                                    + (labelLocationInfo[i].centerY)
+                                    * labelCntList[i])
                                     / labelCntList[listIndex];
 
             if(tempLocation->minX > labelLocationInfo[i].minX)
@@ -215,7 +217,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
             }
         }
 
-        int index = object.centerY * _WIDTH + object.centerX;
+        int index = (int)object.centerY * _WIDTH + (int)object.centerX;
         Rgb565_t* pOutput = (Rgb565_t*)&pixels[index];
         pOutput->data = colorToRgb565Data(COLOR_BLUE);
     }

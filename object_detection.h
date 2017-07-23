@@ -8,8 +8,8 @@ typedef struct{
     uint8_t minY;
     uint8_t maxX;
     uint8_t maxY;
-    uint8_t centerX;
-    uint8_t centerY;
+    float centerX;
+    float centerY;
     Color_t color;
     int cnt;
 } Object_t;
