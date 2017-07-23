@@ -11,7 +11,7 @@ typedef struct{
     uint8_t centerX;
     uint8_t centerY;
     Color_t color;
-    int size;
+    int cnt;
 } Object_t;
 
 typedef struct{

@@ -1,19 +1,11 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "object_detection.h"
 
 #define _WIDTH   180
 #define _HEIGHT  120
 #define _LABEL_SIZE 1001
-
-typedef struct {
-    uint8_t minX;
-    uint8_t minY;
-    uint8_t maxX;
-    uint8_t maxY;
-    uint8_t centerX;
-    uint8_t centerY;
-} Location_t;
 
 void _sortArray(uint16_t* array, int size);
 uint8_t _searchAdjacencyLabel(uint16_t* array, int size);
@@ -30,7 +22,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
 
     memset(labeledPixels, 0, (_HEIGHT * _WIDTH) * sizeof(uint16_t));
 
-    Location_t* labelLocationInfo = (Location_t*)malloc(_LABEL_SIZE * sizeof(Location_t));
+    Object_t* labelLocationInfo = (Object_t*)malloc(_LABEL_SIZE * sizeof(Object_t));
 
     for(y = 0; y < _HEIGHT; ++y) {
         for(x = 0; x < _WIDTH; ++x) {
@@ -66,7 +58,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                 if(listSize == 0) {
                     ++lastLabel;
 
-                    if(lastLabel >= _LABEL_SIZE) {
+                    if(lastLabel > _LABEL_SIZE) {
                         return NULL;
                     }
 
@@ -81,8 +73,8 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                 } else {
                     labeledPixels[y][x] = adjacencyLabels[0];
                     ++labelCntList[adjacencyLabels[0]];
-                    
-                    Location_t* tempLocation = &labelLocationInfo[adjacencyLabels[0]];
+
+                    Object_t* tempLocation = &labelLocationInfo[adjacencyLabels[0]];
 
                     if(tempLocation->minX > x)
                         tempLocation->minX = x;
@@ -125,6 +117,66 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
         }
     }
 
+    int i;
+    int realLabels = 0;
+    for(i = 1; i < _LABEL_SIZE; ++i) {
+        int listIndex = i;
+        
+        while(equalLabelList[listIndex] != 0) {
+            listIndex = equalLabelList[listIndex];
+        }
+    
+
+        if(listIndex != i) {
+            labelCntList[listIndex] += labelCntList[i];
+            
+            Object_t* tempLocation = &labelLocationInfo[listIndex];
+
+            if(tempLocation->minX > labelLocationInfo[i].minX)
+                tempLocation->minX = labelLocationInfo[i].minX;
+            
+            if(tempLocation->minY > labelLocationInfo[i].minY)
+                tempLocation->minY = labelLocationInfo[i].minY;
+            
+            if(tempLocation->maxX < labelLocationInfo[i].maxX)
+                tempLocation->maxX = labelLocationInfo[i].maxX;
+            
+            if(tempLocation->maxY < labelLocationInfo[i].maxY)
+                tempLocation->maxY = labelLocationInfo[i].maxY; 
+
+        } else if (labelCntList[i] > 0) {
+            realLabels++;
+        }
+    }
+
+    Object_t* resultObjects = (Object_t*)malloc(realLabels * sizeof(Object_t));
+
+    int resultIndex = 0;
+    for(i = 1; i < _LABEL_SIZE; ++i) {
+        int listIndex = i;
+        while(equalLabelList[listIndex] != 0) {
+            listIndex = equalLabelList[listIndex];
+        }
+
+        if(listIndex == i && labelCntList[i] > 0) {
+            Object_t* tempObject = &resultObjects[resultIndex];
+            tempObject->minX = labelLocationInfo[listIndex].minX;
+            tempObject->minY = labelLocationInfo[listIndex].minY;
+            tempObject->maxX = labelLocationInfo[listIndex].maxX;
+            tempObject->maxY = labelLocationInfo[listIndex].maxX;
+            tempObject->cnt = labelLocationInfo[listIndex].cnt;
+            resultIndex++;
+        }
+    }
+
+    printf("result index %d\n", resultIndex);
+    printf("realLabels %d\n", realLabels);
+    printf("last Label %d\n", lastLabel);
+
+    ObjectList_t* resultObjectList;
+    resultObjectList->size = realLabels;
+    resultObjectList->list = resultObjects;
+
     for(y = 0; y < _HEIGHT; ++y) {
         for(x = 0; x < _WIDTH; ++x) {
             int index = y * _WIDTH + x;
@@ -147,27 +199,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
         }
     }
 
-    //printf("last label %d\n", lastLabel);
-
-    /*uint16_t abc[4];
-    uint8_t size;
-    abc[0] = 0;
-    abc[1] = 0;
-    abc[2] = 0;
-    abc[3] = 0;
-                    
-    _sortArray(abc, 4);
-                    
-    size = _searchAdjacencyLabel(abc, 4);
-
-    int i;
-    for(i = 0; i < 4; i++) {
-        printf("%d\n", abc[i]);
-    }
-
-    printf("size %d\n", size);
-    */
-    return NULL;
+    return resultObjectList;
 }
 
 uint8_t _searchAdjacencyLabel(uint16_t* array, int size) {
