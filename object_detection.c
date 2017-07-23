@@ -136,9 +136,20 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
     
 
         if(listIndex != i) {
-            labelCntList[listIndex] += labelCntList[i];
-            
+
             Object_t* tempLocation = &labelLocationInfo[listIndex];
+
+            int prvCnt = labelCntList[listIndex];
+
+            labelCntList[listIndex] += labelCntList[i];
+
+            tempLocation->centerX = (prvCnt * tempLocation->centerX 
+                                    + labelLocationInfo[i]->centerX)
+                                    / labelCntList[listIndex];
+        
+            tempLocation->centerY = (prvCnt * tempLocation->centerY 
+                                    + labelLocationInfo[i]->centerY)
+                                    / labelCntList[listIndex];
 
             if(tempLocation->minX > labelLocationInfo[i].minX)
                 tempLocation->minX = labelLocationInfo[i].minX;
