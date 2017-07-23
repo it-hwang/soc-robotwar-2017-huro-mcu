@@ -93,6 +93,25 @@
                 "focus": true,
                 "panel": "shared"
             }
+        },
+        {
+            "taskName": "open terminal",
+            "command": ".\\tools\\putty.exe",
+            "type": "shell",
+            "args": [
+                "-serial ${config:serial.port}",
+                "-sercfg ${config:serial.speed},8,n,1,N"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
         }
     ]
 }

@@ -2,6 +2,7 @@
 #define __GRAPIC_INTERFACE_H__
 
 #include <stdint.h>
+#include "matrix.h"
 
 typedef uint16_t PixelData_t;
 
@@ -11,11 +12,7 @@ typedef struct {
     PixelCoordinate_t y;
 } PixelLocation_t;
 
-typedef struct {
-    PixelData_t* pixels;
-    PixelCoordinate_t width;
-    PixelCoordinate_t height;
-} Screen_t;
+typedef Matrix16_t Screen_t;
 
 extern const PixelCoordinate_t DEFAULT_SCREEN_WIDTH;
 extern const PixelCoordinate_t DEFAULT_SCREEN_HEIGHT;
