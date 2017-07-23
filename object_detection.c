@@ -70,9 +70,12 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                     labelLocationInfo[lastLabel].maxX = x;
                     labelLocationInfo[lastLabel].maxY = y;
 
+                    labelLocationInfo[lastLabel].centerX = x;
+                    labelLocationInfo[lastLabel].centerY = y;
+
                 } else {
                     labeledPixels[y][x] = adjacencyLabels[0];
-                    ++labelCntList[adjacencyLabels[0]];
+                    int currentCnt = ++labelCntList[adjacencyLabels[0]];
 
                     Object_t* tempLocation = &labelLocationInfo[adjacencyLabels[0]];
 
@@ -87,6 +90,11 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                     
                     if(tempLocation->maxY < y)
                         tempLocation->maxY = y;
+                    
+                    tempLocation->centerX = (((currentCnt-1) * tempLocation->centerX)
+                                            + x) / currentCnt;
+                    tempLocation->centerY = (((currentCnt-1) * tempLocation->centerY)
+                                            + y) / currentCnt;
                     
                     uint16_t finalLabel = adjacencyLabels[0];
                     while(equalLabelList[finalLabel] != 0) {
@@ -169,9 +177,9 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
         }
     }
 
-    printf("result index %d\n", resultIndex);
-    printf("realLabels %d\n", realLabels);
-    printf("last Label %d\n", lastLabel);
+    //printf("result index %d\n", resultIndex);
+    //printf("realLabels %d\n", realLabels);
+    //printf("last Label %d\n", lastLabel);
 
     ObjectList_t* resultObjectList;
     resultObjectList->size = realLabels;
