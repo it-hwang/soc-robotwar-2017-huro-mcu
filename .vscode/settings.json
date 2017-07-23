@@ -1,9 +1,10 @@
 // 설정을 이 파일에 넣어서 기본 설정을 덮어씁니다.
 {
-    "cygwin.home": "D:\\cygwin",
+    // 다음 설정 주석들을 해제하여 사용합니다.
+    //"cygwin.home": "D:\\cygwin",
 
     // SoC Board 통신 설정
-    "serial.port": "COM3",
+    //"serial.port": "COM3",
     "serial.speed": "115200",
 
     // Windows 10 호환성 설정
