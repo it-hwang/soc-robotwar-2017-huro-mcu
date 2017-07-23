@@ -58,18 +58,19 @@ Color_t convertPixelDataToColor(uint32_t pixelData) {
     if (c == 0) s = 0;
     else s = 1 - min / i;
 
-    if (i < 0.2)
-        return COLOR_BLACK;
-    else if (i > 0.8 && s < 0.2)
-        return COLOR_WHITE;
-    else if (h >= 300 || h < 60)
-        return COLOR_RED;
-    else if (h >= 60 && h < 180)
-        return COLOR_GREEN;
-    else if (h >= 180 && h < 300)
-        return COLOR_BLUE;
-
-    return COLOR_YELLOW;
+	if (i < 0.2 )
+		return COLOR_BLACK;
+	else if (i > 0.15 && s < 0.15)
+		return COLOR_WHITE;
+	else if (h >= 282  ||h<10)
+		return COLOR_RED;
+	else if (h >= 100 && h < 200)
+		return COLOR_GREEN;
+	else if (h >= 200 && h < 282)
+		return COLOR_BLUE;
+    else if(h>=10 && h<100)
+		return COLOR_YELLOW;
+    return COLOR_WHITE;
 }
 
 int openProcessor(void) {

@@ -214,14 +214,11 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                 }
             }
         }
-    }
 
-    /*for(i = 0; i < resultObjectList->size; ++i) {
-        printf("%d minX : %d\n", i, resultObjectList->list[i].minX);
-        printf("%d maxX : %d\n", i, resultObjectList->list[i].maxX);
-        printf("%d minY : %d\n", i, resultObjectList->list[i].minY);
-        printf("%d maxY : %d\n", i, resultObjectList->list[i].maxY);
-    }*/
+        int index = object.centerY * _WIDTH + object.centerX;
+        Rgb565_t* pOutput = (Rgb565_t*)&pixels[index];
+        pOutput->data = colorToRgb565Data(COLOR_BLUE);
+    }
 
     /*for(y = 0; y < _HEIGHT; ++y) {
         for(x = 0; x < _WIDTH; ++x) {
