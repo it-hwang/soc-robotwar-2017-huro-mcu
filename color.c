@@ -11,6 +11,7 @@
 
 ColorTable_t* pCommonColorTable;
 ColorTable_t* pOrangeColorTable;
+ColorTable_t* pBlackColorTable;
 LookUpTable16_t* pRgab5515Table;
 LookUpTable8_t* pGrayScaleTable;
 
@@ -54,7 +55,7 @@ Color_t _convertCommonColorV1(PixelData_t pixelData) {
     else if(h>=10 && h<100)
 		return COLOR_YELLOW;
     
-    return COLOR_WHITE;
+    return COLOR_NONE;
 }
 
 Color_t _convertOrangeColorV1(PixelData_t pixelData) {
@@ -95,6 +96,38 @@ Color_t _convertOrangeColorV1(PixelData_t pixelData) {
         return COLOR_WHITE;
 }
 
+Color_t _convertBlackColorV1(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    uint32_t rgbaData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    Rgba_t* pRgba = (Rgba_t*)&rgbaData;
+    pRgba->data = rgab5515ToRgbaData(pRgab5515);
+
+    float r = (float)pRgba->r / 255;
+    float g = (float)pRgba->g / 255;
+    float b = (float)pRgba->b / 255;
+    float h;    // hue
+    float s;    // saturation
+    float i;    // intensity
+    float max = _MAX(_MAX(r, g), b);
+    float min = _MIN(_MIN(r, g), b);
+    float c = max - min;
+
+    i = (r + g + b) / 3;
+    if (c == 0) h = 0;
+    else if (max == r) h = 60 * fmodf(((g - b) / c), 6);
+    else if (max == g) h = 60 * (((b - r) / c) + 2);
+    else if (max == b) h = 60 * (((r - g) / c) + 4);
+    else h = 0;
+    if (c == 0) s = 0;
+    else s = 1 - min / i;
+
+	if (i < 0.2 )
+		return COLOR_BLACK;
+    
+    return COLOR_NONE;
+}
+
 uint8_t _convertPixelDataToGrayColor(uint32_t pixelData) {
     uint16_t rgab5515Data = pixelData;
     Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
@@ -106,6 +139,11 @@ uint16_t _convertColorToRgb5515(uint32_t colorData) {
     Rgba_t rgba;
 
     switch (color) {
+        case COLOR_NONE:
+            rgba.r = 0x7f;
+            rgba.g = 0x7f;
+            rgba.b = 0x7f;
+            break;
         case COLOR_BLACK:
             rgba.r = 0x00;
             rgba.g = 0x00;
@@ -172,6 +210,8 @@ void initializeColor(void) {
                             _convertCommonColorV1, false);
     pOrangeColorTable = _createColorTable("./data/orange_v1.lut",
                             _convertOrangeColorV1, false);
+    pBlackColorTable = _createColorTable("./data/black_v1.lut",
+                            _convertBlackColorV1, false);
 
     uint32_t length;
     length = pow(2, sizeof(PixelData_t) * 8);
