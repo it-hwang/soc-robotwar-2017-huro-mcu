@@ -77,31 +77,29 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                     labeledPixels[y][x] = adjacencyLabels[0];
                     int currentCnt = ++labelCntList[adjacencyLabels[0]];
 
-                    Object_t* tempLocation = &labelLocationInfo[adjacencyLabels[0]];
+                    Object_t* label = &labelLocationInfo[adjacencyLabels[0]];
 
-                    if(tempLocation->minX > x)
-                        tempLocation->minX = x;
+                    if(label->minX > x)
+                        label->minX = x;
                     
-                    if(tempLocation->minY > y)
-                        tempLocation->minY = y;
+                    if(label->minY > y)
+                        label->minY = y;
                     
-                    if(tempLocation->maxX < x)
-                        tempLocation->maxX = x;
+                    if(label->maxX < x)
+                        label->maxX = x;
                     
-                    if(tempLocation->maxY < y)
-                        tempLocation->maxY = y;
+                    if(label->maxY < y)
+                        label->maxY = y;
                     
-                    tempLocation->centerX = ((tempLocation->centerX * (currentCnt-1))
+                    label->centerX = ((label->centerX * (currentCnt-1))
                                             + x) / currentCnt;
-                    tempLocation->centerY = ((tempLocation->centerY * (currentCnt-1))
+                    label->centerY = ((label->centerY * (currentCnt-1))
                                             + y) / currentCnt;
                     
                     uint16_t finalLabel = adjacencyLabels[0];
                     while(equalLabelList[finalLabel] != 0) {
                         finalLabel = equalLabelList[finalLabel];
-                        //printf("final label indexing... %d\n", finalLabel);
                     }
-                    //printf("final label %d\n", finalLabel);
 
                     int i;
                     for(i = 1; i < listSize; ++i) {
@@ -117,7 +115,6 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                                 equalLabelList[finalLabel] = listIndex;
                                 finalLabel = listIndex;
                             }
-                            // printf("change label %d to %d\n", listIndex , equalLabelList[listIndex]);
                         }
                     }
                 }
@@ -137,33 +134,33 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
 
         if(listIndex != i) {
 
-            Object_t* tempLocation = &labelLocationInfo[listIndex];
-
-            int prvCnt = labelCntList[listIndex];
-
+            Object_t* targetLabel = &labelLocationInfo[listIndex];
+            Object_t* sourceLabel = &labelLocationInfo[i];
+            
+            int targetCnt = labelCntList[listIndex];
+            int sourceCnt = labelCntList[i];
+            
             labelCntList[listIndex] += labelCntList[i];
 
-            tempLocation->centerX = (prvCnt * tempLocation->centerX 
-                                    + (labelLocationInfo[i].centerX)
-                                    * labelCntList[i])
+            targetLabel->centerX = (targetCnt * targetLabel->centerX 
+                                    + (sourceLabel->centerX)* sourceCnt)
                                     / labelCntList[listIndex];
         
-            tempLocation->centerY = (prvCnt * tempLocation->centerY 
-                                    + (labelLocationInfo[i].centerY)
-                                    * labelCntList[i])
+            targetLabel->centerY = (targetCnt * targetLabel->centerY 
+                                    + (sourceLabel->centerY) * sourceCnt)
                                     / labelCntList[listIndex];
 
-            if(tempLocation->minX > labelLocationInfo[i].minX)
-                tempLocation->minX = labelLocationInfo[i].minX;
+            if(targetLabel->minX > sourceLabel->minX)
+                targetLabel->minX = sourceLabel->minX;
             
-            if(tempLocation->minY > labelLocationInfo[i].minY)
-                tempLocation->minY = labelLocationInfo[i].minY;
+            if(targetLabel->minY > sourceLabel->minY)
+                targetLabel->minY = sourceLabel->minY;
             
-            if(tempLocation->maxX < labelLocationInfo[i].maxX)
-                tempLocation->maxX = labelLocationInfo[i].maxX;
+            if(targetLabel->maxX < sourceLabel->maxX)
+                targetLabel->maxX = sourceLabel->maxX;
             
-            if(tempLocation->maxY < labelLocationInfo[i].maxY)
-                tempLocation->maxY = labelLocationInfo[i].maxY; 
+            if(targetLabel->maxY < sourceLabel->maxY)
+                targetLabel->maxY = sourceLabel->maxY; 
 
         } else if (labelCntList[i] > 0) {
             realLabels++;
@@ -180,26 +177,25 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
         }
 
         if(listIndex == i && labelCntList[i] > 0) {
-            Object_t* tempObject = &resultObjects[resultIndex];
-            tempObject->minX = labelLocationInfo[listIndex].minX;
-            tempObject->minY = labelLocationInfo[listIndex].minY;
-            tempObject->maxX = labelLocationInfo[listIndex].maxX;
-            tempObject->maxY = labelLocationInfo[listIndex].maxY;
-            tempObject->cnt = labelLocationInfo[listIndex].cnt;
-            tempObject->centerX = labelLocationInfo[listIndex].centerX;
-            tempObject->centerY = labelLocationInfo[listIndex].centerY;
+            Object_t* targetObject = &resultObjects[resultIndex];
+            Object_t* sourceObject = &labelLocationInfo[listIndex];
+            targetObject->minX = sourceObject->minX;
+            targetObject->minY = sourceObject->minY;
+            targetObject->maxX = sourceObject->maxX;
+            targetObject->maxY = sourceObject->maxY;
+            targetObject->cnt = sourceObject->cnt;
+            targetObject->centerX = sourceObject->centerX;
+            targetObject->centerY = sourceObject->centerY;
             resultIndex++;
         }
     }
-
-    //printf("result index %d\n", resultIndex);
-    //printf("realLabels %d\n", realLabels);
-    //printf("last Label %d\n", lastLabel);
 
     ObjectList_t* resultObjectList;
     resultObjectList->size = realLabels;
     resultObjectList->list = resultObjects;
 
+    /////////////////////////////////////////////
+    //test code
     for(i = 0; i < resultObjectList->size; ++i) {
         int x;
         int y;
@@ -243,6 +239,9 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
             }
         }
     }*/
+    /////////////////////////////////////////////
+
+    free(labelLocationInfo);
 
     return resultObjectList;
 }
