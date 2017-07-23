@@ -2,7 +2,8 @@
 #include <stdio.h>
 
 #include "image_filter.h"
-#include "color.h"
+#include "color_model.h"
+
 
 // n x n 크기의 평균 필터를 씌웁니다.
 void applyMeanFilter(Screen_t* pScreen, PixelCoordinate_t n) {
@@ -11,9 +12,9 @@ void applyMeanFilter(Screen_t* pScreen, PixelCoordinate_t n) {
         n += 1;
     int n2 = n / 2;
 
-    Screen_t* pBuffer = createScreen(pScreen->width, pScreen->height);
     int width = pScreen->width;
     int height = pScreen->height;
+    Screen_t* pBuffer = createScreen(width, height);
     int sumR;
     int sumG;
     int sumB;
@@ -31,9 +32,9 @@ void applyMeanFilter(Screen_t* pScreen, PixelCoordinate_t n) {
         // 행 초기화
         backwardPosition = -n2 - 1;
         forwardPosition = n2 - 1;
-        pBackwardPixel = (Rgab5515_t*)(pScreen->pixels + y * width);
-        pForwardPixel = (Rgab5515_t*)(pScreen->pixels + y * width);
-        pCurrentPixel = (Rgab5515_t*)(pBuffer->pixels + y * width);
+        pBackwardPixel = (Rgab5515_t*)(pScreen->elements + y * width);
+        pForwardPixel = (Rgab5515_t*)(pScreen->elements + y * width);
+        pCurrentPixel = (Rgab5515_t*)(pBuffer->elements + y * width);
         sumR = (n2 + 1) * pBackwardPixel->r;
         sumG = (n2 + 1) * pBackwardPixel->g;
         sumB = (n2 + 1) * pBackwardPixel->b;
@@ -70,9 +71,9 @@ void applyMeanFilter(Screen_t* pScreen, PixelCoordinate_t n) {
         // 열 초기화
         backwardPosition = -n2 - 1;
         forwardPosition = n2 - 1;
-        pBackwardPixel = (Rgab5515_t*)(pBuffer->pixels + x);
-        pForwardPixel = (Rgab5515_t*)(pBuffer->pixels + x);
-        pCurrentPixel = (Rgab5515_t*)(pScreen->pixels + x);
+        pBackwardPixel = (Rgab5515_t*)(pBuffer->elements + x);
+        pForwardPixel = (Rgab5515_t*)(pBuffer->elements + x);
+        pCurrentPixel = (Rgab5515_t*)(pScreen->elements + x);
         sumR = (n2 + 1) * pBackwardPixel->r;
         sumG = (n2 + 1) * pBackwardPixel->g;
         sumB = (n2 + 1) * pBackwardPixel->b;
@@ -105,4 +106,94 @@ void applyMeanFilter(Screen_t* pScreen, PixelCoordinate_t n) {
     }
 
     destroyScreen(pBuffer);
+}
+
+void applyErosionToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
+    Matrix8_t* pComparator;
+
+    PixelCoordinate_t width = pMatrix->width;
+    PixelCoordinate_t height = pMatrix->height;
+    int i;
+    int x;
+    int y;
+
+    // 가로 방향 침식
+    pComparator = cloneMatrix8(pMatrix);
+    for (y = 0; y < height; ++y) {
+        for (x = 0; x < width; ++x) {
+            uint8_t* pMatrixPixel = &(pMatrix->elements[y * width + x]);
+            if (x >= n && x < width - n) {
+                if (*pMatrixPixel) {
+                    for (i = -n; i <= n; ++i) {
+                        *pMatrixPixel &= 
+                                pComparator->elements[y * width + x + i];
+                    }
+                }
+            }
+            else {
+                *pMatrixPixel = 0;
+            }
+        }
+    }
+    destroyMatrix8(pComparator);
+
+    // 세로 방향 침식
+    pComparator = cloneMatrix8(pMatrix);
+    for (y = 0; y < height; ++y) {
+        for (x = 0; x < width; ++x) {
+            uint8_t* pMatrixPixel = &(pMatrix->elements[y * width + x]);
+            if (y >= n && y < height - n) {
+                if (*pMatrixPixel) {
+                    for (i = -n; i <= n; ++i) {
+                        *pMatrixPixel &= 
+                                pComparator->elements[(y + i) * width + x];
+                    }
+                }
+            }
+            else {
+                *pMatrixPixel = 0;
+            }
+        }
+    }
+    destroyMatrix8(pComparator);
+}
+
+void applyDilationToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
+    Matrix8_t* pComparator;
+
+    PixelCoordinate_t width = pMatrix->width;
+    PixelCoordinate_t height = pMatrix->height;
+    int i;
+    int x;
+    int y;
+
+    // 가로 방향 팽창
+    pComparator = cloneMatrix8(pMatrix);
+    for (y = 0; y < height; ++y) {
+        for (x = 0; x < width; ++x) {
+            uint8_t* pMatrixPixel = &(pMatrix->elements[y * width + x]);
+            for (i = -n; i <= n; ++i) {
+                if (x + i >= 0 && x + i < width) {
+                    *pMatrixPixel |= 
+                            pComparator->elements[y * width + x + i];
+                }
+            }
+        }
+    }
+    destroyMatrix8(pComparator);
+
+    // 세로 방향 침식
+    pComparator = cloneMatrix8(pMatrix);
+    for (y = 0; y < height; ++y) {
+        for (x = 0; x < width; ++x) {
+            uint8_t* pMatrixPixel = &(pMatrix->elements[y * width + x]);
+            for (i = -n; i <= n; ++i) {
+                if (y + i >= 0 && y + i < height) {
+                    *pMatrixPixel |= 
+                            pComparator->elements[(y + i) * width + x];
+                }
+            }
+        }
+    }
+    destroyMatrix8(pComparator);
 }
