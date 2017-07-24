@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "image_filter.h"
 #include "color_model.h"
@@ -196,4 +197,134 @@ void applyDilationToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
         }
     }
     destroyMatrix8(pComparator);
+}
+
+void applyFastErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+    PixelCoordinate_t width = pBinaryMatrix->width;
+    PixelCoordinate_t height = pBinaryMatrix->height;
+    int x;
+    int y;
+    int count;
+    bool needErosion;
+
+    // 가로 방향 침식
+    // 왼쪽에서 오른쪽으로 진행하여 값이 0인 픽셀이 있다면 좌우로 번진다.
+    for (y = 0; y < height; ++y) {
+        count = 0;
+        for (x = 0; x < width; ++x) {
+            needErosion = pBinaryMatrix->elements[y * width + x] == 0;
+            
+            if (count > 0) {
+                if (x - n - 1 >= 0)
+                    pBinaryMatrix->elements[y * width + x - n - 1] = 0;
+                if (x < width)
+                    pBinaryMatrix->elements[y * width + x] = 0;
+                count--;
+            }
+
+            if (needErosion)
+                count = n;
+        }
+        // 잔여물 제거
+        while (count > 0) {
+            pBinaryMatrix->elements[y * width + x - n - 1] = 0;
+            count--;
+            x++;
+        }
+    }
+    
+    // 세로 방향 침식
+    // 위에서 아래로 진행하여 값이 0인 픽셀이 있다면 상하로 번진다.
+    for (x = 0; x < width; ++x) {
+        count = 0;
+        for (y = 0; y < height; ++y) {
+            needErosion = pBinaryMatrix->elements[y * width + x] == 0;
+            
+            if (count > 0) {
+                if (y - n - 1 >= 0)
+                    pBinaryMatrix->elements[(y - n - 1) * width + x] = 0;
+                if (y < height)
+                    pBinaryMatrix->elements[y * width + x] = 0;
+                count--;
+            }
+
+            if (needErosion)
+                count = n;
+        }
+        // 잔여물 제거
+        while (count > 0) {
+            pBinaryMatrix->elements[(y - n - 1) * width + x] = 0;
+            count--;
+            y++;
+        }
+    }
+}
+
+void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+    PixelCoordinate_t width = pBinaryMatrix->width;
+    PixelCoordinate_t height = pBinaryMatrix->height;
+    int x;
+    int y;
+    int count;
+    uint8_t value;
+    uint8_t element;
+    bool needErosion;
+
+    // 가로 방향 팽창
+    // 왼쪽에서 오른쪽으로 진행하여 값이 0이 아닌 픽셀이 있다면 좌우로 번진다.
+    for (y = 0; y < height; ++y) {
+        count = 0;
+        for (x = 0; x < width; ++x) {
+            element = pBinaryMatrix->elements[y * width + x];
+            needErosion = element != 0;
+            if (needErosion)
+                value = element;
+            
+            if (count > 0) {
+                if (x - n - 1 >= 0)
+                    pBinaryMatrix->elements[y * width + x - n - 1] = value;
+                if (x < width)
+                    pBinaryMatrix->elements[y * width + x] = value;
+                count--;
+            }
+
+            if (needErosion)
+                count = n;
+        }
+        // 잔여물 제거
+        while (count > 0) {
+            pBinaryMatrix->elements[y * width + x - n - 1] = value;
+            count--;
+            x++;
+        }
+    }
+    
+    // 세로 방향 팽창
+    // 위에서 아래로 진행하여 값이 0이 아닌 픽셀이 있다면 상하로 번진다.
+    for (x = 0; x < width; ++x) {
+        count = 0;
+        for (y = 0; y < height; ++y) {
+            element = pBinaryMatrix->elements[y * width + x];
+            needErosion = element != 0;
+            if (needErosion)
+                value = element;
+            
+            if (count > 0) {
+                if (y - n - 1 >= 0)
+                    pBinaryMatrix->elements[(y - n - 1) * width + x] = value;
+                if (y < height)
+                    pBinaryMatrix->elements[y * width + x] = value;
+                count--;
+            }
+
+            if (needErosion)
+                count = n;
+        }
+        // 잔여물 팽창
+        while (count > 0) {
+            pBinaryMatrix->elements[(y - n - 1) * width + x] = value;
+            count--;
+            y++;
+        }
+    }
 }
