@@ -27,6 +27,8 @@ typedef Color_t (ColorTableFunc_t)(PixelData_t);
 extern ColorTable_t* pCommonColorTable;
 extern ColorTable_t* pOrangeColorTable;
 extern ColorTable_t* pBlackColorTable;
+extern ColorTable_t* pRedColorTable;
+extern ColorTable_t* pBlueColorTable;
 extern LookUpTable16_t* pRgab5515Table;
 extern LookUpTable8_t* pGrayScaleTable;
 
