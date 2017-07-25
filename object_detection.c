@@ -2,35 +2,35 @@
 #include <string.h>
 #include <stdlib.h>
 #include "object_detection.h"
+#include "graphic_interface.h"
 
-#define _WIDTH   180
-#define _HEIGHT  120
 #define _LABEL_SIZE 1001
 
 void _sortArray(uint16_t* array, int size);
 uint8_t _searchAdjacencyLabel(uint16_t* array, int size);
 
-ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
-                                    Color_t flagColor) {
+ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
     int x;
     int y;
+    int width = matrix->width;
+    int height = matrix->height;
+    uint8_t* pixels = &matrix->elements;
 
-    uint16_t labeledPixels[_HEIGHT][_WIDTH];
+    uint16_t labeledPixels[height][width];
     uint16_t equalLabelList[_LABEL_SIZE] = {0,};
     int labelCntList[_LABEL_SIZE] = {0,};
     int lastLabel = 0;
 
-    memset(labeledPixels, 0, (_HEIGHT * _WIDTH) * sizeof(uint16_t));
+    memset(labeledPixels, 0, (height * width) * sizeof(uint16_t));
 
     Object_t* labelLocationInfo = (Object_t*)malloc(_LABEL_SIZE * sizeof(Object_t));
 
-    for(y = 0; y < _HEIGHT; ++y) {
-        for(x = 0; x < _WIDTH; ++x) {
-            int index = y * _WIDTH + x;
-            uint16_t pixelData = pixels[index];
-            Color_t color = getColorFromTable(colorTable, pixelData);
+    for(y = 0; y < height; ++y) {
+        for(x = 0; x < width; ++x) {
+            int index = y * width + x;
+            uint8_t pixelData = pixels[index];
 
-            if(color == flagColor) {
+            if(pixelData != 0) {
                 uint16_t adjacencyLabels[4];
                 uint8_t listSize;
                 adjacencyLabels[0] = labeledPixels[y-1][x];
@@ -47,7 +47,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
                     adjacencyLabels[1] = 0;
                     adjacencyLabels[2] = 0;
                 }
-                if (x == _WIDTH - 1) {
+                if (x == width - 1) {
                     adjacencyLabels[3] = 0;
                 }
                 
@@ -194,7 +194,7 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
     resultObjectList->size = realLabels;
     resultObjectList->list = resultObjects;
 
-    /////////////////////////////////////////////
+    /*////////////////////////////////////////////
     //test code
     for(i = 0; i < resultObjectList->size; ++i) {
         int x;
@@ -202,8 +202,8 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
         Object_t object = resultObjectList->list[i];
         for(y = object.minY; y <= object.maxY; ++y) {
             for(x = object.minX; x <= object.maxX; ++x) {
-                int index = y * _WIDTH + x;
-                Rgb565_t* pOutput = (Rgb565_t*)&pixels[index];
+                int index = y * width + x;
+                uint8_t* pOutput = (uint8_t*)&pixels[index];
 
                 if(y == object.minY || y == object.maxY) {
                     pOutput->data = colorToRgb565Data(COLOR_RED);
@@ -213,34 +213,12 @@ ObjectList_t* detectObjectsLocation(uint16_t* pixels, ColorTable_t colorTable,
             }
         }
 
-        int index = (int)object.centerY * _WIDTH + (int)object.centerX;
-        Rgb565_t* pOutput = (Rgb565_t*)&pixels[index];
+        int index = (int)object.centerY * width + (int)object.centerX;
+        uint8_t* pOutput = (uint8_t*)&pixels[index];
         pOutput->data = colorToRgb565Data(COLOR_BLUE);
-    }
-
-    /*for(y = 0; y < _HEIGHT; ++y) {
-        for(x = 0; x < _WIDTH; ++x) {
-            int index = y * _WIDTH + x;
-           
-            uint16_t outputLabel = labeledPixels[y][x];
-            Rgb565_t* pOutput = (Rgb565_t*)&pixels[index];
-
-            int listIndex = outputLabel;
-            while(equalLabelList[listIndex] != 0) {
-                listIndex = equalLabelList[listIndex];
-            }
-
-            if(outputLabel != 0) {
-                int outputColor = (listIndex % 3) + 2;
-                pOutput->data = colorToRgb565Data((Color_t)outputColor);
-                //printf("%d\n", listIndex);
-            }else {
-                pOutput->data = colorToRgb565Data(COLOR_WHITE);
-            }
-        }
     }*/
-    /////////////////////////////////////////////
 
+    
     free(labelLocationInfo);
 
     return resultObjectList;
