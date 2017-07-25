@@ -345,3 +345,22 @@ void finalizeColor(void) {
     destroyLookUpTable8(pGrayScaleTable);
 }
 
+
+Matrix8_t* createColorMatrix(Screen_t* pScreen, ColorTable_t* pColorTable) {
+    PixelCoordinate_t width = pScreen->width;
+    PixelCoordinate_t height = pScreen->height;
+    Matrix8_t* pColorMatrix = createMatrix8(width, height);
+    int length = width * height;
+    int i;
+    Color_t* pColorData = pColorMatrix->elements;
+    PixelData_t* pPixelData = pScreen->elements;
+
+    for (i = 0; i < length; ++i) {
+        *pColorData = getColorFromTable(pColorTable, *pPixelData);
+        pColorData++;
+        pPixelData++;
+    }
+
+    return pColorMatrix;
+}
+

@@ -44,5 +44,7 @@ static inline PixelData_t colorToRgab5515Data(Color_t color) {
     return pRgab5515Table->elements[color];
 }
 
+Matrix8_t* createColorMatrix(Screen_t* pScreen, ColorTable_t* pColorTable);
+
 
 #endif // __COLOR_RECOGNITION_H__
