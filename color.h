@@ -9,6 +9,7 @@
 
 
 typedef enum {
+    COLOR_NONE = 0,
     COLOR_BLACK,
     COLOR_WHITE,
     COLOR_RED,
@@ -25,6 +26,9 @@ typedef Color_t (ColorTableFunc_t)(PixelData_t);
 
 extern ColorTable_t* pCommonColorTable;
 extern ColorTable_t* pOrangeColorTable;
+extern ColorTable_t* pBlackColorTable;
+extern ColorTable_t* pRedColorTable;
+extern ColorTable_t* pBlueColorTable;
 extern LookUpTable16_t* pRgab5515Table;
 extern LookUpTable8_t* pGrayScaleTable;
 
@@ -39,6 +43,8 @@ static inline Color_t getColorFromTable(ColorTable_t* pColorTable,
 static inline PixelData_t colorToRgab5515Data(Color_t color) {
     return pRgab5515Table->elements[color];
 }
+
+Matrix8_t* createColorMatrix(Screen_t* pScreen, ColorTable_t* pColorTable);
 
 
 #endif // __COLOR_RECOGNITION_H__
