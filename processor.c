@@ -12,6 +12,7 @@
 #include "obstacle_manager.h"
 #include "object_detection.h"
 #include "robot_protocol.h"
+#include "image_filter.h"
 
 ObstacleId_t* _obstacleSequence;
 
@@ -114,7 +115,7 @@ void _improveSomeObstacle(void) {
 
     int x;
     int y;
-
+    
     for(y = 0; y < pColorMatrix->height; ++y) {
         for(x = 0; x < pColorMatrix->width; ++x) {
             Color_t* output = &(pColorMatrix->elements[y *  pColorMatrix->width + x]);
@@ -123,6 +124,10 @@ void _improveSomeObstacle(void) {
             }
         }
     }
+    
+    applyDilationToMatrix8(pColorMatrix, 1);
+    applyErosionToMatrix8(pColorMatrix, 2);
+    applyDilationToMatrix8(pColorMatrix, 1);
 
     ObjectList_t* resultObjectList = detectObjectsLocation(pColorMatrix);
 
