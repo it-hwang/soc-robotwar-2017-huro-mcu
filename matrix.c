@@ -64,6 +64,19 @@ Matrix32_t* cloneMatrix32(Matrix32_t* pMatrix32) {
     return pMatrix;
 }
 
+
+Matrix8_t* createSubMatrix8(Matrix8_t* pMatrix8, PixelRect_t* pRect) {
+    Matrix8_t* pMatrix = (Matrix8_t*)malloc(sizeof(Matrix8_t));
+    uint16_t width = pRect->maxX-pRect->minX+1;
+    uint16_t height = pRect->maxY-pRect->minY+1;
+    size_t size = width * sizeof(uint8_t);
+    for(int i=minY; i<=maxY; ++i) {
+        memcpy(pMatrix[i]->elements, pMatrix8[i]->elements, size);
+    }
+   
+    return pMatrix;
+}
+
 void destroyMatrix8(Matrix8_t* pMatrix8) {
     free(pMatrix8->elements);
     free(pMatrix8);

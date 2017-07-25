@@ -12,6 +12,13 @@ typedef struct {
     PixelCoordinate_t y;
 } PixelLocation_t;
 
+typedef struct {
+    PixelCoordinate_t minX;
+    PixelCoordinate_t minY;
+    PixelCoordinate_t maxX;
+    PixelCoordinate_t maxY;
+} PixelRect_t;
+
 typedef Matrix16_t Screen_t;
 
 extern const PixelCoordinate_t DEFAULT_SCREEN_WIDTH;

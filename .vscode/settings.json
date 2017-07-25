@@ -8,5 +8,8 @@
     "serial.speed": "115200",
 
     // Windows 10 호환성 설정
-    "terminal.integrated.shell.windows": "cmd.exe"
+    "terminal.integrated.shell.windows": "cmd.exe",
+    "files.associations": {
+        "matrix.c": "cpp"
+    }
 }
