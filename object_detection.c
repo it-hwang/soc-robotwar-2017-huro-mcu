@@ -193,32 +193,7 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
     ObjectList_t* resultObjectList;
     resultObjectList->size = realLabels;
     resultObjectList->list = resultObjects;
-
-    /*///////////////////////////////////////////
-    //test code
-    for(i = 0; i < resultObjectList->size; ++i) {
-        int x;
-        int y;
-        Object_t object = resultObjectList->list[i];
-        for(y = object.minY; y <= object.maxY; ++y) {
-            for(x = object.minX; x <= object.maxX; ++x) {
-                int index = y * width + x;
-                uint8_t* pOutput = (uint8_t*)&pixels[index];
-
-                if(y == object.minY || y == object.maxY) {
-                    *pOutput = COLOR_RED;
-                } else if(x == object.minX || x == object.maxX) {
-                    *pOutput = COLOR_RED;
-                }
-            }
-        }
-
-        int index = (int)object.centerY * width + (int)object.centerX;
-        uint8_t* pOutput = (uint8_t*)&pixels[index];
-        *pOutput = COLOR_BLUE;
-    }*/
-
-    
+     
     free(labelLocationInfo);
 
     return resultObjectList;
