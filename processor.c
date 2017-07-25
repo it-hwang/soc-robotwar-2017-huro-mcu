@@ -11,6 +11,7 @@
 #include "graphic_interface.h"
 #include "obstacle_manager.h"
 #include "robot_protocol.h"
+#include "image_filter.h"
 
 ObstacleId_t* _obstacleSequence;
 
@@ -111,6 +112,10 @@ void _improveSomeObstacle(void) {
     readFpgaVideoData(_pDefaultScreen);
     Matrix8_t* pColorMatrix = _createColorMatrix(_pDefaultScreen);
 
+    applyErosionToMatrix8(pColorMatrix, 2);
+    applyDilationToMatrix8(pColorMatrix, 2);
+    applyDilationToMatrix8(pColorMatrix, 2);
+    applyErosionToMatrix8(pColorMatrix, 2);
 
     //sendDataToRobot(command);
     //printf("send command to robot: %d\n", command);
