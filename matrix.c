@@ -65,13 +65,55 @@ Matrix32_t* cloneMatrix32(Matrix32_t* pMatrix32) {
 }
 
 
-Matrix8_t* createSubMatrix8(Matrix8_t* pMatrix8, PixelRect_t* pRect) {
-    Matrix8_t* pMatrix = (Matrix8_t*)malloc(sizeof(Matrix8_t));
-    uint16_t width = pRect->maxX-pRect->minX+1;
-    uint16_t height = pRect->maxY-pRect->minY+1;
-    size_t size = width * sizeof(uint8_t);
-    for(int i=minY; i<=maxY; ++i) {
-        memcpy(pMatrix[i]->elements, pMatrix8[i]->elements, size);
+Matrix8_t* createSubMatrix8(Matrix8_t* pMatrix8, uint16_t minX, uint16_t minY, uint16_t maxX, uint16_t maxY) {
+    uint16_t width = maxX-minX+1;
+    uint16_t height = maxY-minY+1;
+    Matrix8_t* pMatrix = createMatrix8(width, height);
+    
+    uint16_t* pSrcElements = pMatrix8->elements + minX;
+    uint16_t* pDstElements = pMatrix->elements;
+    size_t size_w = width * sizeof(uint8_t);
+    int i;
+    for(i=minY; i<=maxY; ++i) {
+        memcpy(pDstElements, pSrcElements, size_w);
+        pSrcElements += pMatrix8->width;
+        pDstElements += width;
+    }
+   
+    return pMatrix;
+}
+
+Matrix16_t* createSubMatrix16(Matrix16_t* pMatrix16, uint16_t minX, uint16_t minY, uint16_t maxX, uint16_t maxY) {
+    uint16_t width = maxX-minX+1;
+    uint16_t height = maxY-minY+1;
+    Matrix16_t* pMatrix = createMatrix16(width, height);
+    
+    uint16_t* pSrcElements = pMatrix16->elements + minX;
+    uint16_t* pDstElements = pMatrix->elements;
+    size_t size_w = width * sizeof(uint16_t);
+    int i;
+    for(i=minY; i<=maxY; ++i) {
+        memcpy(pDstElements, pSrcElements, size_w);
+        pSrcElements += pMatrix16->width;
+        pDstElements += width;
+    }
+   
+    return pMatrix;
+}
+
+Matrix32_t* createSubMatrix32(Matrix32_t* pMatrix32, uint16_t minX, uint16_t minY, uint16_t maxX, uint16_t maxY) {
+    uint16_t width = maxX-minX+1;
+    uint16_t height = maxY-minY+1;
+    Matrix32_t* pMatrix = createMatrix32(width, height);
+    
+    uint16_t* pSrcElements = pMatrix32->elements + minX;
+    uint16_t* pDstElements = pMatrix->elements;
+    size_t size_w = width * sizeof(uint32_t);
+    int i;
+    for(i=minY; i<=maxY; ++i) {
+        memcpy(pDstElements, pSrcElements, size_w);
+        pSrcElements += pMatrix32->width;
+        pDstElements += width;
     }
    
     return pMatrix;
