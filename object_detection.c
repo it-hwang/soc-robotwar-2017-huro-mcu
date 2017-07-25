@@ -14,7 +14,7 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
     int y;
     int width = matrix->width;
     int height = matrix->height;
-    uint8_t* pixels = &matrix->elements;
+    uint8_t* pixels = matrix->elements;
 
     uint16_t labeledPixels[height][width];
     uint16_t equalLabelList[_LABEL_SIZE] = {0,};
@@ -194,7 +194,7 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
     resultObjectList->size = realLabels;
     resultObjectList->list = resultObjects;
 
-    /*////////////////////////////////////////////
+    /*///////////////////////////////////////////
     //test code
     for(i = 0; i < resultObjectList->size; ++i) {
         int x;
@@ -206,16 +206,16 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
                 uint8_t* pOutput = (uint8_t*)&pixels[index];
 
                 if(y == object.minY || y == object.maxY) {
-                    pOutput->data = colorToRgb565Data(COLOR_RED);
+                    *pOutput = COLOR_RED;
                 } else if(x == object.minX || x == object.maxX) {
-                    pOutput->data = colorToRgb565Data(COLOR_RED);
+                    *pOutput = COLOR_RED;
                 }
             }
         }
 
         int index = (int)object.centerY * width + (int)object.centerX;
         uint8_t* pOutput = (uint8_t*)&pixels[index];
-        pOutput->data = colorToRgb565Data(COLOR_BLUE);
+        *pOutput = COLOR_BLUE;
     }*/
 
     
