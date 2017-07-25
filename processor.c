@@ -110,7 +110,18 @@ void _improveSomeObstacle(void) {
     ///////////////////////////////////////////////////////////////////////////
     readFpgaVideoData(_pDefaultScreen);
     Matrix8_t* pColorMatrix = _createColorMatrix(_pDefaultScreen);
+    Matrix8_t* pSubMatrix;
 
+    
+    pSubMatrix = createSubMatrix8(pColorMatrix, 60, 60, 100, 100);
+    destroyMatrix8(pSubMatrix);
+    pSubMatrix = createSubMatrix8(pColorMatrix, 60, 60, 100, 100);
+    destroyMatrix8(pSubMatrix);
+    pSubMatrix = createSubMatrix8(pColorMatrix, 60, 60, 100, 100);
+    destroyMatrix8(pSubMatrix);
+    pSubMatrix = createSubMatrix8(pColorMatrix, 60, 60, 100, 100);
+    destroyMatrix8(pSubMatrix);
+    
 
     //sendDataToRobot(command);
     //printf("send command to robot: %d\n", command);
