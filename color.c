@@ -382,7 +382,7 @@ void initializeColor(void) {
     uint32_t length;
     length = pow(2, sizeof(PixelData_t) * 8);
     pRgab5515Table = createLookUpTable16("./data/rgab5515.lut",
-                            _convertColorToRgb5515, MAX_COLOR, true);
+                            _convertColorToRgb5515, MAX_COLOR, false);
     pGrayScaleTable = createLookUpTable8("./data/grayscale.lut",
                             _convertPixelDataToGrayColor, length, false);
 
