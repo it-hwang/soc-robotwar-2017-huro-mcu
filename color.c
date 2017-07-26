@@ -377,7 +377,7 @@ void initializeColor(void) {
     pColorTables[COLOR_YELLOW] = _createColorTable("./data/yellow_v1.lut",
                                                 _convertYellowColorV1, false);
     pColorTables[COLOR_ORANGE] = _createColorTable("./data/orange_v1.lut",
-                                                _convertOrangeColorV1, true);
+                                                _convertOrangeColorV1, false);
 
     uint32_t length;
     length = pow(2, sizeof(PixelData_t) * 8);
