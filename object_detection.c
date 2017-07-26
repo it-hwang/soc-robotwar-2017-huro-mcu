@@ -10,6 +10,7 @@ void _sortArray(uint16_t* array, int size);
 uint8_t _searchAdjacencyLabel(uint16_t* array, int size);
 
 ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
+setbuf(stdout, NULL);
     int x;
     int y;
     int width = matrix->width;
@@ -21,10 +22,12 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
     int labelCntList[_LABEL_SIZE] = {0,};
     int lastLabel = 0;
 
-    memset(labeledPixels, 0, (height * width) * sizeof(uint16_t));
+    memset(labeledPixels, 0, sizeof(labeledPixels));
+return NULL;
 
     Object_t* labelLocationInfo = (Object_t*)malloc(_LABEL_SIZE * sizeof(Object_t));
 
+printf("step1\n");
     for(y = 0; y < height; ++y) {
         for(x = 0; x < width; ++x) {
             int index = y * width + x;
@@ -59,6 +62,7 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
                     ++lastLabel;
 
                     if(lastLabel > _LABEL_SIZE) {
+                        free(labelLocationInfo);
                         return NULL;
                     }
 
@@ -122,6 +126,7 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
         }
     }
 
+printf("step2\n");
     int i;
     int realLabels = 0;
     for(i = 1; i < _LABEL_SIZE; ++i) {
@@ -167,6 +172,7 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
         }
     }
 
+printf("step3\n");
     Object_t* resultObjects = (Object_t*)malloc(realLabels * sizeof(Object_t));
 
     int resultIndex = 0;
@@ -190,12 +196,15 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
         }
     }
 
+printf("step4\n");
     ObjectList_t* resultObjectList;
+    resultObjectList = (ObjectList_t*)malloc(sizeof(resultObjectList));
     resultObjectList->size = realLabels;
     resultObjectList->list = resultObjects;
      
     free(labelLocationInfo);
 
+printf("step5\n");
     return resultObjectList;
 }
 

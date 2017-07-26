@@ -60,6 +60,8 @@ void _applyColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
     int i;
     PixelData_t* pScreenPixel = pScreen->elements;
     Color_t* pColorPixel = pColorMatrix->elements;
+printf("%d ", width);
+printf("%d ", height);
 
     for (i = 0; i < length; ++i) {
         *pScreenPixel = colorToRgab5515Data(*pColorPixel);
@@ -111,11 +113,11 @@ void _improveSomeObstacle(void) {
     */
     ///////////////////////////////////////////////////////////////////////////
     readFpgaVideoData(_pDefaultScreen);
-    Matrix8_t* pColorMatrix = _createColorMatrix(_pDefaultScreen);
+    Matrix8_t* pColorMatrix = createColorMatrix(_pDefaultScreen, pBlueColorTable);
 
     int x;
     int y;
-    
+    /*
     for(y = 0; y < pColorMatrix->height; ++y) {
         for(x = 0; x < pColorMatrix->width; ++x) {
             Color_t* output = &(pColorMatrix->elements[y *  pColorMatrix->width + x]);
@@ -124,13 +126,15 @@ void _improveSomeObstacle(void) {
             }
         }
     }
-    
+    */
+    /*
     applyDilationToMatrix8(pColorMatrix, 1);
     applyErosionToMatrix8(pColorMatrix, 2);
     applyDilationToMatrix8(pColorMatrix, 1);
+*/
 
     ObjectList_t* resultObjectList = detectObjectsLocation(pColorMatrix);
-
+/*
     int i;
     for(i = 0; i < resultObjectList->size; ++i) {
         int x;
@@ -155,14 +159,22 @@ void _improveSomeObstacle(void) {
         uint16_t* pOutput = (uint16_t*)&pixels[index];
         *pOutput = 0x1F;
     }
+*/
+printf("step6\n");
+    if (resultObjectList)
+        free(resultObjectList);
 
-    free(resultObjectList);
+printf("step7\n");
     //sendDataToRobot(command);
     //printf("send command to robot: %d\n", command);
     //waitDataFromRobot();
 
-    //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
+    _applyColorMatrix(_pDefaultScreen, pColorMatrix);
+printf("step8\n");
     destroyMatrix8(pColorMatrix);
+printf("step9\n");
     _convertScreenToDisplay(_pDefaultScreen);
+printf("step10\n");
     displayScreen(_pDefaultScreen);
+printf("step11\n");
 }
