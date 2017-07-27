@@ -111,11 +111,11 @@ void _improveSomeObstacle(void) {
     */
     ///////////////////////////////////////////////////////////////////////////
     readFpgaVideoData(_pDefaultScreen);
-    Matrix8_t* pColorMatrix = _createColorMatrix(_pDefaultScreen);
+    Matrix8_t* pColorMatrix = createColorMatrix(_pDefaultScreen, pBlueColorTable);
 
     int x;
     int y;
-    
+    /*
     for(y = 0; y < pColorMatrix->height; ++y) {
         for(x = 0; x < pColorMatrix->width; ++x) {
             Color_t* output = &(pColorMatrix->elements[y *  pColorMatrix->width + x]);
@@ -124,6 +124,7 @@ void _improveSomeObstacle(void) {
             }
         }
     }
+    */
     
     applyDilationToMatrix8(pColorMatrix, 1);
     applyErosionToMatrix8(pColorMatrix, 2);
@@ -131,32 +132,36 @@ void _improveSomeObstacle(void) {
 
     ObjectList_t* resultObjectList = detectObjectsLocation(pColorMatrix);
 
-    int i;
-    for(i = 0; i < resultObjectList->size; ++i) {
-        int x;
-        int y;
-        Object_t object = resultObjectList->list[i];
-        PixelData_t* pixels = _pDefaultScreen->elements;
+    if (resultObjectList) {
+        int i;
+        for(i = 0; i < resultObjectList->size; ++i) {
+            int x;
+            int y;
+            Object_t object = resultObjectList->list[i];
+            PixelData_t* pixels = _pDefaultScreen->elements;
 
-        for(y = object.minY; y <= object.maxY; ++y) {
-            for(x = object.minX; x <= object.maxX; ++x) {
-                int index = y * _pDefaultScreen->width + x;
-                uint16_t* pOutput = (uint16_t*)&pixels[index];
+            for(y = object.minY; y <= object.maxY; ++y) {
+                for(x = object.minX; x <= object.maxX; ++x) {
+                    int index = y * _pDefaultScreen->width + x;
+                    uint16_t* pOutput = (uint16_t*)&pixels[index];
 
-                if(y == object.minY || y == object.maxY) {
-                    *pOutput = 0xF800;
-                } else if(x == object.minX || x == object.maxX) {
-                    *pOutput = 0xF800;
+                    if(y == object.minY || y == object.maxY) {
+                        *pOutput = 0xF800;
+                    } else if(x == object.minX || x == object.maxX) {
+                        *pOutput = 0xF800;
+                    }
                 }
             }
-        }
 
-        int index = (int)object.centerY * _pDefaultScreen->width + (int)object.centerX;
-        uint16_t* pOutput = (uint16_t*)&pixels[index];
-        *pOutput = 0x1F;
+            int index = (int)object.centerY * _pDefaultScreen->width + (int)object.centerX;
+            uint16_t* pOutput = (uint16_t*)&pixels[index];
+            *pOutput = 0x1F;
+        }
     }
 
-    free(resultObjectList);
+    if (resultObjectList)
+        free(resultObjectList);
+
     //sendDataToRobot(command);
     //printf("send command to robot: %d\n", command);
     //waitDataFromRobot();
