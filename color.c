@@ -9,13 +9,13 @@
 #define _MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define _MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
+
+ColorTable_t* pColorTables[MAX_COLOR];
 ColorTable_t* pCommonColorTable;
-ColorTable_t* pOrangeColorTable;
-ColorTable_t* pBlackColorTable;
-ColorTable_t* pRedColorTable;
-ColorTable_t* pBlueColorTable;
 LookUpTable16_t* pRgab5515Table;
 LookUpTable8_t* pGrayScaleTable;
+
+bool _hasInitialized = false;
 
 
 void _calculateHSI(PixelData_t pixelData, float* pH, float* pS, float* pI) {
@@ -126,77 +126,55 @@ Color_t _convertCommonColorV1(PixelData_t pixelData) {
     return COLOR_NONE;
 }
 
-Color_t _convertOrangeColorV1(PixelData_t pixelData) {
-    uint16_t rgab5515Data = pixelData;
-    uint32_t rgbaData;
-    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
-    Rgba_t* pRgba = (Rgba_t*)&rgbaData;
-    pRgba->data = rgab5515ToRgbaData(pRgab5515);
-
-    float r = (float)pRgba->r / 255;
-    float g = (float)pRgba->g / 255;
-    float b = (float)pRgba->b / 255;
-    float h;    // hue
-    float s;    // saturation
-    float i;    // intensity
-    float max = _MAX(_MAX(r, g), b);
-    float min = _MIN(_MIN(r, g), b);
-    float c = max - min;
-
-    i = (r + g + b) / 3;
-    if (c == 0) h = 0;
-    else if (max == r) h = 60 * fmodf(((g - b) / c), 6);
-    else if (max == g) h = 60 * (((b - r) / c) + 2);
-    else if (max == b) h = 60 * (((r - g) / c) + 4);
-    else h = 0;
-    if (c == 0) s = 0;
-    else s = 1 - min / i;
-
-	if (i < 0.2 )
-		return COLOR_BLACK;
-	else if (i > 0.15 && s < 0.15)
-		return COLOR_WHITE;
-	else if(h>=3 && h<58)
-		 return COLOR_ORANGE;
-    else if (h >= 200 && h < 282)
-		return COLOR_BLUE;
-    else
-        return COLOR_WHITE;
-}
-
+// y=1/x 함수 형태
 Color_t _convertBlackColorV1(PixelData_t pixelData) {
-    uint16_t rgab5515Data = pixelData;
-    uint32_t rgbaData;
-    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
-    Rgba_t* pRgba = (Rgba_t*)&rgbaData;
-    pRgba->data = rgab5515ToRgbaData(pRgab5515);
-
-    float r = (float)pRgba->r / 255;
-    float g = (float)pRgba->g / 255;
-    float b = (float)pRgba->b / 255;
     float h;    // hue
     float s;    // saturation
-    float i;    // intensity
-    float max = _MAX(_MAX(r, g), b);
-    float min = _MIN(_MIN(r, g), b);
-    float c = max - min;
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
 
-    i = (r + g + b) / 3;
-    if (c == 0) h = 0;
-    else if (max == r) h = 60 * fmodf(((g - b) / c), 6);
-    else if (max == g) h = 60 * (((b - r) / c) + 2);
-    else if (max == b) h = 60 * (((r - g) / c) + 4);
-    else h = 0;
-    if (c == 0) s = 0;
-    else s = 1 - min / i;
+    // i > ((a / (s - b)) + c)
+    float a = 0.02;
+    float b = 0.28;
+    float c = -0.02;
 
-	if (i < 0.2 )
-		return COLOR_BLACK;
+    bool isGray = false;
+    if (s <= b)
+        isGray = true;
+    else if (v <= (a / (s - b)) + c)
+        isGray = true;
+    
+    if (isGray && v < 0.40)
+        return COLOR_BLACK;
     
     return COLOR_NONE;
 }
 
-// y=1/x 함수
+// y=1/x 함수 형태
+Color_t _convertWhiteColorV1(PixelData_t pixelData) {
+    float h;    // hue
+    float s;    // saturation
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
+
+    // i > ((a / (s - b)) + c)
+    float a = 0.02;
+    float b = 0.28;
+    float c = -0.02;
+
+    bool isGray = false;
+    if (s <= b)
+        isGray = true;
+    else if (v <= (a / (s - b)) + c)
+        isGray = true;
+    
+    if (isGray && v > 0.40)
+        return COLOR_WHITE;
+    
+    return COLOR_NONE;
+}
+
+// y=1/x 함수 형태
 Color_t _convertRedColorV1(PixelData_t pixelData) {
     float h;    // hue
     float s;    // saturation
@@ -218,7 +196,29 @@ Color_t _convertRedColorV1(PixelData_t pixelData) {
     return COLOR_NONE;
 }
 
-// y=1/x 함수
+// y=1/x 함수 형태
+Color_t _convertGreenColorV1(PixelData_t pixelData) {
+    float h;    // hue
+    float s;    // saturation
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
+
+    // i > ((a / (s - b)) + c)
+    float a = 0.10;
+    float b = 0.08;
+    float c = -0.04;
+
+	if (h >= 90 && h < 160) {
+        if (s <= b)
+            return COLOR_NONE;
+        else if (v > (a / (s - b)) + c)
+	    	return COLOR_GREEN;
+    }
+    
+    return COLOR_NONE;
+}
+
+// y=1/x 함수 형태
 Color_t _convertBlueColorV1(PixelData_t pixelData) {
     float h;    // hue
     float s;    // saturation
@@ -239,6 +239,51 @@ Color_t _convertBlueColorV1(PixelData_t pixelData) {
     
     return COLOR_NONE;
 }
+
+// y=1/x 함수 형태
+Color_t _convertYellowColorV1(PixelData_t pixelData) {
+    float h;    // hue
+    float s;    // saturation
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
+
+    // i > ((a / (s - b)) + c)
+    float a = 0.12;
+    float b = 0.12;
+    float c = -0.06;
+
+	if (h >= 46 && h < 70) {
+        if (s <= b)
+            return COLOR_NONE;
+        else if (v > (a / (s - b)) + c)
+	    	return COLOR_YELLOW;
+    }
+    
+    return COLOR_NONE;
+}
+
+// y=1/x 함수 형태
+Color_t _convertOrangeColorV1(PixelData_t pixelData) {
+    float h;    // hue
+    float s;    // saturation
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
+
+    // i > ((a / (s - b)) + c)
+    float a = 0.12;
+    float b = 0.12;
+    float c = -0.06;
+
+	if (h >= 10 && h < 32) {
+        if (s <= b)
+            return COLOR_NONE;
+        else if (v > (a / (s - b)) + c)
+	    	return COLOR_ORANGE;
+    }
+    
+    return COLOR_NONE;
+}
+
 
 uint8_t _convertPixelDataToGrayColor(uint32_t pixelData) {
     uint16_t rgab5515Data = pixelData;
@@ -313,21 +358,26 @@ void _destroyColorTable(ColorTable_t* pColorTable) {
 
 
 void initializeColor(void) {
-    static bool hasInitialized = false;
-    if (hasInitialized)
+    if (_hasInitialized)
         return;
 
     mkdir("./data", 0755);
     pCommonColorTable = _createColorTable("./data/common_v1.lut",
                             _convertCommonColorV1, false);
-    pOrangeColorTable = _createColorTable("./data/orange_v1.lut",
-                            _convertOrangeColorV1, false);
-    pBlackColorTable = _createColorTable("./data/black_v1.lut",
-                            _convertBlackColorV1, false);
-    pRedColorTable = _createColorTable("./data/red_v1.lut",
-                            _convertRedColorV1, false);
-    pBlueColorTable = _createColorTable("./data/blue_v1.lut",
-                            _convertBlueColorV1, false);
+    pColorTables[COLOR_BLACK] = _createColorTable("./data/black_v1.lut",
+                                                _convertBlackColorV1, false);
+    pColorTables[COLOR_WHITE] = _createColorTable("./data/white_v1.lut",
+                                                _convertWhiteColorV1, false);
+    pColorTables[COLOR_RED] = _createColorTable("./data/red_v1.lut",
+                                                _convertRedColorV1, false);
+    pColorTables[COLOR_GREEN] = _createColorTable("./data/green_v1.lut",
+                                                _convertGreenColorV1, false);
+    pColorTables[COLOR_BLUE] = _createColorTable("./data/blue_v1.lut",
+                                                _convertBlueColorV1, false);
+    pColorTables[COLOR_YELLOW] = _createColorTable("./data/yellow_v1.lut",
+                                                _convertYellowColorV1, false);
+    pColorTables[COLOR_ORANGE] = _createColorTable("./data/orange_v1.lut",
+                                                _convertOrangeColorV1, false);
 
     uint32_t length;
     length = pow(2, sizeof(PixelData_t) * 8);
@@ -336,16 +386,22 @@ void initializeColor(void) {
     pGrayScaleTable = createLookUpTable8("./data/grayscale.lut",
                             _convertPixelDataToGrayColor, length, false);
 
-    hasInitialized = true;
+    _hasInitialized = true;
 }
 
 void finalizeColor(void) {
+    if (!_hasInitialized)
+        return;
+
     _destroyColorTable(pCommonColorTable);
-    _destroyColorTable(pOrangeColorTable);
-    _destroyColorTable(pBlackColorTable);
-    _destroyColorTable(pRedColorTable);
-    _destroyColorTable(pBlueColorTable);
-    destroyLookUpTable8(pRgab5515Table);
+    _destroyColorTable(pColorTables[COLOR_BLACK]);
+    _destroyColorTable(pColorTables[COLOR_WHITE]);
+    _destroyColorTable(pColorTables[COLOR_RED]);
+    _destroyColorTable(pColorTables[COLOR_GREEN]);
+    _destroyColorTable(pColorTables[COLOR_BLUE]);
+    _destroyColorTable(pColorTables[COLOR_YELLOW]);
+    _destroyColorTable(pColorTables[COLOR_ORANGE]);
+    destroyLookUpTable16(pRgab5515Table);
     destroyLookUpTable8(pGrayScaleTable);
 }
 
