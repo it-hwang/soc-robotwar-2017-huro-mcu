@@ -10,6 +10,7 @@
 #include "color_model.h"
 #include "graphic_interface.h"
 #include "obstacle_manager.h"
+#include "object_detection.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
 
@@ -98,16 +99,49 @@ void _improveSomeObstacle(void) {
                                     pColorTables[COLOR_YELLOW]);
 
 
-    //applyDilationToMatrix8(pColorMatrix, 1);
-    //applyErosionToMatrix8(pColorMatrix, 2);
-    //applyDilationToMatrix8(pColorMatrix, 1);
+    applyDilationToMatrix8(pColorMatrix, 1);
+    applyErosionToMatrix8(pColorMatrix, 2);
+    applyDilationToMatrix8(pColorMatrix, 1);
 
+    ObjectList_t* resultObjectList = detectObjectsLocation(pColorMatrix);
+
+    int x;
+    int y;
+    if (resultObjectList) {
+        int i;
+        for(i = 0; i < resultObjectList->size; ++i) {
+            int x;
+            int y;
+            Object_t object = resultObjectList->list[i];
+            PixelData_t* pixels = _pDefaultScreen->elements;
+
+            for(y = object.minY; y <= object.maxY; ++y) {
+                for(x = object.minX; x <= object.maxX; ++x) {
+                    int index = y * _pDefaultScreen->width + x;
+                    uint16_t* pOutput = (uint16_t*)&pixels[index];
+
+                    if(y == object.minY || y == object.maxY) {
+                        *pOutput = 0xF800;
+                    } else if(x == object.minX || x == object.maxX) {
+                        *pOutput = 0xF800;
+                    }
+                }
+            }
+
+            int index = (int)object.centerY * _pDefaultScreen->width + (int)object.centerX;
+            uint16_t* pOutput = (uint16_t*)&pixels[index];
+            *pOutput = 0x1F;
+        }
+    }
+
+    if (resultObjectList)
+        free(resultObjectList);
 
     //sendDataToRobot(command);
     //printf("send command to robot: %d\n", command);
     //waitDataFromRobot();
 
-    _applyColorMatrix(_pDefaultScreen, pColorMatrix);
+    //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
     destroyMatrix8(pColorMatrix);
     _convertScreenToDisplay(_pDefaultScreen);
     displayScreen(_pDefaultScreen);
