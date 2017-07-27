@@ -60,8 +60,6 @@ void _applyColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
     int i;
     PixelData_t* pScreenPixel = pScreen->elements;
     Color_t* pColorPixel = pColorMatrix->elements;
-printf("%d ", width);
-printf("%d ", height);
 
     for (i = 0; i < length; ++i) {
         *pScreenPixel = colorToRgab5515Data(*pColorPixel);
@@ -127,54 +125,49 @@ void _improveSomeObstacle(void) {
         }
     }
     */
-    /*
+    
     applyDilationToMatrix8(pColorMatrix, 1);
     applyErosionToMatrix8(pColorMatrix, 2);
     applyDilationToMatrix8(pColorMatrix, 1);
-*/
 
     ObjectList_t* resultObjectList = detectObjectsLocation(pColorMatrix);
-/*
-    int i;
-    for(i = 0; i < resultObjectList->size; ++i) {
-        int x;
-        int y;
-        Object_t object = resultObjectList->list[i];
-        PixelData_t* pixels = _pDefaultScreen->elements;
 
-        for(y = object.minY; y <= object.maxY; ++y) {
-            for(x = object.minX; x <= object.maxX; ++x) {
-                int index = y * _pDefaultScreen->width + x;
-                uint16_t* pOutput = (uint16_t*)&pixels[index];
+    if (resultObjectList) {
+        int i;
+        for(i = 0; i < resultObjectList->size; ++i) {
+            int x;
+            int y;
+            Object_t object = resultObjectList->list[i];
+            PixelData_t* pixels = _pDefaultScreen->elements;
 
-                if(y == object.minY || y == object.maxY) {
-                    *pOutput = 0xF800;
-                } else if(x == object.minX || x == object.maxX) {
-                    *pOutput = 0xF800;
+            for(y = object.minY; y <= object.maxY; ++y) {
+                for(x = object.minX; x <= object.maxX; ++x) {
+                    int index = y * _pDefaultScreen->width + x;
+                    uint16_t* pOutput = (uint16_t*)&pixels[index];
+
+                    if(y == object.minY || y == object.maxY) {
+                        *pOutput = 0xF800;
+                    } else if(x == object.minX || x == object.maxX) {
+                        *pOutput = 0xF800;
+                    }
                 }
             }
-        }
 
-        int index = (int)object.centerY * _pDefaultScreen->width + (int)object.centerX;
-        uint16_t* pOutput = (uint16_t*)&pixels[index];
-        *pOutput = 0x1F;
+            int index = (int)object.centerY * _pDefaultScreen->width + (int)object.centerX;
+            uint16_t* pOutput = (uint16_t*)&pixels[index];
+            *pOutput = 0x1F;
+        }
     }
-*/
-printf("step6\n");
+
     if (resultObjectList)
         free(resultObjectList);
 
-printf("step7\n");
     //sendDataToRobot(command);
     //printf("send command to robot: %d\n", command);
     //waitDataFromRobot();
 
-    _applyColorMatrix(_pDefaultScreen, pColorMatrix);
-printf("step8\n");
+    //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
     destroyMatrix8(pColorMatrix);
-printf("step9\n");
     _convertScreenToDisplay(_pDefaultScreen);
-printf("step10\n");
     displayScreen(_pDefaultScreen);
-printf("step11\n");
 }
