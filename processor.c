@@ -129,14 +129,16 @@ void _improveSomeObstacle(void) {
     int x;
     int y;
     
-    for(y = 0; y < pColorMatrix->height; ++y) {
+    for(y = 0; y < pColorMatrix->height; ++y) { //이진화
         for(x = 0; x < pColorMatrix->width; ++x) {
             Color_t* output = &(pColorMatrix->elements[y *  pColorMatrix->width + x]);
-            if(*output != COLOR_BLUE) {
+            if(*output != COLOR_BLACK) {
                 *output = 0;
             }
         }
     }
+
+    
     
     applyDilationToMatrix8(pColorMatrix, 1);
     applyErosionToMatrix8(pColorMatrix, 2);
