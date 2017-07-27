@@ -342,6 +342,10 @@ void initializeColor(void) {
 void finalizeColor(void) {
     _destroyColorTable(pCommonColorTable);
     _destroyColorTable(pOrangeColorTable);
+    _destroyColorTable(pBlackColorTable);
+    _destroyColorTable(pRedColorTable);
+    _destroyColorTable(pBlueColorTable);
+    destroyLookUpTable8(pRgab5515Table);
     destroyLookUpTable8(pGrayScaleTable);
 }
 
