@@ -13,6 +13,7 @@
 #include "object_detection.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
+#include "line_detection.h"
 
 ObstacleId_t* _obstacleSequence;
 
@@ -35,24 +36,6 @@ void _convertScreenToDisplay(Screen_t* pScreen) {
     }
 }
 
-Matrix8_t* _createColorMatrix(Screen_t* pScreen) {
-    int width = pScreen->width;
-    int height = pScreen->height;
-    int length = width * height;
-    int i;
-    Matrix8_t* pColorMatrix = createMatrix8(width, height);
-    Color_t* pColorPixel = pColorMatrix->elements;
-    PixelData_t* pScreenPixel = pScreen->elements;
-
-    for (i = 0; i < length; ++i) {
-        *pColorPixel = getColorFromTable(pCommonColorTable, *pScreenPixel);
-        pColorPixel++;
-        pScreenPixel++;
-    }
-
-    return pColorMatrix;
-}
-
 void _applyColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
     int width = pScreen->width;
     int height = pScreen->height;
@@ -63,6 +46,8 @@ void _applyColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
 
     for (i = 0; i < length; ++i) {
         *pScreenPixel = colorToRgab5515Data(*pColorPixel);
+        //if (*pColorPixel)
+        //    *pScreenPixel = 0x00ff;
         pScreenPixel++;
         pColorPixel++;
     }
@@ -111,73 +96,65 @@ void _improveSomeObstacle(void) {
     */
     ///////////////////////////////////////////////////////////////////////////
     readFpgaVideoData(_pDefaultScreen);
-    Matrix8_t* pColorMatrix = _createColorMatrix(_pDefaultScreen);
+    Matrix8_t* pColorMatrix = createColorMatrix(_pDefaultScreen, 
+                                    pColorTables[COLOR_BLACK]);
     
-    
-    //line_detection Test
-    Matrix8_t* pSubMatrix;
-    ObjectList_t* pSubMatrixObjectList;
-
-    //pSubMatrix = createSubMatrix8(pColorMatrix, 60, 60, 100, 100);
-    //pSubMatrixObjectList = detectObjectsLocation(pSubMatrix);   
-
-   
-    //destroyMatrix8(pSubMatrix);
-  
-
-    
-    int x;
-    int y;
-    
-    for(y = 0; y < pColorMatrix->height; ++y) { //이진화
-        for(x = 0; x < pColorMatrix->width; ++x) {
-            Color_t* output = &(pColorMatrix->elements[y *  pColorMatrix->width + x]);
-            if(*output != COLOR_BLACK) {
-                *output = 0;
-            }
-        }
-    }
-
-    
-    
+    // 깁기
     applyDilationToMatrix8(pColorMatrix, 1);
     applyErosionToMatrix8(pColorMatrix, 2);
     applyDilationToMatrix8(pColorMatrix, 1);
+  
+    ObjectList_t* pMatrixObjectList;
+    pMatrixObjectList = detectObjectsLocation(pColorMatrix);
 
-    ObjectList_t* resultObjectList = detectObjectsLocation(pColorMatrix);
+    if (pMatrixObjectList)
+        free(pMatrixObjectList);
+    
+    /*if (pMatrixObjectList) {
+        int i;
+        for(i = 0; i < pMatrixObjectList->size; ++i) {
+            int x;
+            int y;
+            Object_t object = pMatrixObjectList->list[i];
+            PixelData_t* pixels = _pDefaultScreen->elements;
 
-    int i;
-    for(i = 0; i < resultObjectList->size; ++i) {
-        int x;
-        int y;
-        Object_t object = resultObjectList->list[i];
-        PixelData_t* pixels = _pDefaultScreen->elements;
+            for(y = object.minY; y <= object.maxY; ++y) {
+                for(x = object.minX; x <= object.maxX; ++x) {
+                    int index = y * _pDefaultScreen->width + x;
+                    uint16_t* pOutput = (uint16_t*)&pixels[index];
 
-        for(y = object.minY; y <= object.maxY; ++y) {
-            for(x = object.minX; x <= object.maxX; ++x) {
-                int index = y * _pDefaultScreen->width + x;
-                uint16_t* pOutput = (uint16_t*)&pixels[index];
-
-                if(y == object.minY || y == object.maxY) {
-                    *pOutput = 0xF800;
-                } else if(x == object.minX || x == object.maxX) {
-                    *pOutput = 0xF800;
+                    if(y == object.minY || y == object.maxY) {
+                        *pOutput = 0xF800;
+                    } else if(x == object.minX || x == object.maxX) {
+                        *pOutput = 0xF800;
+                    }
                 }
             }
+
+            int index = (int)object.centerY * _pDefaultScreen->width + (int)object.centerX;
+            uint16_t* pOutput = (uint16_t*)&pixels[index];
+            *pOutput = 0x1F;
         }
+    }*/
+    
+    /*pMatrixObjectList = detectObjectsLocation(pColorMatrix);
+    if (pMatrixObjectList)
+        free(pMatrixObjectList);
+    */
 
-        int index = (int)object.centerY * _pDefaultScreen->width + (int)object.centerX;
-        uint16_t* pOutput = (uint16_t*)&pixels[index];
-        *pOutput = 0x1F;
-    }
+    //line-detection process    
+    
+    lineDetection(pColorMatrix);
 
-    free(resultObjectList);
+
+    
+    /***********************************************************************************************/
     //sendDataToRobot(command);
     //printf("send command to robot: %d\n", command);
     //waitDataFromRobot();
     
 
-    //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
+    _applyColorMatrix(_pDefaultScreen, pColorMatrix);
     destroyMatrix8(pColorMatrix);
     _convertScreenToDisplay(_pDefaultScreen);
     displayScreen(_pDefaultScreen);

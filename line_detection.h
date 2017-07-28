@@ -9,14 +9,18 @@
 
 typedef struct {
     double theta;     //기울기
-    PixelLocation_t distancePoint;  //Line과의 거리를 확인할 point
+    PixelLocation_t centerPoint;  //Line과의 거리를 확인할 point
+    
+    PixelLocation_t centerUpperPoint;
+    PixelLocation_t centerLowerPoint;
+    
+    PixelLocation_t LeftUpPoint;
+    PixelLocation_t LeftDownPoint;
+    
+    PixelLocation_t RightUpPoint;
+    PixelLocation_t RightDownPoint;
 } Line_t;
 
-Line_t* lineDetection(Matrix8_t* pObjectLineMatrix , ObjectList_t* pSubObject);
-PixelLocation_t* _searchToTop(Matrix8_t* pObjectLineMatrix, PixelLocation_t* pPixel);
-PixelLocation_t* _searchToBottom(Matrix8_t* pObjectLineMatrix, PixelLocation_t* pPixel);
-Line_t* _computeTheta()
+Line_t* lineDetection(Matrix8_t* pColorMatrix);
 
 #endif // __LINE_DETECTION_H__
-
-

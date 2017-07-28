@@ -19,6 +19,8 @@ typedef struct{
     uint8_t size;
 } ObjectList_t;
 
-ObjectList_t* detectObjectsLocation(Matrix8_t* matrix);
+ObjectList_t* detectObjectsLocation(Matrix8_t* pMatrix);
+ObjectList_t* detectObjectsLocationWithLabeling(Matrix8_t* pMatrix,
+                                                Matrix16_t* pLabelMatrix);
 
 #endif //__OBJECT_DETECTION_H__
