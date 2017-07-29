@@ -69,7 +69,14 @@ Matrix8_t* createSubMatrix8(Matrix8_t* pMatrix8, uint16_t minX, uint16_t minY, u
     uint16_t width = maxX-minX+1;
     uint16_t height = maxY-minY+1;
     Matrix8_t* pMatrix = createMatrix8(width, height);
-    
+
+    int x, y;
+    for(y = 0; y < height; y++) {
+        for(x = 0; x < width; x++) {
+            pMatrix->elements[y * width + x] = pMatrix8->elements[(y+minY) * (pMatrix8->width) + (x+minX)];
+        }
+    }
+    /*
     uint16_t* pSrcElements = pMatrix8->elements + minX;
     uint16_t* pDstElements = pMatrix->elements;
     size_t size_w = width * sizeof(uint8_t);
@@ -79,7 +86,7 @@ Matrix8_t* createSubMatrix8(Matrix8_t* pMatrix8, uint16_t minX, uint16_t minY, u
         pSrcElements += pMatrix8->width;
         pDstElements += width;
     }
-   
+    */
     return pMatrix;
 }
 

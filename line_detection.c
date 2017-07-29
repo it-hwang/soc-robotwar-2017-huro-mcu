@@ -5,107 +5,161 @@
 
 #include "line_detection.h"
 
+#define PI 3.141592
+
 Line_t* _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* candidate, int labelNum);
 PixelLocation_t _searchToTop(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
 PixelLocation_t _searchToBottom(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
+PixelLocation_t _searchToTopCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
+PixelLocation_t _searchToBottomCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
+double _getAngle(PixelLocation_t src, PixelLocation_t dst);
 
 
 //SubMatrix와 해당 SubMatrix의 LabelList를 인자로 받아 LineDetection을 진행한다.
 Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     
     Matrix8_t* pSubMatrix;
-    pSubMatrix = createSubMatrix8(pColorMatrix, 60, 0, 120, 120);
+    pSubMatrix = createSubMatrix8(pColorMatrix, 60, 0, 119, 119);
 
     Matrix16_t* pLabelMatrix = createMatrix16(pSubMatrix->width, pSubMatrix->height);   
+    memset(pLabelMatrix->elements, 0, (pSubMatrix->height * pSubMatrix->width) * sizeof(uint16_t));
+
+    ObjectList_t* pObjectList;
     
-    ObjectList_t* pMatrixObjectListWithLabeling;
-    
-    pMatrixObjectListWithLabeling = detectObjectsLocationWithLabeling(pSubMatrix, pLabelMatrix);
-    
-    printf("A");
-    return NULL;
-    
-    Line_t* lineA = (Line_t*)malloc(sizeof(Line_t));
-    
-    /*
+    pObjectList = detectObjectsLocationWithLabeling(pSubMatrix, pLabelMatrix);
+    //printf("list size 2 %d\n", pObjectList->size);
     int i;
-    int maxList;
     Line_t* resultLine = (Line_t*)malloc(sizeof(Line_t));
-    for(i = 0; i < pSubObjectList->size; ++i) {
-        Object_t* object = &(pSubObjectList->list[i]);
-        if(object->minX < 5 && object->maxX )
+    resultLine->distancePoint.y = 0;
 
+    Line_t* line = (Line_t*)malloc(sizeof(Line_t));
 
-        int labelNum = i+1;
-        resultLine = _labelToLine(pLabelMatrix, object, resultLine, labelNum);  
-        //6개의 포인트를 통해 각도를 구하고
+    
+    for(i = 0; i < pObjectList->size; i++) {
+        Object_t* object = &(pObjectList->list[i]);
+        if(object->minX<5 && object->maxX>55) {
+            uint16_t labelNum = pLabelMatrix->elements[(int)object->centerY * pLabelMatrix->width + (int)object->centerX];
+            line = _labelToLine(pLabelMatrix, object, line, labelNum);
+            if(line != NULL) {
+                //printf("line THETA = %f\n", line->theta);
+                //printf("line DistancePixel = (%d, %d)\n", line->distancePoint.x, line->distancePoint.y);
+                if(resultLine->distancePoint.y <= line->distancePoint.y) {
+                resultLine = line;
+                }
+            }
+            else {
+                printf("None line!!!\n");
+                resultLine = NULL;
+            }
+        }  
     }
 
-    
+    free(line);
+    destroyMatrix8(pSubMatrix);
     destroyMatrix16(pLabelMatrix);
-    if (pMatrixObjectListWithLabeling)
-        free(pMatrixObjectListWithLabeling);
-
+    if (pObjectList){
+        free(pObjectList->list);
+        free(pObjectList);
+    }
     return resultLine;
-    */
 }
 
 Line_t* _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* candidate, int labelNum){
-    PixelLocation_t minMinPoint;
-    PixelLocation_t minMaxPoint;
-    PixelLocation_t maxMinPoint;
-    PixelLocation_t maxMaxPoint;
-
-    minMinPoint.x = object->minX;
-    minMinPoint.y = object->minY;
     
-    minMaxPoint.x = object->minX;
-    minMaxPoint.y = object->maxY;
-    
-    maxMinPoint.x = object->maxX;
-    maxMinPoint.y = object->minY;
-
-    maxMaxPoint.x = object->maxX;
-    maxMaxPoint.y = object->maxY;
-
-    candidate->centerPoint.x = (uint8_t)object->centerX;
-    candidate->centerPoint.y = (uint8_t)object->centerY;
+    PixelLocation_t centerUpPoint;
+    PixelLocation_t centerDownPoint;
+    PixelLocation_t leftUpPoint;
+    PixelLocation_t leftDownPoint;
+    PixelLocation_t rightUpPoint;
+    PixelLocation_t rightDownPoint;
 
     PixelLocation_t* pPixel = (PixelLocation_t*)malloc(sizeof(PixelLocation_t));
     
-    pPixel->x = candidate->centerPoint.x;
-    pPixel->y = candidate->centerPoint.y;
-    candidate->centerUpperPoint = _searchToTop(pObjectLineMatrix, pPixel, labelNum);
-    candidate->centerLowerPoint = _searchToBottom(pObjectLineMatrix, pPixel, labelNum);
+    pPixel->x = (uint8_t)object->centerX;
+    pPixel->y = (uint8_t)object->centerY;
+    centerUpPoint = _searchToTopCenter(pObjectLineMatrix, pPixel, labelNum);
+    centerDownPoint = _searchToBottomCenter(pObjectLineMatrix, pPixel, labelNum);
+  
+    candidate->distancePoint = centerDownPoint;
+
+    pPixel->x = object->minX;
+    pPixel->y = object->minY;
+    leftUpPoint = _searchToBottom(pObjectLineMatrix, pPixel, labelNum);
 
     pPixel->x = object->minX;
     pPixel->y = object->maxY;
-    //candidate->minMaxUpperPoint = _searchToTop(pObjectLineMatrix, pPixel, labelNum);
+    leftDownPoint = _searchToTop(pObjectLineMatrix, pPixel, labelNum);
 
     pPixel->x = object->maxX;
     pPixel->y = object->minY;
-    //candidate->maxMinLowerPoint = _searchToBottom(pObjectLineMatrix, pPixel, labelNum);
-    
+    rightUpPoint = _searchToBottom(pObjectLineMatrix, pPixel, labelNum);
+
+    pPixel->x = object->maxX;
+    pPixel->y = object->maxY;
+    rightDownPoint = _searchToTop(pObjectLineMatrix, pPixel, labelNum);
+
     free(pPixel);
-    return candidate;
+
+    double angleDown1 = _getAngle(leftDownPoint, centerDownPoint);
+    double angleDown2 = _getAngle(centerDownPoint, rightDownPoint);
+    double angleUp1 = _getAngle(leftUpPoint, centerUpPoint);
+    double angleUp2 = _getAngle(centerUpPoint, rightUpPoint);
+
+    printf("angelUp1 = %f\n", angleUp1);
+    printf("angelUp2 = %f\n", angleUp2);
+    printf("angelDown1 = %f\n", angleDown1);
+    printf("angelDown2 = %f\n", angleDown2);
+    
+    /*
+    printf("centerPoint.x = %d\n", candidate->centerPoint.x);
+    printf("centerPoint.y = %d\n", candidate->centerPoint.y);
+    printf("minX = %d\n", object->minX);
+    printf("minY = %d\n", object->minY);
+    printf("maxX = %d\n", object->maxX);
+    printf("maxY = %d\n", object->maxY);
+   
+    printf("centerUpPoint.x = %d\n", centerUpPoint.x);
+    printf("centerUpPoint.y = %d\n", centerUpPoint.y);
+
+    printf("centerDownPoint.x = %d\n", centerDownPoint.x);
+    printf("centerDownPoint.y = %d\n", centerDownPoint.y);
+    
+    printf("leftUpPoint.x = %d\n", leftUpPoint.x);
+    printf("leftUpPoint.y = %d\n", leftUpPoint.y);
+    
+    printf("leftDownPoint.x = %d\n", leftDownPoint.x);
+    printf("leftDownPoint.y = %d\n", leftDownPoint.y);
+    
+    printf("rightUpPoint.x = %d\n", rightUpPoint.x);
+    printf("rightUpPoint.y = %d\n", rightUpPoint.y);
+    
+    printf("rightDownPoint.x = %d\n", rightDownPoint.x);
+    printf("rightDownPoint.y = %d\n", rightDownPoint.y);
+    */
+
+    if(fabs(angleDown1 - angleDown2) <= 5) {
+        candidate->theta = (angleDown1+angleDown2)/2;
+        return candidate;
+    }
+    else {
+        return NULL;
+    }
 }
 
 //두 점을 이용한 기울기 계산
-double _computeTheta(PixelLocation_t* srcPixel, PixelLocation_t* dstPixel) {
-    double theta;
-    return theta; 
-}
+double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
+    int dDeltaX;
+    int dDeltaY;
 
-double GetAngleFromXY2Degree(double dDeltaX, double dDeltaY) {
-    double dAngle = atan2( dDeltaY , dDeltaX);
+    dDeltaX = dst.x - src.x;
+    dDeltaY = dst.y - src.y;
     
+    double dAngle = atan2(dDeltaY , dDeltaX);
     /*
     radian -> degree
     */                      
-    dAngle *= (180.0/M_PI);
-    
-        if( dAngle < 0.0 ) dAngle += 360.0;
-    
+    dAngle *= (180.0/PI);
+    //if( dAngle < 0.0 ) dAngle += 360.0;
     return dAngle;
 }
 
@@ -120,11 +174,11 @@ PixelLocation_t _searchToTop(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPi
     int y;
     int cnt = 0;
     for(y=pPixel->y; y>=0; --y) {
-        Color_t* output = &(pObjectLineMatrix->elements[pPixel->y * pObjectLineMatrix->width + pPixel->x]);
-        if(*output == COLOR_BLACK) {
+        uint16_t* output = &(pObjectLineMatrix->elements[y * pObjectLineMatrix->width + x]);
+        if((int)*output != labelNum) {
             cnt++;
         }
-        else if(cnt > 0) {
+        else {
             resultPixel.y = y;
             break;
         }
@@ -140,11 +194,11 @@ PixelLocation_t _searchToBottom(Matrix16_t* pObjectLineMatrix, PixelLocation_t* 
     int y;
     int cnt = 0;
     for(y=pPixel->y; y<= pObjectLineMatrix->height; ++y) {
-        Color_t* output = &(pObjectLineMatrix->elements[pPixel->y * pObjectLineMatrix->width + pPixel->x]);
-        if(*output == COLOR_BLACK) {
+        uint16_t* output = &(pObjectLineMatrix->elements[y * pObjectLineMatrix->width + x]);
+        if((int)*output != labelNum) {
             cnt++;
         }
-        else if(cnt > 0) {
+        else {
             resultPixel.y = y;
             break;
         }
@@ -152,6 +206,46 @@ PixelLocation_t _searchToBottom(Matrix16_t* pObjectLineMatrix, PixelLocation_t* 
     return resultPixel;
 }
 
+PixelLocation_t _searchToTopCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum){    //위를 향한 Search
+    PixelLocation_t resultPixel; 
+    int x = pPixel->x;
+    resultPixel.x = x;
+    int y;
+    int cnt = 0;
+    for(y=pPixel->y; y>=0; y--) {
+        uint16_t* output = &(pObjectLineMatrix->elements[y * pObjectLineMatrix->width + x]);
+        
+        if((int)*output == labelNum) {
+            cnt++;
+        }
+        else {
+            resultPixel.y = y;
+            break;
+        }
+    }
+    return resultPixel;
+}
+
+PixelLocation_t _searchToBottomCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum){    //아래를 향한 Search
+    PixelLocation_t resultPixel;
+    int x = pPixel->x;
+    resultPixel.x = x;
+    
+    int y;
+    int cnt = 0;
+    for(y=pPixel->y; y<= pObjectLineMatrix->height; y++) {
+        uint16_t* output = &(pObjectLineMatrix->elements[y * pObjectLineMatrix->width + x]);
+        if((int)*output == labelNum) {
+            cnt++;
+        }
+        else {
+            resultPixel.y = y;
+            break;
+        }
+    }
+
+    return resultPixel;
+}
 
 
 

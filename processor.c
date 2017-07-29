@@ -104,13 +104,11 @@ void _improveSomeObstacle(void) {
     applyErosionToMatrix8(pColorMatrix, 2);
     applyDilationToMatrix8(pColorMatrix, 1);
   
+  
     ObjectList_t* pMatrixObjectList;
     pMatrixObjectList = detectObjectsLocation(pColorMatrix);
-
-    if (pMatrixObjectList)
-        free(pMatrixObjectList);
-    
-    /*if (pMatrixObjectList) {
+    //printf("list size 1 %d\n", pMatrixObjectList->size);
+    if (pMatrixObjectList) {
         int i;
         for(i = 0; i < pMatrixObjectList->size; ++i) {
             int x;
@@ -135,7 +133,11 @@ void _improveSomeObstacle(void) {
             uint16_t* pOutput = (uint16_t*)&pixels[index];
             *pOutput = 0x1F;
         }
-    }*/
+    }
+
+    if (pMatrixObjectList)
+        free(pMatrixObjectList);
+    
     
     /*pMatrixObjectList = detectObjectsLocation(pColorMatrix);
     if (pMatrixObjectList)
@@ -144,7 +146,9 @@ void _improveSomeObstacle(void) {
 
     //line-detection process    
     
-    lineDetection(pColorMatrix);
+    Line_t* A = lineDetection(pColorMatrix);
+    
+    
 
 
     
@@ -153,8 +157,8 @@ void _improveSomeObstacle(void) {
     //printf("send command to robot: %d\n", command);
     //waitDataFromRobot();
     
-
-    _applyColorMatrix(_pDefaultScreen, pColorMatrix);
+    //free(A);
+    //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
     destroyMatrix8(pColorMatrix);
     _convertScreenToDisplay(_pDefaultScreen);
     displayScreen(_pDefaultScreen);
