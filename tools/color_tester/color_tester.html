@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>색상 확인</title>
+        <link href="color_tester.css" rel="stylesheet" type="text/css" />
+        <script type="text/javascript" src="color_tester.js"></script>
+    </head>
+    <body>
+        <div>
+            <canvas id="color_canvas" width="256" height="256">
+                지원하지 않는 브라우저입니다.
+            </canvas>
+        </div>
+        <div>
+            H: <input id="h_value" type="number" min="0" max="360" step="1" value="0" /><br />
+            a: <input id="a_value" type="number" step="0.01" value="0.02" /><br />
+            b: <input id="b_value" type="number" step="0.01" value="0.28" /><br />
+            c: <input id="c_value" type="number" step="0.01" value="-0.02" /><br />
+            line color: <input id="line_color" type="color" value="#ffff00" /><br />
+        </div>
+    </body>
+</html>
