@@ -41,14 +41,11 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
             uint16_t labelNum = pLabelMatrix->elements[(int)object->centerY * pLabelMatrix->width + (int)object->centerX];
             line = _labelToLine(pLabelMatrix, object, line, labelNum);
             if(line != NULL) {
-                //printf("line THETA = %f\n", line->theta);
-                //printf("line DistancePixel = (%d, %d)\n", line->distancePoint.x, line->distancePoint.y);
                 if(resultLine->distancePoint.y <= line->distancePoint.y) {
                 resultLine = line;
                 }
             }
             else {
-                printf("None line!!!\n");
                 resultLine = NULL;
             }
         }  
@@ -105,10 +102,10 @@ Line_t* _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* ca
     double angleUp1 = _getAngle(leftUpPoint, centerUpPoint);
     double angleUp2 = _getAngle(centerUpPoint, rightUpPoint);
 
-    printf("angelUp1 = %f\n", angleUp1);
-    printf("angelUp2 = %f\n", angleUp2);
-    printf("angelDown1 = %f\n", angleDown1);
-    printf("angelDown2 = %f\n", angleDown2);
+    //printf("angelUp1 = %f\n", angleUp1);
+    //printf("angelUp2 = %f\n", angleUp2);
+    //printf("angelDown1 = %f\n", angleDown1);
+    //printf("angelDown2 = %f\n", angleDown2);
     
     /*
     printf("centerPoint.x = %d\n", candidate->centerPoint.x);

@@ -146,8 +146,15 @@ void _improveSomeObstacle(void) {
 
     //line-detection process    
     
-    Line_t* A = lineDetection(pColorMatrix);
-    
+    Line_t* line = lineDetection(pColorMatrix);
+    if(line == NULL) {
+        printf("None line!!!\n");
+    }
+    else {
+        printf("Yes line!!!\n");
+        printf("line THETA = %f\n", line->theta);
+        printf("line DistancePixel = (%d, %d)\n", line->distancePoint.x, line->distancePoint.y);
+    }
     
 
 
