@@ -83,7 +83,8 @@ void closeProcessor(void) {
 int runProcessor(void) {
     int i;
     for (i = 0; i < 100; ++i) {
-        _improveSomeObstacle();
+        //_improveSomeObstacle();
+        Send_Command(0x01, 0xfe);
     }
 
     return 0;
@@ -154,10 +155,8 @@ void _improveSomeObstacle(void) {
         printf("Yes line!!!\n");
         printf("line THETA = %f\n", line->theta);
         printf("line DistancePixel = (%d, %d)\n", line->distancePoint.x, line->distancePoint.y);
+        free(line);
     }
-    
-
-
     
     /***********************************************************************************************/
     //sendDataToRobot(command);
