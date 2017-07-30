@@ -13,6 +13,8 @@
 #define CENTER 52
 #define RIGHT_ZERO_DEGREE -10
 #define LEFT_ZERO_DEGREE 4
+#define BIG_DIVIDE 15
+#define SMALL_DIVIDE 5
 
 Line_t* _captureLine(Screen_t* pScreen);
 
@@ -67,6 +69,7 @@ bool checkCenter() {
 
     int distance = CENTER - pLine->distancePoint.y;
     int isException = false;
+    Line_t* pDistaceLine = NULL;
 
     while(abs(distance) > 5){
         if(isException) {
@@ -79,7 +82,11 @@ bool checkCenter() {
             printf("같은방향으로 움직인다.\n");
         }    
     
-        Line_t* pDistaceLine = _captureLine(_pDefaultScreen);
+        if(pDistaceLine != NULL){
+            free(pDistaceLine);
+        }
+
+        pDistaceLine = _captureLine(_pDefaultScreen);//free 필요
         
         _convertScreenToDisplay(_pDefaultScreen);
         displayScreen(_pDefaultScreen);
@@ -99,11 +106,35 @@ bool checkCenter() {
             isException = true;
         } else {
             distance = CENTER - pDistaceLine->distancePoint.y;
-            free(pDistaceLine);
         }
     }
 
-    
+    if(isRight) {
+        double distanceTheta = pDistaceLine->theta;
+        distanceTheta += RIGHT_ZERO_DEGREE;
+        if(distanceTheta < 0){
+            int bigAngleSize = (int)(distanceTheta / (double)BIG_DIVIDE);
+            int bigAngleSizeRemainer = (int)(distanceTheta % (double)BIG_DIVIDE);
+            int smallAngleSize = (int)(bigAngleSizeRemainer / (double)SMALL_DIVIDE);
+
+            int i;
+            for(i = 0; i < bigAngleSize; ++i) {
+                //빅 모션 한다.
+            }
+
+            for(i = 0; i < smallAngleSize; ++i) {
+                //스몰 모션 한다.
+            }
+
+            
+
+        }else {
+
+        }
+
+    }else {
+
+    }
 
     if(pLine != NULL) {
         free(pLine);
