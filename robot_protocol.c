@@ -58,5 +58,12 @@ void Send_Command(unsigned char Ldata)
 	uart1_buffer_write(Command_Buffer, 6);
 }
 
+void waitMotion(void)
+{
+	unsigned char Command_Buffer[6] = {0,};
+
+	uart1_buffer_read(Command_Buffer, 6);
+}
+
 #define ERROR	0
 #define OK	1

@@ -14,6 +14,7 @@
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "line_detection.h"
+#include "check_center.h"
 
 ObstacleId_t* _obstacleSequence;
 
@@ -77,14 +78,16 @@ void closeProcessor(void) {
     closeGraphicInterface();
     closeRobotPort();
     destroyScreen(_pDefaultScreen);
+    free(_obstacleSequence);
     finalizeColor();
 }
 
 int runProcessor(void) {
     int i;
-    for (i = 0; i < 100; ++i) {
+    for (i = 0; i < 20; ++i) {
         //_improveSomeObstacle();
-        Send_Command(0x01, 0xfe);
+        //Send_Command(0x01, 0xfe);
+        checkCenter();
     }
 
     return 0;
@@ -136,8 +139,11 @@ void _improveSomeObstacle(void) {
         }
     }
 
-    if (pMatrixObjectList)
+    if (pMatrixObjectList){
+        free(pMatrixObjectList->list);
         free(pMatrixObjectList);
+    }
+        
     
     
     /*pMatrixObjectList = detectObjectsLocation(pColorMatrix);
