@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "robot_protocol.h"
 #include "uart_api.h"
@@ -35,28 +36,27 @@ void closeRobotPort(void) {
 	uart_close();
 }
 
-void sendDataToRobot(short data) {
-	BIOLOID_PACKET* packet = _createPacket();
-
-	packet->dataLow0 = data & 0xff;
-	packet->dataLow1 = ~(packet->dataLow0);
-	packet->dataHigh0 = (data >> 8) & 0xff;
-	packet->dataHigh1 = ~(packet->dataHigh0);
-
-	uart1_buffer_write((unsigned char*)packet, sizeof(BIOLOID_PACKET));
-
-	free(packet);
+void DelayLoop(int delay_time)
+{
+	while(delay_time)
+		delay_time--;
 }
 
-BIOLOID_PACKET* _createPacket(void) {
-	BIOLOID_PACKET* packet = malloc(sizeof(BIOLOID_PACKET));
+void Send_Command(unsigned char Ldata)
+{
+	unsigned char Command_Buffer[6] = {0,};
 	
-	packet->startCode0 = 0xff;
-	packet->startCode1 = 0x55;
-	packet->dataLow0 = 0x00;
-	packet->dataLow1 = 0x00;
-	packet->dataHigh0 = 0x00;
-	packet->dataHigh1 = 0x00;
+	unsigned char Ldata1 = ~Ldata;
 
-	return packet;
+	Command_Buffer[0] = 0xff;	// Start Byte -> 0xff
+	Command_Buffer[1] = 0x55; // Start Byte1 -> 0x55
+    Command_Buffer[2] = Ldata;
+	Command_Buffer[3] = Ldata1;
+	Command_Buffer[4] = 0x00;  // 0x00
+	Command_Buffer[5] = 0xff; // 0xff
+
+	uart1_buffer_write(Command_Buffer, 6);
 }
+
+#define ERROR	0
+#define OK	1

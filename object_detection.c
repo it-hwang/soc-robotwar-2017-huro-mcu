@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "object_detection.h"
 #include "graphic_interface.h"
 #include "matrix.h"
@@ -10,15 +11,16 @@
 void _sortArray(uint16_t* array, int size);
 uint8_t _searchAdjacencyLabel(uint16_t* array, int size);
 
-ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
+ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
+                                     Matrix16_t* pOutputLabelMatrix) {
     static uint16_t equalLabelList[_LABEL_SIZE];
     static int labelCntList[_LABEL_SIZE];
 
     int x;
     int y;
-    int width = matrix->width;
-    int height = matrix->height;
-    uint8_t* pixels = matrix->elements;
+    int width = pMatrix->width;
+    int height = pMatrix->height;
+    uint8_t* pixels = pMatrix->elements;
 
     Matrix16_t* pLabelMatrix = createMatrix16(width, height);
     memset(pLabelMatrix->elements, 0, (height * width) * sizeof(uint16_t));
@@ -144,7 +146,7 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
             int sourceCnt = labelCntList[i];
             
             labelCntList[listIndex] += labelCntList[i];
-
+            
             targetLabel->centerX = (targetCnt * targetLabel->centerX 
                                     + (sourceLabel->centerX)* sourceCnt)
                                     / labelCntList[listIndex];
@@ -174,19 +176,17 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
 
     int resultIndex = 0;
     for(i = 1; i < _LABEL_SIZE; ++i) {
-        int listIndex = i;
-        while(equalLabelList[listIndex] != 0) {
-            listIndex = equalLabelList[listIndex];
-        }
+        bool hasParentLabel = (equalLabelList[i] != 0);
+        bool isEmptyLabel = (labelCntList[i] == 0);
 
-        if(listIndex == i && labelCntList[i] > 0) {
+        if(!hasParentLabel && !isEmptyLabel) {
             Object_t* targetObject = &resultObjects[resultIndex];
-            Object_t* sourceObject = &labelLocationInfo[listIndex];
+            Object_t* sourceObject = &labelLocationInfo[i];
             targetObject->minX = sourceObject->minX;
             targetObject->minY = sourceObject->minY;
             targetObject->maxX = sourceObject->maxX;
             targetObject->maxY = sourceObject->maxY;
-            targetObject->cnt = sourceObject->cnt;
+            targetObject->cnt = labelCntList[i];
             targetObject->centerX = sourceObject->centerX;
             targetObject->centerY = sourceObject->centerY;
             resultIndex++;
@@ -196,12 +196,50 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* matrix) {
     ObjectList_t* resultObjectList = (ObjectList_t*)malloc(sizeof(ObjectList_t));
     resultObjectList->size = realLabels;
     resultObjectList->list = resultObjects;
+    /*********************************/
+
+    bool hasOutputLabelMatrix = false;
+    if(pOutputLabelMatrix != NULL) {
+        hasOutputLabelMatrix = ( pOutputLabelMatrix->width == width &&
+                                 pOutputLabelMatrix->height == height );
+    }
+
+    if(hasOutputLabelMatrix) {
+        int cmpArray[_LABEL_SIZE] = {0,};
+        int latestLabelId = 0;
+        for(y=0; y<height; ++y) {
+            for(x=0; x<width; ++x) {
+                int labelId = pLabelMatrix->elements[y*width+x];
+                
+                if(cmpArray[labelId] == 0) {
+                    int rootLabelId = labelId;
+                    while(equalLabelList[rootLabelId] != 0) 
+                        rootLabelId = equalLabelList[rootLabelId];
+                    
+                    if(cmpArray[rootLabelId] == 0) cmpArray[rootLabelId] = ++latestLabelId;
+                    cmpArray[labelId] = cmpArray[rootLabelId];
+                }
+
+                pOutputLabelMatrix->elements[y*width+x] = cmpArray[labelId];
+            }
+        }
+    }
 
     destroyMatrix16(pLabelMatrix);
     free(labelLocationInfo);
 
     return resultObjectList;
 }
+
+ObjectList_t* detectObjectsLocation(Matrix8_t* pMatrix) {
+    return _detectObjectsLocation(pMatrix, NULL);
+}
+
+ObjectList_t* detectObjectsLocationWithLabeling(Matrix8_t* pMatrix,
+                                                Matrix16_t* pLabelMatrix) {
+    return _detectObjectsLocation(pMatrix, pLabelMatrix);
+}
+
 
 uint8_t _searchAdjacencyLabel(uint16_t* array, int size) {
     int i = 0;

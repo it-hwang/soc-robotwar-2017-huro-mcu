@@ -13,6 +13,7 @@
 #include "object_detection.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
+#include "line_detection.h"
 
 ObstacleId_t* _obstacleSequence;
 
@@ -82,7 +83,8 @@ void closeProcessor(void) {
 int runProcessor(void) {
     int i;
     for (i = 0; i < 100; ++i) {
-        _improveSomeObstacle();
+        //_improveSomeObstacle();
+        Send_Command(0x01, 0xfe);
     }
 
     return 0;
@@ -96,23 +98,23 @@ void _improveSomeObstacle(void) {
     ///////////////////////////////////////////////////////////////////////////
     readFpgaVideoData(_pDefaultScreen);
     Matrix8_t* pColorMatrix = createColorMatrix(_pDefaultScreen, 
-                                    pColorTables[COLOR_YELLOW]);
-
-
+                                    pColorTables[COLOR_BLACK]);
+    
+    // 깁기
     applyDilationToMatrix8(pColorMatrix, 1);
     applyErosionToMatrix8(pColorMatrix, 2);
     applyDilationToMatrix8(pColorMatrix, 1);
-
-    ObjectList_t* resultObjectList = detectObjectsLocation(pColorMatrix);
-
-    int x;
-    int y;
-    if (resultObjectList) {
+  
+  
+    ObjectList_t* pMatrixObjectList;
+    pMatrixObjectList = detectObjectsLocation(pColorMatrix);
+    //printf("list size 1 %d\n", pMatrixObjectList->size);
+    if (pMatrixObjectList) {
         int i;
-        for(i = 0; i < resultObjectList->size; ++i) {
+        for(i = 0; i < pMatrixObjectList->size; ++i) {
             int x;
             int y;
-            Object_t object = resultObjectList->list[i];
+            Object_t object = pMatrixObjectList->list[i];
             PixelData_t* pixels = _pDefaultScreen->elements;
 
             for(y = object.minY; y <= object.maxY; ++y) {
@@ -134,13 +136,34 @@ void _improveSomeObstacle(void) {
         }
     }
 
-    if (resultObjectList)
-        free(resultObjectList);
+    if (pMatrixObjectList)
+        free(pMatrixObjectList);
+    
+    
+    /*pMatrixObjectList = detectObjectsLocation(pColorMatrix);
+    if (pMatrixObjectList)
+        free(pMatrixObjectList);
+    */
 
+    //line-detection process    
+    
+    Line_t* line = lineDetection(pColorMatrix);
+    if(line == NULL) {
+        printf("None line!!!\n");
+    }
+    else {
+        printf("Yes line!!!\n");
+        printf("line THETA = %f\n", line->theta);
+        printf("line DistancePixel = (%d, %d)\n", line->distancePoint.x, line->distancePoint.y);
+        free(line);
+    }
+    
+    /***********************************************************************************************/
     //sendDataToRobot(command);
     //printf("send command to robot: %d\n", command);
     //waitDataFromRobot();
-
+    
+    //free(A);
     //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
     destroyMatrix8(pColorMatrix);
     _convertScreenToDisplay(_pDefaultScreen);
