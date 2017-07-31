@@ -7,7 +7,7 @@
 
 #define PI 3.141592
 
-Line_t* _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* candidate, int labelNum);
+bool _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* candidate, int labelNum);
 PixelLocation_t _searchToTop(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
 PixelLocation_t _searchToBottom(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
 PixelLocation_t _searchToTopCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
@@ -33,35 +33,42 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     resultLine->distancePoint.y = 0;
 
     Line_t* line = (Line_t*)malloc(sizeof(Line_t));
-
+    bool emptyLine = true;
     
     for(i = 0; i < pObjectList->size; i++) {
         Object_t* object = &(pObjectList->list[i]);
         if(object->minX<5 && object->maxX>55) {
             uint16_t labelNum = pLabelMatrix->elements[(int)object->centerY * pLabelMatrix->width + (int)object->centerX];
-            line = _labelToLine(pLabelMatrix, object, line, labelNum);
-            if(line != NULL) {
+            bool isLine = _labelToLine(pLabelMatrix, object, line, labelNum);
+            if(isLine) {
                 if(resultLine->distancePoint.y <= line->distancePoint.y) {
-                resultLine = line;
+                    resultLine->theta = line->theta;
+                    resultLine->distancePoint.x = line->distancePoint.x;
+                    resultLine->distancePoint.y = line->distancePoint.y;
+                    emptyLine = false;
                 }
             }
-            else {
-                resultLine = NULL;
-            }
         }  
+    }
+
+    if(emptyLine) {
+        free(resultLine);
+        resultLine = NULL;
     }
 
     free(line);
     destroyMatrix8(pSubMatrix);
     destroyMatrix16(pLabelMatrix);
+    
     if (pObjectList){
         free(pObjectList->list);
         free(pObjectList);
     }
+
     return resultLine;
 }
 
-Line_t* _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* candidate, int labelNum){
+bool _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* candidate, int labelNum){
     
     PixelLocation_t centerUpPoint;
     PixelLocation_t centerDownPoint;
@@ -71,7 +78,7 @@ Line_t* _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* ca
     PixelLocation_t rightDownPoint;
 
     PixelLocation_t* pPixel = (PixelLocation_t*)malloc(sizeof(PixelLocation_t));
-    
+
     pPixel->x = (uint8_t)object->centerX;
     pPixel->y = (uint8_t)object->centerY;
     centerUpPoint = _searchToTopCenter(pObjectLineMatrix, pPixel, labelNum);
@@ -134,12 +141,12 @@ Line_t* _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* ca
     printf("rightDownPoint.y = %d\n", rightDownPoint.y);
     */
 
-    if(fabs(angleDown1 - angleDown2) <= 5) {
+    if(fabs(angleDown1 - angleDown2) <= 10) {
         candidate->theta = (angleDown1+angleDown2)/2;
-        return candidate;
+        return true;
     }
     else {
-        return NULL;
+        return false;
     }
 }
 
@@ -243,12 +250,3 @@ PixelLocation_t _searchToBottomCenter(Matrix16_t* pObjectLineMatrix, PixelLocati
 
     return resultPixel;
 }
-
-
-
-
-
-
-
-
-
