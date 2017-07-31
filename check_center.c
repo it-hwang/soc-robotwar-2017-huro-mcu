@@ -8,11 +8,9 @@
 #include "object_detection.h"
 #include "graphic_interface.h"
 
-#include "uart_api.h"
-
-#define CENTER 52
-#define RIGHT_ZERO_DEGREE -10
-#define LEFT_ZERO_DEGREE 4
+#define CENTER 80
+#define RIGHT_ZERO_DEGREE 2
+#define LEFT_ZERO_DEGREE -5
 #define BIG_DIVIDE 15
 #define SMALL_DIVIDE 5
 
@@ -40,16 +38,19 @@ bool checkCenter() {
         if(!isRight) {
             //오른쪽으로 머리를 돌린다.
             isRight = true;
-            Send_Command(0x46);
-            waitMotion();
             printf("오른쪽\n");
-        
-        else {   
+            Send_Command(0xfe);
+            waitMotion();
+            Send_Command(0x3a);
+            waitMotion();
+        }else {   
             //왼쪽으로 머리를 돌린다.
             isRight = false;
-            Send_Command(0x47);
-            waitMotion();
             printf("왼쪽\n");
+            Send_Command(0xfe);
+            waitMotion();
+            Send_Command(0xc5);
+            waitMotion();
         }
 
         pLine = _captureLine(_pDefaultScreen);
@@ -73,9 +74,23 @@ bool checkCenter() {
         }else if(distance < 0) {
             //반대방향으로 움직인다.
             printf("반대방향으로 움직인다.\n");
+            if(isRight) {
+                Send_Command(0x0b);
+                waitMotion();
+            }else {
+                Send_Command(0x07);
+                waitMotion();
+            }
         }else {
             //같은방향으로 움직인다.
             printf("같은방향으로 움직인다.\n");
+            if(isRight) {
+                Send_Command(0x07);
+                waitMotion();
+            }else {
+                Send_Command(0x0b);
+                waitMotion();
+            }
         }    
     
         if(pDistaceLine != NULL){
@@ -83,10 +98,10 @@ bool checkCenter() {
         }
 
         pDistaceLine = _captureLine(_pDefaultScreen);//free 필요
-        
+        printf("찍었다.\n");
         _convertScreenToDisplay(_pDefaultScreen);
         displayScreen(_pDefaultScreen);
-
+        cnt = 0;
         while(cnt < 5 && pDistaceLine == NULL) {
             pDistaceLine = _captureLine(_pDefaultScreen);
             cnt++;
@@ -98,96 +113,140 @@ bool checkCenter() {
         if(pDistaceLine == NULL) {
             //반대방향으로 3걸음 움직인다.
             printf("반대방향으로 3걸음 움직인다.\n");
+            if(isRight) {
+                Send_Command(0x0b);
+                waitMotion();
+                Send_Command(0x0b);
+                waitMotion();
+                Send_Command(0x0b);
+                waitMotion();
+            }else {
+                Send_Command(0x07);
+                waitMotion();
+                Send_Command(0x07);
+                waitMotion();
+                Send_Command(0x07);
+                waitMotion();
+            }
             isException = true;
         } else {
             distance = CENTER - pDistaceLine->distancePoint.y;
         }
     }
 
+    if(distance <= 5) {
+        pDistaceLine = _captureLine(_pDefaultScreen);
+        _convertScreenToDisplay(_pDefaultScreen);
+        displayScreen(_pDefaultScreen);
+
+        cnt = 0;
+        while(cnt < 5 && pDistaceLine == NULL) {
+            pDistaceLine = _captureLine(_pDefaultScreen);
+            cnt++;
+            _convertScreenToDisplay(_pDefaultScreen);
+            displayScreen(_pDefaultScreen);
+            printf("거리 다시찍는중..\n");
+        }
+    }
+
     double distanceTheta = pDistaceLine->theta;
+    //printf("distanceTheta %f\n", distanceTheta);
+    
+    if(pDistaceLine != NULL)
+        free(pDistaceLine);
+    
+    bool isGood;
 
-    free(pDistaceLine);
+    int zeroDegree;
+    if(isRight) {
+        zeroDegree = RIGHT_ZERO_DEGREE;
+    } else {
+        zeroDegree = LEFT_ZERO_DEGREE;
+    }
 
-    bool isGood = false;
+    
+    if((distanceTheta >= zeroDegree - 4) &&
+        (distanceTheta <= zeroDegree + 4)) {
+        isGood = true;
+    } else {
+        isGood = false;
+    }
 
     while(!isGood) {
         if(isRight) {
-            distanceTheta += RIGHT_ZERO_DEGREE;
+            distanceTheta -= RIGHT_ZERO_DEGREE;
         } else {
             distanceTheta -= LEFT_ZERO_DEGREE;
         }
         
-        if(distanceTheta != 0) {
-            int bigAngleSize = (int)(abs(distanceTheta) / BIG_DIVIDE);
-            int bigAngleSizeRemainer = (int)(abs(distanceTheta) % BIG_DIVIDE);
-            int smallAngleSize = (int)(abs(bigAngleSizeRemainer) / SMALL_DIVIDE);
+        int bigAngleSize = (abs((int)distanceTheta) / BIG_DIVIDE);
+        int bigAngleSizeRemainer = (abs((int)distanceTheta) % BIG_DIVIDE);
+        int smallAngleSize = (abs((int)bigAngleSizeRemainer) / SMALL_DIVIDE);
 
-            unsigned char bigMotion;
-            unsigned char smallModtion;
+        unsigned char bigMotion;
+        unsigned char smallMotion;
 
-            if(distanceTheta < 0) {
-                //bigMotion = 모션번호 16진수
-                //smallMotion = 모션번호
-            } else {
-                //bigMotion = 모션번호
-                //smallMotion = 모션번호
-            }
+        if(distanceTheta < 0) {
+            bigMotion = 0x10;
+            smallMotion = 0x13;
+        } else {
+            bigMotion = 0x0f;
+            smallMotion = 0x12;
+        }
+        printf("theta %f\n", distanceTheta);
+        printf("bigAngleSize %d\n", bigAngleSize);
+        printf("bigAngleSizeReminder %d\n", bigAngleSize);
+        printf("smallAngleSize %d\n", smallAngleSize);
+        int i;
+        for(i = 0; i < bigAngleSize; ++i) {
+            //빅 모션 한다.
+            printf("빅모션\n");
+            Send_Command(bigMotion);
+            waitMotion();
+        }
 
-            int i;
-            for(i = 0; i < bigAngleSize; ++i) {
-                //빅 모션 한다.
-                //Send_Command(bigMotion);
-            }
+        for(i = 0; i < smallAngleSize; ++i) {
+            //스몰 모션 한다.
+            printf("스몰모션\n");
+            Send_Command(smallMotion);
+            waitMotion();
+        }
 
-            for(i = 0; i < smallAngleSize; ++i) {
-                //스몰 모션 한다.
-                //Send_command(smallMotion);
-            }
+        Line_t* checkPosition = _captureLine(_pDefaultScreen);
+        
+        _convertScreenToDisplay(_pDefaultScreen);
+        displayScreen(_pDefaultScreen);
 
-            Line_t* checkPosition = _captureLine(_pDefaultScreen);
-            
+        cnt = 0;
+        while(checkPosition == NULL && cnt < 3) {
+            checkPosition = _captureLine(_pDefaultScreen);
+
             _convertScreenToDisplay(_pDefaultScreen);
             displayScreen(_pDefaultScreen);
+        }
 
-            cnt = 0;
-            while(checkPosition == NULL && cnt < 3) {
-                checkPosition = _captureLine(_pDefaultScreen);
-
-                _convertScreenToDisplay(_pDefaultScreen);
-                displayScreen(_pDefaultScreen);
-            }
-
-            if(checkPosition != NULL) {
-                int zeroDegree;
-                if(isRight) {
-                    zeroDegree = RIGHT_ZERO_DEGREE;
-                } else {
-                    zeroDegree = LEFT_ZERO_DEGREE;
-                }
-
-                
-                if((checkPosition->theta >= zeroDegree - 2) &&
-                    (checkPosition->theta <= zeroDegree + 2)) {
-                    isGood = true;
-                } else {
-                    distanceTheta = checkPosition->theta;
-                }
-
-                free(checkPosition);
+        if(checkPosition != NULL) {
+            if(isRight) {
+                zeroDegree = RIGHT_ZERO_DEGREE;
             } else {
-                isGood = true;
+                zeroDegree = LEFT_ZERO_DEGREE;
             }
-        }else {
+
+            
+            if((checkPosition->theta >= zeroDegree - 4) &&
+                (checkPosition->theta <= zeroDegree + 4)) {
+                isGood = true;
+            } else {
+                distanceTheta = checkPosition->theta;
+            }
+
+            free(checkPosition);
+        } else {
             isGood = true;
         }
+        
     }
-    
-    /*//반대편을보고 확인 
-    Line_t* lastCheck = _captureLine(_pDefaultScreen);
 
-    if(lastCheck != NULL) {
-
-    }*/
     //////함수 끝
 
 
@@ -197,7 +256,7 @@ bool checkCenter() {
 
     destroyScreen(_pDefaultScreen);
 
-    return false;
+    return true;
 }
 
 Line_t* _captureLine(Screen_t* pScreen) {

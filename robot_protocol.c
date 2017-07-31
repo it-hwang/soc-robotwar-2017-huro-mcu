@@ -8,6 +8,8 @@
 #define _UART_BITS			8
 #define _UART_STOPS			1
 
+unsigned char* _readBuffer;
+
 typedef struct _BIOLOID_PACKET {
 	unsigned char startCode0;	// start code 0			(1byte)
 	unsigned char startCode1;	// start code 1			(1byte)
@@ -60,9 +62,11 @@ void Send_Command(unsigned char Ldata)
 
 void waitMotion(void)
 {
-	unsigned char Command_Buffer[6] = {0,};
+	_readBuffer = malloc(6 * sizeof(unsigned char));
+	
+	uart1_buffer_read(_readBuffer, 6);
 
-	uart1_buffer_read(Command_Buffer, 6);
+	free(_readBuffer);
 }
 
 #define ERROR	0
