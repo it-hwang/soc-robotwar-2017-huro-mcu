@@ -43,7 +43,7 @@ bool checkCenter() {
             Send_Command(0x46);
             waitMotion();
             printf("오른쪽\n");
-        }
+        
         else {   
             //왼쪽으로 머리를 돌린다.
             isRight = false;
@@ -61,15 +61,11 @@ bool checkCenter() {
         
     } while(pLine == NULL);
 
-   if(isRight) {
-       printf("오른쪽에서 찾음\n");
-    } else {
-       printf("오른쪽에서 찾음\n");
-    }
-
+    ///함수 시작
     int distance = CENTER - pLine->distancePoint.y;
     int isException = false;
     Line_t* pDistaceLine = NULL;
+    cnt = 0;
 
     while(abs(distance) > 5){
         if(isException) {
@@ -91,7 +87,6 @@ bool checkCenter() {
         _convertScreenToDisplay(_pDefaultScreen);
         displayScreen(_pDefaultScreen);
 
-        int cnt = 0;
         while(cnt < 5 && pDistaceLine == NULL) {
             pDistaceLine = _captureLine(_pDefaultScreen);
             cnt++;
@@ -109,32 +104,92 @@ bool checkCenter() {
         }
     }
 
-    if(isRight) {
-        double distanceTheta = pDistaceLine->theta;
-        distanceTheta += RIGHT_ZERO_DEGREE;
-        if(distanceTheta < 0){
-            int bigAngleSize = (int)(distanceTheta / (double)BIG_DIVIDE);
-            int bigAngleSizeRemainer = (int)(distanceTheta % (double)BIG_DIVIDE);
-            int smallAngleSize = (int)(bigAngleSizeRemainer / (double)SMALL_DIVIDE);
+    double distanceTheta = pDistaceLine->theta;
+
+    free(pDistaceLine);
+
+    bool isGood = false;
+
+    while(!isGood) {
+        if(isRight) {
+            distanceTheta += RIGHT_ZERO_DEGREE;
+        } else {
+            distanceTheta -= LEFT_ZERO_DEGREE;
+        }
+        
+        if(distanceTheta != 0) {
+            int bigAngleSize = (int)(abs(distanceTheta) / BIG_DIVIDE);
+            int bigAngleSizeRemainer = (int)(abs(distanceTheta) % BIG_DIVIDE);
+            int smallAngleSize = (int)(abs(bigAngleSizeRemainer) / SMALL_DIVIDE);
+
+            unsigned char bigMotion;
+            unsigned char smallModtion;
+
+            if(distanceTheta < 0) {
+                //bigMotion = 모션번호 16진수
+                //smallMotion = 모션번호
+            } else {
+                //bigMotion = 모션번호
+                //smallMotion = 모션번호
+            }
 
             int i;
             for(i = 0; i < bigAngleSize; ++i) {
                 //빅 모션 한다.
+                //Send_Command(bigMotion);
             }
 
             for(i = 0; i < smallAngleSize; ++i) {
                 //스몰 모션 한다.
+                //Send_command(smallMotion);
             }
 
+            Line_t* checkPosition = _captureLine(_pDefaultScreen);
             
+            _convertScreenToDisplay(_pDefaultScreen);
+            displayScreen(_pDefaultScreen);
 
+            cnt = 0;
+            while(checkPosition == NULL && cnt < 3) {
+                checkPosition = _captureLine(_pDefaultScreen);
+
+                _convertScreenToDisplay(_pDefaultScreen);
+                displayScreen(_pDefaultScreen);
+            }
+
+            if(checkPosition != NULL) {
+                int zeroDegree;
+                if(isRight) {
+                    zeroDegree = RIGHT_ZERO_DEGREE;
+                } else {
+                    zeroDegree = LEFT_ZERO_DEGREE;
+                }
+
+                
+                if((checkPosition->theta >= zeroDegree - 2) &&
+                    (checkPosition->theta <= zeroDegree + 2)) {
+                    isGood = true;
+                } else {
+                    distanceTheta = checkPosition->theta;
+                }
+
+                free(checkPosition);
+            } else {
+                isGood = true;
+            }
         }else {
-
+            isGood = true;
         }
-
-    }else {
-
     }
+    
+    /*//반대편을보고 확인 
+    Line_t* lastCheck = _captureLine(_pDefaultScreen);
+
+    if(lastCheck != NULL) {
+
+    }*/
+    //////함수 끝
+
 
     if(pLine != NULL) {
         free(pLine);
