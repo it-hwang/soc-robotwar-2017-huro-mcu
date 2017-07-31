@@ -29,7 +29,7 @@ bool verticalBarricadeMain(void) {
         waitMotion();
         Send_Command(0x5c);
         waitMotion();
-        
+
         objList = _captureObject(_pDefaultScreen, COLOR_YELLOW, false);
 
         distanceCnt = 0;
@@ -43,7 +43,7 @@ bool verticalBarricadeMain(void) {
                 }
             }
         }
-        printf("첫단계 크기 %d\n", distanceCnt);
+        //printf("첫단계 크기 %d\n", distanceCnt);
         if(distanceCnt < 2000 && distanceCnt > 400) {
             Send_Command(0x03);
             waitMotion();
@@ -70,7 +70,7 @@ bool verticalBarricadeMain(void) {
                 }
             }
         }
-        printf("두번째 크기 %d\n", distanceCnt);
+        //printf("두번째 크기 %d\n", distanceCnt);
         if(objList != NULL) {
             free(objList->list);
             free(objList);
@@ -80,30 +80,15 @@ bool verticalBarricadeMain(void) {
 
     Send_Command(0x03);
     waitMotion();
-    /*readFpgaVideoData(_pDefaultScreen);
-    Matrix8_t* pYellowMatrix = createColorMatrix(_pDefaultScreen, 
-                                    pColorTables[COLOR_YELLOW]);
 
-    //applyDilationToMatrix8(pBlackMatrix, 1);
-    //applyErosionToMatrix8(pBlackMatrix, 2);
-    //applyDilationToMatrix8(pBlackMatrix, 1);
-
-    ObjectList_t* objList = detectObjectsLocation(pYellowMatrix);
-*/
-    if (objList){
+    if (objList != NULL){
         free(objList->list);
         free(objList);
     }
 
-    //destroyMatrix8(pYellowMatrix);
-    //sendDataToRobot(command);
-    //printf("send command to robot: %d\n", command);
-    //waitDataFromRobot();
-
-    //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
     destroyScreen(_pDefaultScreen);
 
-    return false;
+    return true;
 }
 
 ObjectList_t* _captureObject(Screen_t* pScreen, Color_t color, bool flg) {
@@ -152,10 +137,8 @@ ObjectList_t* _captureObject(Screen_t* pScreen, Color_t color, bool flg) {
                 uint16_t* pOutput = (uint16_t*)&pixels[index];
                 *pOutput = 0x1F;
 
-                //printf("%d cnt %d ( %d, %d )\n", i, object.cnt, (int)object.centerX, (int)object.centerY);
-
                 if(object.cnt > 500) {
-                    printf("%d cnt %d ( %d, %d )\n", i, object.cnt, (int)object.centerX, (int)object.centerY);
+                    //printf("%d cnt %d ( %d, %d )\n", i, object.cnt, (int)object.centerX, (int)object.centerY);
                 }
             }
         }
