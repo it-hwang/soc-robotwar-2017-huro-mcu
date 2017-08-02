@@ -16,7 +16,6 @@
 
 ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg);
 
-
 Screen_t* _pDefaultScreen;
 
 bool redBridgeMain(void) {
@@ -76,7 +75,7 @@ ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg) {
        
         destroyMatrix8(pColorMatrix);
 
-        if (objList) {
+        if (objList != NULL) {
             int i;
             for(i = 0; i < objList->size; ++i) {
                 int x;

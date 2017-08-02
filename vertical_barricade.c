@@ -114,7 +114,7 @@ ObjectList_t* _captureObject(Screen_t* pScreen, Color_t color, bool flg) {
        
         destroyMatrix8(pColorMatrix);
 
-        if (objList) {
+        if (objList != NULL) {
             int i;
             for(i = 0; i < objList->size; ++i) {
                 int x;
