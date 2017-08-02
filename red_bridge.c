@@ -7,6 +7,12 @@
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "red_bridge.h"
+#include "check_center.h"
+
+#define MIN_CNT 400
+#define RED_BRIDGE_CNT 1500
+#define RED_BRIDGE_Y 50
+#define LIMIT_TRY 10
 
 Screen_t* _pDefaultScreen;
 
@@ -14,15 +20,44 @@ bool redBridgeMain(void) {
 
     _pDefaultScreen = createDefaultScreen();
 
-    ObjectList_t* objList = _captureObject(_pDefaultScreen, COLOR_RED, false);
+    int maxRedObjectCnt = 0;
+    int maxRedObjectY = 0;
+    int falseConuter = 0;
+
+    while(true) {
+        ObjectList_t* objList = _captureObject(_pDefaultScreen, COLOR_RED, false);
+
+        if(objList != NULL) {
+            int i;
+            for(i = 0; i < objList->size; ++i) {
+                if(maxRedObjectCnt < objList->list[i].cnt) {
+                    maxRedObjectCnt = objList->list[i].cnt;
+                    maxRedObjectY = objList->list[i].y;
+                }
+            }
+            free(objList->list);
+            free(objList);
+        }
+
+        if(maxRedObjectCnt < MIN_CNT || objList == NULL) {
+            falseCounter++;
+            if(falseCounter > LIMIT_TRY)
+                return false;
+        }else if(maxRedObjectCnt < RED_BRIDGE_CNT && maxRedObjectY < RED_BRIDGE_Y) {
+            falseCounter = 0;
+            //Send_Command()//앞으로 간다.
+            checkCenter();
+        }else {
+            //Send_Command(); 장애물 통과 모션
+            checkCenter();
+            return true;
+        }
+    }
 }
 
 ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg) {
         
-        readFpgaVideoData(pScreen);     
-
-        //_convertScreenToDisplay(pScreen);
-        //displayScreen(pScreen);
+        readFpgaVideoData(pScreen);
 
         Matrix8_t* pColorMatrix = createColorMatrix(pScreen, 
                                     pColorTables[color]);
