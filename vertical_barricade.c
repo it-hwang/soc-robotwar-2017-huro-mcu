@@ -8,6 +8,10 @@
 #include "image_filter.h"
 #include "vertical_barricade.h"
 
+#define MIN_CNT 400
+#define BARRICADE_CNT 2000
+#define PROGRESS_CNT 1000
+
 ObjectList_t* _captureObject(Screen_t* pScreen, Color_t color, bool flg);
 
 Screen_t* _pDefaultScreen;
@@ -36,7 +40,7 @@ bool verticalBarricadeMain(void) {
         if(objList != NULL){
             int i;
             for(i = 0; i < objList->size; ++i) {
-                if(objList->list[i].cnt >= 400) {
+                if(objList->list[i].cnt >= MIN_CNT) {
                     if(distanceCnt < objList->list[i].cnt){
                         distanceCnt = objList->list[i].cnt;
                     }
@@ -44,10 +48,10 @@ bool verticalBarricadeMain(void) {
             }
         }
         //printf("첫단계 크기 %d\n", distanceCnt);
-        if(distanceCnt < 2000 && distanceCnt > 400) {
+        if(distanceCnt < BARRICADE_CNT && distanceCnt > MIN_CNT) {
             Send_Command(0x03);
             waitMotion();
-        }else if(distanceCnt >= 2000) {
+        }else if(distanceCnt >= BARRICADE_CNT) {
             isBarricade = true;
         }
 
@@ -76,7 +80,7 @@ bool verticalBarricadeMain(void) {
             free(objList);
         }
 
-    }while(distanceCnt > 1000);
+    }while(distanceCnt > PROGRESS_CNT);
 
     Send_Command(0x03);
     waitMotion();
@@ -110,8 +114,6 @@ ObjectList_t* _captureObject(Screen_t* pScreen, Color_t color, bool flg) {
        
         destroyMatrix8(pColorMatrix);
 
-        int x;
-        int y;
         if (objList) {
             int i;
             for(i = 0; i < objList->size; ++i) {
@@ -143,7 +145,6 @@ ObjectList_t* _captureObject(Screen_t* pScreen, Color_t color, bool flg) {
             }
         }
 
-        _convertScreenToDisplay(pScreen);
         displayScreen(pScreen);
         return objList;
 }
