@@ -15,6 +15,8 @@
 #include "image_filter.h"
 #include "line_detection.h"
 #include "check_center.h"
+#include "vertical_barricade.h"
+#include "red_bridge.h"
 
 ObstacleId_t* _obstacleSequence;
 
@@ -98,7 +100,8 @@ int runProcessor(void) {
         waitMotion();
         Send_Command(0x5c);
         waitMotion();*/
-        verticalBarricadeMain();
+        //verticalBarricadeMain();
+        redBridgeMain();
         //checkCenter();
         /*Send_Command(0xfe);
         waitMotion();
