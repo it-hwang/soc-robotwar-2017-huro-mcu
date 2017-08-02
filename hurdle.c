@@ -6,61 +6,63 @@
 #include "object_detection.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
-#include "red_bridge.h"
 #include "check_center.h"
+#include "hurdle.h"
 
 #define MIN_CNT 400
-#define RED_BRIDGE_CNT 1500
-#define RED_BRIDGE_Y 50
+#define HURDLE_CNT 1500
+#define DIFFRENCE_X 80
 #define LIMIT_TRY 10
 
-ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg);
-
+ObjectList_t* _captureBlueObject(Screen_t* pScreen, Color_t color, bool flg);
 
 Screen_t* _pDefaultScreen;
 
-bool redBridgeMain(void) {
+bool hurdleMain(void) {
 
     _pDefaultScreen = createDefaultScreen();
 
-    int maxRedObjectCnt = 0;
-    int maxRedObjectY = 0;
+    int maxBlueObjectCnt = 0;
+    int gapObjectX = 0;
     int falseCounter = 0;
 
     while(true) {
-        ObjectList_t* objList = _captureRedObject(_pDefaultScreen, COLOR_RED, false);
-
+        ObjectList_t* objList = _captureBlueObject(_pDefaultScreen, COLOR_BLUE, false);
+        
         if(objList != NULL) {
             int i;
             for(i = 0; i < objList->size; ++i) {
-                if(maxRedObjectCnt < objList->list[i].cnt) {
-                    maxRedObjectCnt = objList->list[i].cnt;
-                    maxRedObjectY = (int)objList->list[i].centerY;
+                if(maxBlueObjectCnt < objList->list[i].cnt) {
+                    maxBlueObjectCnt = objList->list[i].cnt;
+                    gapObjectX = (int)(objList->list[i].maxX - objList->list[i].minX);
                 }
             }
             free(objList->list);
             free(objList);
         }
 
-        if(maxRedObjectCnt < MIN_CNT || objList == NULL) {
+        if(objList == NULL || maxBlueObjectCnt < MIN_CNT) {
             falseCounter++;
-            if(falseCounter > LIMIT_TRY)
+            if(falseCounter > LIMIT_TRY) {
                 destroyScreen(_pDefaultScreen);
                 return false;
-        }else if(maxRedObjectCnt < RED_BRIDGE_CNT && maxRedObjectY < RED_BRIDGE_Y) {
+            }
+        }else if(maxBlueObjectCnt > HURDLE_CNT) {
             falseCounter = 0;
-            //Send_Command()//앞으로 간다.
-            checkCenter();
-        }else {
-            //Send_Command(); 장애물 통과 모션
-            checkCenter();
-            destroyScreen(_pDefaultScreen);
-            return true;
+            if(gapObjectX > DIFFRENCE_X) {
+                //Send_Command(); //장애물 통과 모션
+                checkCenter();
+                destroyScreen(_pDefaultScreen);
+                return true;
+            }else {
+                //Send_Command(); //앞으로 이동
+                checkCenter();
+            }
         }
     }
 }
 
-ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg) {
+ObjectList_t* _captureBlueObject(Screen_t* pScreen, Color_t color, bool flg) {
         
         readFpgaVideoData(pScreen);
 
