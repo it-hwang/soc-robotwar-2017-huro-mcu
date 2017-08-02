@@ -4,7 +4,6 @@
 #include <math.h>
 
 #include "check_center.h"
-#include "line_detection.h"
 #include "object_detection.h"
 #include "graphic_interface.h"
 #include "robot_protocol.h"
@@ -15,8 +14,6 @@
 #define LEFT_ZERO_DEGREE -5
 #define BIG_DIVIDE 15
 #define SMALL_DIVIDE 5
-
-Line_t* _captureLine(Screen_t* pScreen);
 
 Screen_t* _pDefaultScreen;
 
@@ -53,7 +50,7 @@ bool checkCenter() {
             waitMotion();
         }
 
-        pLine = _captureLine(_pDefaultScreen);
+        pLine = captureLine(_pDefaultScreen);
 
         cnt++;
 
@@ -96,13 +93,13 @@ bool checkCenter() {
             free(pDistaceLine);
         }
 
-        pDistaceLine = _captureLine(_pDefaultScreen);//free 필요
+        pDistaceLine = captureLine(_pDefaultScreen);//free 필요
         //printf("찍었다.\n");
         
         displayScreen(_pDefaultScreen);
         cnt = 0;
         while(cnt < 5 && pDistaceLine == NULL) {
-            pDistaceLine = _captureLine(_pDefaultScreen);
+            pDistaceLine = captureLine(_pDefaultScreen);
             cnt++;
             //printf("다시찍는중\n");
            
@@ -134,13 +131,13 @@ bool checkCenter() {
     }
 
     if(distance <= 5) {
-        pDistaceLine = _captureLine(_pDefaultScreen);
+        pDistaceLine = captureLine(_pDefaultScreen);
         
         displayScreen(_pDefaultScreen);
 
         cnt = 0;
         while(cnt < 5 && pDistaceLine == NULL) {
-            pDistaceLine = _captureLine(_pDefaultScreen);
+            pDistaceLine = captureLine(_pDefaultScreen);
             cnt++;
             
             displayScreen(_pDefaultScreen);
@@ -211,14 +208,14 @@ bool checkCenter() {
             waitMotion();
         }
 
-        Line_t* checkPosition = _captureLine(_pDefaultScreen);
+        Line_t* checkPosition = captureLine(_pDefaultScreen);
         
         
         displayScreen(_pDefaultScreen);
 
         cnt = 0;
         while(checkPosition == NULL && cnt < 3) {
-            checkPosition = _captureLine(_pDefaultScreen);
+            checkPosition = captureLine(_pDefaultScreen);
 
             
             displayScreen(_pDefaultScreen);
@@ -258,7 +255,7 @@ bool checkCenter() {
     return true;
 }
 
-Line_t* _captureLine(Screen_t* pScreen) {
+Line_t* captureLine(Screen_t* pScreen) {
         
         readFpgaVideoData(pScreen);     
 
@@ -309,7 +306,7 @@ bool checkAngle(void) {
             waitMotion();
         }
 
-        pLine = _captureLine(_pDefaultScreen);
+        pLine = captureLine(_pDefaultScreen);
 
         cnt++;
 
@@ -379,14 +376,14 @@ bool checkAngle(void) {
             waitMotion();
         }
 
-        Line_t* checkPosition = _captureLine(_pDefaultScreen);
+        Line_t* checkPosition = captureLine(_pDefaultScreen);
         
         
         displayScreen(_pDefaultScreen);
 
         cnt = 0;
         while(checkPosition == NULL && cnt < 3) {
-            checkPosition = _captureLine(_pDefaultScreen);
+            checkPosition = captureLine(_pDefaultScreen);
 
             
             displayScreen(_pDefaultScreen);
