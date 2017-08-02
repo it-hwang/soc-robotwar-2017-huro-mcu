@@ -7,6 +7,8 @@
 #include "line_detection.h"
 #include "object_detection.h"
 #include "graphic_interface.h"
+#include "robot_protocol.h"
+#include "image_filter.h"
 
 #define CENTER 80
 #define RIGHT_ZERO_DEGREE 2
@@ -315,6 +317,10 @@ bool checkAngle(void) {
         
     } while(pLine == NULL);
 
+
+    double distanceTheta = pLine->theta;
+    //printf("distanceTheta %f\n", distanceTheta);
+    
     bool isGood;
 
     int zeroDegree;

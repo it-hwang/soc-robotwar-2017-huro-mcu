@@ -14,6 +14,9 @@
 #define RED_BRIDGE_Y 50
 #define LIMIT_TRY 10
 
+ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg);
+
+
 Screen_t* _pDefaultScreen;
 
 bool redBridgeMain(void) {
@@ -22,17 +25,17 @@ bool redBridgeMain(void) {
 
     int maxRedObjectCnt = 0;
     int maxRedObjectY = 0;
-    int falseConuter = 0;
+    int falseCounter = 0;
 
     while(true) {
-        ObjectList_t* objList = _captureObject(_pDefaultScreen, COLOR_RED, false);
+        ObjectList_t* objList = _captureRedObject(_pDefaultScreen, COLOR_RED, false);
 
         if(objList != NULL) {
             int i;
             for(i = 0; i < objList->size; ++i) {
                 if(maxRedObjectCnt < objList->list[i].cnt) {
                     maxRedObjectCnt = objList->list[i].cnt;
-                    maxRedObjectY = objList->list[i].y;
+                    maxRedObjectY = (int)objList->list[i].centerY;
                 }
             }
             free(objList->list);
@@ -71,8 +74,6 @@ ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg) {
        
         destroyMatrix8(pColorMatrix);
 
-        int x;
-        int y;
         if (objList) {
             int i;
             for(i = 0; i < objList->size; ++i) {

@@ -113,8 +113,8 @@ Matrix32_t* createSubMatrix32(Matrix32_t* pMatrix32, uint16_t minX, uint16_t min
     uint16_t height = maxY-minY+1;
     Matrix32_t* pMatrix = createMatrix32(width, height);
     
-    uint16_t* pSrcElements = pMatrix32->elements + minX;
-    uint16_t* pDstElements = pMatrix->elements;
+    uint16_t* pSrcElements = (uint16_t*)(pMatrix32->elements + minX);
+    uint16_t* pDstElements = (uint16_t*)pMatrix->elements;
     size_t size_w = width * sizeof(uint32_t);
     int i;
     for(i=minY; i<=maxY; ++i) {
