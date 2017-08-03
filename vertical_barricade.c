@@ -29,7 +29,7 @@ bool verticalBarricadeMain(void) {
     do{
         Send_Command(0xff);
         waitMotion();
-        Send_Command(0x80);
+        Send_Command(0x35);
         waitMotion();
         Send_Command(0xff);
         waitMotion();
@@ -54,10 +54,6 @@ bool verticalBarricadeMain(void) {
             Send_Command(MOTION_MOVE_FORWARD);
             waitMotion();
             checkCenter();
-            Send_Command(0xfe);
-            waitMotion();
-            Send_Command(0x80);
-            waitMotion();
         }else if(distanceCnt >= BARRICADE_CNT) {
             isBarricade = true;
         }
@@ -70,6 +66,15 @@ bool verticalBarricadeMain(void) {
     while(!isBarricade); 
     
     do{
+        Send_Command(0xff);
+        waitMotion();
+        Send_Command(0x35);
+        waitMotion();
+        Send_Command(0xff);
+        waitMotion();
+        Send_Command(0x5c);
+        waitMotion();
+        
         objList = _captureObject(_pVerticalBarricadeScreen, COLOR_YELLOW, true);
 
         distanceCnt = 0;
@@ -93,10 +98,7 @@ bool verticalBarricadeMain(void) {
     Send_Command(MOTION_MOVE_FORWARD);
     waitMotion();
     checkCenter();
-    Send_Command(0xfe);
-    waitMotion();
-    Send_Command(0x80);
-    waitMotion();
+   
 
     destroyScreen(_pVerticalBarricadeScreen);
 

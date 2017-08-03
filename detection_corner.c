@@ -12,17 +12,17 @@
 #define FIT_DISTANCE 80
 #define LIMIT_TRY 10
 
-Screen_t* _pDefaultScreen;
+Screen_t* _pCornerScreen;
 
 bool detectionCornerMain(void) {
 
-    _pDefaultScreen = createDefaultScreen();
+    _pCornerScreen = createDefaultScreen();
 
     int distanceLine = 0;
     int falseCounter = 0;
     
     while(true) {
-        Line_t* pLine = captureLine(_pDefaultScreen);
+        Line_t* pLine = captureLine(_pCornerScreen);
 
         if(pLine != NULL) {
             falseCounter = 0;
@@ -30,20 +30,22 @@ bool detectionCornerMain(void) {
             free(pLine);
 
             if(distanceLine > FIT_DISTANCE) {
-                //Send_Command(); //앞으로 간다.
-                //waitMotion();
+                Send_Command(MOTION_MOVE_FORWARD); 
+                waitMotion();
                 checkCenter();
             }else {
-                //Send_Command(); //90도 회전
-                //waitMotion();
+                Send_Command(MOTION_TURN_CORNER); //90도 회전
+                waitMotion();
+                Send_Command(MOTION_TURN_CORNER); //90도 회전
+                waitMotion();
                 checkCenter();
-                destroyScreen(_pDefaultScreen);
+                destroyScreen(_pCornerScreen);
                 return true;
             }
         }else {
             falseCounter++;
-            if(falsesCounter > LIMIT_TRY) {
-                destroyScreen(_pDefaultScreen);
+            if(falseCounter > LIMIT_TRY) {
+                destroyScreen(_pCornerScreen);
                 return false;
             }
         }

@@ -11,6 +11,8 @@
 #define MOTION_MOVE_DOWN 0x48
 #define MOTION_TURN_LEFT_BIG 0x53
 #define MOTION_TURN_RIGHT_BIG 0x54
+#define MOTION_MOVE_HUDDLE 0x27
+#define MOTION_STAND_HUDDLE 0x2a
 
 int openRobotPort(void);
 void closeRobotPort(void);

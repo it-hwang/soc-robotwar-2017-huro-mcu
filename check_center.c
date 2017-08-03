@@ -253,6 +253,11 @@ bool checkCenter() {
 
     destroyScreen(_pDefaultScreen);
 
+    Send_Command(0xfe);
+    waitMotion();
+    Send_Command(0x80);
+    waitMotion();
+    
     return true;
 }
 
@@ -421,5 +426,10 @@ bool checkAngle(void) {
 
     destroyScreen(_pDefaultScreen);
 
+    Send_Command(0xfe);
+    waitMotion();
+    Send_Command(0x80);
+    waitMotion();
+    
     return true;
 }
