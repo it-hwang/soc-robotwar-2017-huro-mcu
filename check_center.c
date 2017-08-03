@@ -14,6 +14,7 @@
 #define LEFT_ZERO_DEGREE -5
 #define BIG_DIVIDE 15
 #define SMALL_DIVIDE 5
+#define ANGLE_RANGE 6
 
 Screen_t* _pDefaultScreen;
 
@@ -71,20 +72,20 @@ bool checkCenter() {
             //반대방향으로 움직인다.
             //printf("반대방향으로 움직인다.\n");
             if(isRight) {
-                Send_Command(0x0b);
+                Send_Command(MOTION_MOVE_LEFT);
                 waitMotion();
             }else {
-                Send_Command(0x07);
+                Send_Command(MOTION_MOVE_RIGHT);
                 waitMotion();
             }
         }else {
             //같은방향으로 움직인다.
             //printf("같은방향으로 움직인다.\n");
             if(isRight) {
-                Send_Command(0x07);
+                Send_Command(MOTION_MOVE_RIGHT);
                 waitMotion();
             }else {
-                Send_Command(0x0b);
+                Send_Command(MOTION_MOVE_LEFT);
                 waitMotion();
             }
         }    
@@ -110,18 +111,18 @@ bool checkCenter() {
             //반대방향으로 3걸음 움직인다.
             //printf("반대방향으로 3걸음 움직인다.\n");
             if(isRight) {
-                Send_Command(0x0b);
+                Send_Command(MOTION_MOVE_LEFT);
                 waitMotion();
-                Send_Command(0x0b);
+                Send_Command(MOTION_MOVE_LEFT);
                 waitMotion();
-                Send_Command(0x0b);
+                Send_Command(MOTION_MOVE_LEFT);
                 waitMotion();
             }else {
-                Send_Command(0x07);
+                Send_Command(MOTION_MOVE_RIGHT);
                 waitMotion();
-                Send_Command(0x07);
+                Send_Command(MOTION_MOVE_RIGHT);
                 waitMotion();
-                Send_Command(0x07);
+                Send_Command(MOTION_MOVE_RIGHT);
                 waitMotion();
             }
             isException = true;
@@ -161,8 +162,8 @@ bool checkCenter() {
     }
 
     
-    if((distanceTheta >= zeroDegree - 4) &&
-        (distanceTheta <= zeroDegree + 4)) {
+    if((distanceTheta >= zeroDegree - ANGLE_RANGE) &&
+        (distanceTheta <= zeroDegree + ANGLE_RANGE)) {
         isGood = true;
     } else {
         isGood = false;
@@ -183,11 +184,11 @@ bool checkCenter() {
         unsigned char smallMotion;
 
         if(distanceTheta < 0) {
-            bigMotion = 0x10;
-            smallMotion = 0x13;
+            bigMotion = MOTION_TURN_LEFT_BIG;
+            smallMotion = MOTION_TURN_LEFT;
         } else {
-            bigMotion = 0x0f;
-            smallMotion = 0x12;
+            bigMotion = MOTION_TURN_RIGHT_BIG;
+            smallMotion = MOTION_TURN_RIGHT;
         }
         printf("theta %f\n", distanceTheta);
         printf("bigAngleSize %d\n", bigAngleSize);
@@ -229,8 +230,8 @@ bool checkCenter() {
             }
 
             
-            if((checkPosition->theta >= zeroDegree - 4) &&
-                (checkPosition->theta <= zeroDegree + 4)) {
+            if((checkPosition->theta >= zeroDegree - ANGLE_RANGE) &&
+                (checkPosition->theta <= zeroDegree + ANGLE_RANGE)) {
                 isGood = true;
             } else {
                 distanceTheta = checkPosition->theta;
@@ -252,6 +253,11 @@ bool checkCenter() {
 
     destroyScreen(_pDefaultScreen);
 
+    Send_Command(0xfe);
+    waitMotion();
+    Send_Command(0x80);
+    waitMotion();
+    
     return true;
 }
 
@@ -328,8 +334,8 @@ bool checkAngle(void) {
     }
 
     
-    if((distanceTheta >= zeroDegree - 4) &&
-        (distanceTheta <= zeroDegree + 4)) {
+    if((distanceTheta >= zeroDegree - ANGLE_RANGE) &&
+        (distanceTheta <= zeroDegree + ANGLE_RANGE)) {
         isGood = true;
     } else {
         isGood = false;
@@ -350,11 +356,11 @@ bool checkAngle(void) {
         unsigned char smallMotion;
 
         if(distanceTheta < 0) {
-            bigMotion = 0x10;
-            smallMotion = 0x13;
+            bigMotion = MOTION_TURN_LEFT_BIG;
+            smallMotion = MOTION_TURN_LEFT;
         } else {
-            bigMotion = 0x0f;
-            smallMotion = 0x12;
+            bigMotion = MOTION_TURN_RIGHT_BIG;
+            smallMotion = MOTION_TURN_RIGHT;
         }
         /*printf("theta %f\n", distanceTheta);
         printf("bigAngleSize %d\n", bigAngleSize);
@@ -397,8 +403,8 @@ bool checkAngle(void) {
             }
 
             
-            if((checkPosition->theta >= zeroDegree - 4) &&
-                (checkPosition->theta <= zeroDegree + 4)) {
+            if((checkPosition->theta >= zeroDegree - ANGLE_RANGE) &&
+                (checkPosition->theta <= zeroDegree + ANGLE_RANGE)) {
                 isGood = true;
             } else {
                 distanceTheta = checkPosition->theta;
@@ -420,5 +426,10 @@ bool checkAngle(void) {
 
     destroyScreen(_pDefaultScreen);
 
+    Send_Command(0xfe);
+    waitMotion();
+    Send_Command(0x80);
+    waitMotion();
+    
     return true;
 }

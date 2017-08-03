@@ -7,35 +7,37 @@
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "vertical_barricade.h"
+#include "check_center.h"
 
-#define MIN_CNT 400
+#define MIN_CNT 300
 #define BARRICADE_CNT 2000
 #define PROGRESS_CNT 1000
 
 ObjectList_t* _captureObject(Screen_t* pScreen, Color_t color, bool flg);
 
-Screen_t* _pDefaultScreen;
+Screen_t* _pVerticalBarricadeScreen;
 
 bool verticalBarricadeMain(void) {
     
-    _pDefaultScreen = createDefaultScreen();
+    _pVerticalBarricadeScreen = createDefaultScreen();
     
     ObjectList_t* objList;
 
     bool isBarricade = false;
     int distanceCnt = 0;
+
     do{
         Send_Command(0xff);
         waitMotion();
-        Send_Command(0x80);
+        Send_Command(0x35);
         waitMotion();
         Send_Command(0xff);
         waitMotion();
         Send_Command(0x5c);
         waitMotion();
 
-        objList = _captureObject(_pDefaultScreen, COLOR_YELLOW, false);
-
+        objList = _captureObject(_pVerticalBarricadeScreen, COLOR_YELLOW, true);
+        
         distanceCnt = 0;
         if(objList != NULL){
             int i;
@@ -49,8 +51,9 @@ bool verticalBarricadeMain(void) {
         }
         //printf("첫단계 크기 %d\n", distanceCnt);
         if(distanceCnt < BARRICADE_CNT && distanceCnt > MIN_CNT) {
-            Send_Command(0x03);
+            Send_Command(MOTION_MOVE_FORWARD);
             waitMotion();
+            checkCenter();
         }else if(distanceCnt >= BARRICADE_CNT) {
             isBarricade = true;
         }
@@ -63,7 +66,16 @@ bool verticalBarricadeMain(void) {
     while(!isBarricade); 
     
     do{
-        objList = _captureObject(_pDefaultScreen, COLOR_YELLOW, false);
+        Send_Command(0xff);
+        waitMotion();
+        Send_Command(0x35);
+        waitMotion();
+        Send_Command(0xff);
+        waitMotion();
+        Send_Command(0x5c);
+        waitMotion();
+        
+        objList = _captureObject(_pVerticalBarricadeScreen, COLOR_YELLOW, true);
 
         distanceCnt = 0;
         if(objList != NULL){
@@ -82,15 +94,13 @@ bool verticalBarricadeMain(void) {
 
     }while(distanceCnt > PROGRESS_CNT);
 
-    Send_Command(0x03);
+    sleep(1);
+    Send_Command(MOTION_MOVE_FORWARD);
     waitMotion();
+    checkCenter();
+   
 
-    if (objList != NULL){
-        free(objList->list);
-        free(objList);
-    }
-
-    destroyScreen(_pDefaultScreen);
+    destroyScreen(_pVerticalBarricadeScreen);
 
     return true;
 }

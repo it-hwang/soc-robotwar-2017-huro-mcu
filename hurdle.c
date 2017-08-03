@@ -16,18 +16,18 @@
 
 ObjectList_t* _captureBlueObject(Screen_t* pScreen, Color_t color, bool flg);
 
-Screen_t* _pDefaultScreen;
+Screen_t* _pHuddleScreen;
 
 bool hurdleMain(void) {
 
-    _pDefaultScreen = createDefaultScreen();
+    _pHuddleScreen = createDefaultScreen();
 
     int maxBlueObjectCnt = 0;
     int gapObjectX = 0;
     int falseCounter = 0;
 
     while(true) {
-        ObjectList_t* objList = _captureBlueObject(_pDefaultScreen, COLOR_BLUE, false);
+        ObjectList_t* objList = _captureBlueObject(_pHuddleScreen, COLOR_BLUE, false);
         
         if(objList != NULL) {
             int i;
@@ -44,21 +44,52 @@ bool hurdleMain(void) {
         if(objList == NULL || maxBlueObjectCnt < MIN_CNT) {
             falseCounter++;
             if(falseCounter > LIMIT_TRY) {
-                destroyScreen(_pDefaultScreen);
+                destroyScreen(_pHuddleScreen);
                 return false;
             }
         }else if(maxBlueObjectCnt > HURDLE_CNT) {
             if(gapObjectX > DIFFRENCE_X) {
-                //Send_Command(); //장애물 통과 모션
-                //waitMotion();
+                Send_Command(0xfe);
+                waitMotion();
+                Send_Command(0x39);
+                waitMotion();
+                Send_Command(0xff);
+                waitMotion();
+                Send_Command(0xd2);
+                waitMotion();
+                Send_Command(MOTION_MOVE_HUDDLE); //장애물 통과 모션
+                waitMotion();
+                Send_Command(0xfe);
+                waitMotion();
+                Send_Command(0x80);
+                waitMotion();
+                Send_Command(0xff);
+                waitMotion();
+                Send_Command(0x5c);
+                waitMotion();
+                Send_Command(MOTION_STAND_HUDDLE);
+                waitMotion();
                 checkCenter();
-                destroyScreen(_pDefaultScreen);
+                Send_Command(0xfe);
+                waitMotion();
+                Send_Command(0x80);
+                waitMotion();
+                destroyScreen(_pHuddleScreen);
                 return true;
             }else {
+<<<<<<< HEAD
                 falseCounter = 0;
                 //Send_Command(); //앞으로 이동
                 //waitMotion();
+=======
+                Send_Command(MOTION_MOVE_FORWARD); //앞으로 이동
+                waitMotion();
+>>>>>>> feature-detection-corner
                 checkCenter();
+                Send_Command(0xfe);
+                waitMotion();
+                Send_Command(0x80);
+                waitMotion();
             }
         }
     }

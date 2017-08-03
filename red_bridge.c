@@ -10,24 +10,24 @@
 #include "check_center.h"
 
 #define MIN_CNT 400
-#define RED_BRIDGE_CNT 1500
-#define RED_BRIDGE_Y 50
+#define RED_BRIDGE_CNT 500
+#define RED_BRIDGE_Y 80
 #define LIMIT_TRY 10
 
 ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg);
 
-Screen_t* _pDefaultScreen;
+Screen_t* _pRedBridgeScreen;
 
 bool redBridgeMain(void) {
 
-    _pDefaultScreen = createDefaultScreen();
+    _pRedBridgeScreen = createDefaultScreen();
 
     int maxRedObjectCnt = 0;
     int maxRedObjectY = 0;
     int falseCounter = 0;
 
     while(true) {
-        ObjectList_t* objList = _captureRedObject(_pDefaultScreen, COLOR_RED, false);
+        ObjectList_t* objList = _captureRedObject(_pRedBridgeScreen, COLOR_RED, true);
 
         if(objList != NULL) {
             int i;
@@ -44,16 +44,31 @@ bool redBridgeMain(void) {
         if(maxRedObjectCnt < MIN_CNT || objList == NULL) {
             falseCounter++;
             if(falseCounter > LIMIT_TRY)
-                destroyScreen(_pDefaultScreen);
+                destroyScreen(_pRedBridgeScreen);
                 return false;
-        }else if(maxRedObjectCnt < RED_BRIDGE_CNT && maxRedObjectY < RED_BRIDGE_Y) {
+        }else if(maxRedObjectCnt < RED_BRIDGE_CNT || maxRedObjectY < RED_BRIDGE_Y) {
+        //}else if(maxRedObjectY < RED_BRIDGE_Y) {
             falseCounter = 0;
-            //Send_Command()//앞으로 간다.
+            Send_Command(MOTION_MOVE_FORWARD);
+            waitMotion();
             checkCenter();
+            Send_Command(0xfe);
+            waitMotion();
+            Send_Command(0x80);
+            waitMotion();
         }else {
-            //Send_Command(); 장애물 통과 모션
+            //Send_Command(0xff);
+            //waitMotion();
+            //Send_Command(0x65);
+            //waitMotion();
+            Send_Command(MOTION_MOVE_DOWN);
+            waitMotion();
             checkCenter();
-            destroyScreen(_pDefaultScreen);
+            Send_Command(0xfe);
+            waitMotion();
+            Send_Command(0x80);
+            waitMotion();
+            destroyScreen(_pRedBridgeScreen);
             return true;
         }
     }
