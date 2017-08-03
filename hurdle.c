@@ -48,7 +48,6 @@ bool hurdleMain(void) {
                 return false;
             }
         }else if(maxBlueObjectCnt > HURDLE_CNT) {
-            falseCounter = 0;
             if(gapObjectX > DIFFRENCE_X) {
                 //Send_Command(); //장애물 통과 모션
                 //waitMotion();
@@ -56,6 +55,7 @@ bool hurdleMain(void) {
                 destroyScreen(_pDefaultScreen);
                 return true;
             }else {
+                falseCounter = 0;
                 //Send_Command(); //앞으로 이동
                 //waitMotion();
                 checkCenter();
