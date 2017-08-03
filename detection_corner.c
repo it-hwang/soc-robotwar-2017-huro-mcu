@@ -45,11 +45,7 @@ bool detectionCornerMain(void) {
         }else {
             falseCounter++;
             if(falseCounter > LIMIT_TRY) {
-<<<<<<< HEAD
-                destroyScreen(_pDefaultScreen);
-=======
                 destroyScreen(_pCornerScreen);
->>>>>>> feature-detection-corner
                 return false;
             }
         }

@@ -77,14 +77,8 @@ bool hurdleMain(void) {
                 destroyScreen(_pHuddleScreen);
                 return true;
             }else {
-<<<<<<< HEAD
-                falseCounter = 0;
-                //Send_Command(); //앞으로 이동
-                //waitMotion();
-=======
                 Send_Command(MOTION_MOVE_FORWARD); //앞으로 이동
                 waitMotion();
->>>>>>> feature-detection-corner
                 checkCenter();
                 Send_Command(0xfe);
                 waitMotion();

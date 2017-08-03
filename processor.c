@@ -89,8 +89,8 @@ int runProcessor(void) {
     for (i = 0; i < 200; ++i) {
         //_improveSomeObstacle();
         //Send_Command(0x01, 0xfe);
-        //sleep(1);
-        /*Send_Command(0x01);
+        sleep(1);
+        Send_Command(0x02);
         waitMotion();
         Send_Command(0xfe);
         waitMotion();
@@ -99,15 +99,16 @@ int runProcessor(void) {
         Send_Command(0xff);
         waitMotion();
         Send_Command(0x5c);
-        waitMotion();*/
+        waitMotion();
+        detectionMineMain();
         //verticalBarricadeMain();
-        redBridgeMain();
+        //redBridgeMain();
         //checkCenter();
         /*Send_Command(0xfe);
         waitMotion();
         Send_Command(0x3a);
         waitMotion();
-
+        
         _pDefaultScreen = createDefaultScreen();
         readFpgaVideoData(_pDefaultScreen);
 

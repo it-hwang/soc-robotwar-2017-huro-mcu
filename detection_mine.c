@@ -12,7 +12,7 @@
 #define RANGE_CNT_MIN 20
 #define RANGE_CNT_MAX 100
 #define RANGE_DISTANCE_MIN 50
-#define RANGE_DISTANCE_MAX 110
+#define RANGE_DISTANCE_MAX 130
 #define DISTANCE_MINE 100
 #define STATUS_FRONT 0
 #define STATUS_RIGHT 1
@@ -32,6 +32,7 @@ bool detectionMineMain(void) {
     int leftY = 0;
 
     while(true) {
+        
         ObjectList_t* objList = _captureBlackObject(_pMineDefaultScreen, COLOR_BLACK, false);
         
         int nearestMineY = 0;
@@ -42,10 +43,12 @@ bool detectionMineMain(void) {
                 int centerX = (int)objList->list[i].centerX;
                 int centerY = (int)objList->list[i].centerY;
                 int cnt = (int)objList->list[i].cnt;
-                if(centerX >= RANGE_DISTANCE_MIN && centerX <= RANGE_DISTANCE_MAX) {
-                    if(cnt >= RANGE_CNT_MIN && cnt <= RANGE_CNT_MAX) {
-                        if(centerY > nearestMineY) {
-                            nearestMineY = centerY;
+                if(centerY >= DISTANCE_MINE) {    
+                    if(centerX >= RANGE_DISTANCE_MIN && centerX <= RANGE_DISTANCE_MAX) {
+                        if(cnt >= RANGE_CNT_MIN && cnt <= RANGE_CNT_MAX) {
+                            if(centerY > nearestMineY) {
+                                nearestMineY = centerY;
+                            }
                         }
                     }
                 }
@@ -57,8 +60,8 @@ bool detectionMineMain(void) {
         if(objList == NULL || nearestMineY == 0) {
             switch(status) {
                 case STATUS_FRONT :
-                    //Send_Command(); //앞으로 이동
-                    //waitMotion();
+                    Send_Command(MOTION_MOVE_FORWARD); //앞으로 이동
+                    waitMotion();
                     checkAngle();
                     if(_isHurdleExist()) {
                         checkCenter();
@@ -68,14 +71,30 @@ bool detectionMineMain(void) {
                 
                 case STATUS_RIGHT :
                     status = STATUS_FRONT;
-                    //Send_Command(); //머리 원위치
+                    //Send_Command(0xff);
                     //waitMotion();
+                    //Send_Command(0x5c);
+                    //waitMotion();
+                    Send_Command(0xfe);
+                    waitMotion();
+                    Send_Command(0x80);
+                    waitMotion();
+                    Send_Command(MOTION_MOVE_RIGHT);
+                    waitMotion();
                     break;
 
                 case STATUS_LEFT :
                     status = STATUS_FRONT;
-                    //Send_Command(); //머리 원위치
+                    //Send_Command(0xff);
                     //waitMotion();
+                    //Send_Command(0x5c);
+                    //waitMotion();
+                    Send_Command(0xfe);
+                    waitMotion();
+                    Send_Command(0x80);
+                    waitMotion();
+                    Send_Command(MOTION_MOVE_LEFT);
+                    waitMotion();
                     break;
                 default :
                     break;
@@ -84,28 +103,34 @@ bool detectionMineMain(void) {
             switch(status) {
                 case STATUS_FRONT :
                     status = STATUS_RIGHT;
-                    //Send_Command(); //오른쪽으로 머리를 돌린다.
-                    //waitMotion();
+                    Send_Command(0xfe); //오른쪽으로 머리를 돌린다.
+                    waitMotion();
+                    Send_Command(0x3b); //오른쪽으로 머리를 돌린다.
+                    waitMotion();
                     break;
                 
                 case STATUS_RIGHT :
                     status = STATUS_LEFT;
                     rightY = nearestMineY;
-                    //Send_Command(); //왼쪽으로 머리를 돌린다.
-                    //waitMotion();
+                    Send_Command(0xfe); //왼쪽으로 머리를 돌린다.
+                    waitMotion();
+                    Send_Command(0xc5); //왼쪽으로 머리를 돌린다.
+                    waitMotion();
                     break;
 
                 case STATUS_LEFT :
                     status = STATUS_FRONT;
                     leftY = nearestMineY;
-                    //Send_Command(); //머리 원위치
-                    //waitMotion();
+                    Send_Command(0xfe);
+                    waitMotion();
+                    Send_Command(0x80);
+                    waitMotion();
                     if(leftY > rightY) {
-                        //Send_Command(); //오른쪽으로 이동
-                        //waitMotion();
+                        Send_Command(MOTION_MOVE_RIGHT); //오른쪽으로 이동
+                        waitMotion();
                     }else {
-                        //Send_Command(); //왼쪽으로 이동
-                        //waitMotion();
+                        Send_Command(MOTION_MOVE_LEFT); //왼쪽으로 이동
+                        waitMotion();
                     }
                     leftY = 0;
                     rightY = 0;
