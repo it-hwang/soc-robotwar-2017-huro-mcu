@@ -42,7 +42,7 @@ bool detectionCornerMain(void) {
             }
         }else {
             falseCounter++;
-            if(falsesCounter > LIMIT_TRY) {
+            if(falseCounter > LIMIT_TRY) {
                 destroyScreen(_pDefaultScreen);
                 return false;
             }

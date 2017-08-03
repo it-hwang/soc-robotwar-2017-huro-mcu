@@ -9,7 +9,6 @@
 #include "check_center.h"
 #include "detection_mine.h"
 
-#define LIMIT_TRY 10
 #define RANGE_CNT_MIN 20
 #define RANGE_CNT_MAX 100
 #define RANGE_DISTANCE_MIN 50
@@ -20,14 +19,13 @@
 #define STATUS_LEFT 2
 
 ObjectList_t* _captureBlackObject(Screen_t* pScreen, Color_t color, bool flg);
+bool _isHurdleExist(void);
 
 Screen_t* _pMineDefaultScreen;
 
 bool detectionMineMain(void) {
 
     _pMineDefaultScreen = createDefaultScreen();
-    
-    int falseCounter = 0;
 
     int status = STATUS_FRONT;
     int rightY = 0;
@@ -58,7 +56,7 @@ bool detectionMineMain(void) {
 
         if(objList == NULL || nearestMineY == 0) {
             switch(status) {
-                STATUS_FRONT :
+                case STATUS_FRONT :
                     //Send_Command(); //앞으로 이동
                     //waitMotion();
                     checkAngle();
@@ -68,13 +66,13 @@ bool detectionMineMain(void) {
                     }
                     break;
                 
-                STATUS_RIGHT :
+                case STATUS_RIGHT :
                     status = STATUS_FRONT;
                     //Send_Command(); //머리 원위치
                     //waitMotion();
                     break;
 
-                STATUS_LEFT :
+                case STATUS_LEFT :
                     status = STATUS_FRONT;
                     //Send_Command(); //머리 원위치
                     //waitMotion();
@@ -84,20 +82,20 @@ bool detectionMineMain(void) {
             }
         } else {
             switch(status) {
-                STATUS_FRONT :
+                case STATUS_FRONT :
                     status = STATUS_RIGHT;
                     //Send_Command(); //오른쪽으로 머리를 돌린다.
                     //waitMotion();
                     break;
                 
-                STATUS_RIGHT :
+                case STATUS_RIGHT :
                     status = STATUS_LEFT;
                     rightY = nearestMineY;
                     //Send_Command(); //왼쪽으로 머리를 돌린다.
                     //waitMotion();
                     break;
 
-                STATUS_LEFT :
+                case STATUS_LEFT :
                     status = STATUS_FRONT;
                     leftY = nearestMineY;
                     //Send_Command(); //머리 원위치
