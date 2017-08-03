@@ -10,7 +10,7 @@
 #include "detection_mine.h"
 
 #define LIMIT_TRY 10
-#define RANGE_CNT_MIN 50
+#define RANGE_CNT_MIN 20
 #define RANGE_CNT_MAX 100
 #define RANGE_DISTANCE_MIN 50
 #define RANGE_DISTANCE_MAX 110
@@ -61,7 +61,9 @@ bool detectionMineMain(void) {
                 STATUS_FRONT :
                     //Send_Command(); //앞으로 이동
                     //waitMotion();
-                    if(/*허들 찾은 경우*/false) {
+                    checkAngle();
+                    if(_isHurdleExist()) {
+                        checkCenter();
                         return true;
                     }
                     break;
@@ -118,7 +120,33 @@ bool detectionMineMain(void) {
     }
 }
 
-bool _isHurdleExist()
+bool _isHurdleExist(void) {
+    Screen_t* pScreen;
+
+    pScreen = createDefaultScreen();
+
+    ObjectList_t* objList = _captureBlackObject(pScreen, COLOR_BLUE, true);
+
+    int i;
+    for(i = 0; i < objList->size; ++i) {
+        int diffrenceX = (int)objList->list[i].maxX - (int)objList->list[i].minX;
+        int distanceY = (int)objList->list[i].maxY;
+        if(diffrenceX > 70 && distanceY > 50) {
+            return true;
+        }
+    }
+    
+    if(objList != NULL) {
+        free(objList->list);
+        free(objList);
+    }
+
+    destroyScreen(pScreen);
+
+    return false;
+
+}
+
 ObjectList_t* _captureBlackObject(Screen_t* pScreen, Color_t color, bool flg) {
         
     readFpgaVideoData(pScreen);
