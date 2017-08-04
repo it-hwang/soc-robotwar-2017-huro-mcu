@@ -52,10 +52,6 @@ bool redBridgeMain(void) {
             Send_Command(MOTION_MOVE_FORWARD);
             waitMotion();
             checkCenter();
-            Send_Command(0xfe);
-            waitMotion();
-            Send_Command(0x80);
-            waitMotion();
         }else {
             //Send_Command(0xff);
             //waitMotion();
@@ -64,10 +60,6 @@ bool redBridgeMain(void) {
             Send_Command(MOTION_MOVE_DOWN);
             waitMotion();
             checkCenter();
-            Send_Command(0xfe);
-            waitMotion();
-            Send_Command(0x80);
-            waitMotion();
             destroyScreen(_pRedBridgeScreen);
             return true;
         }

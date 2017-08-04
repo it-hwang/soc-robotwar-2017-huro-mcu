@@ -49,7 +49,7 @@ bool verticalBarricadeMain(void) {
                 }
             }
         }
-        //printf("첫단계 크기 %d\n", distanceCnt);
+        printf("첫단계 크기 %d\n", distanceCnt);
         if(distanceCnt < BARRICADE_CNT && distanceCnt > MIN_CNT) {
             Send_Command(MOTION_MOVE_FORWARD);
             waitMotion();
@@ -86,7 +86,7 @@ bool verticalBarricadeMain(void) {
                 }
             }
         }
-        //printf("두번째 크기 %d\n", distanceCnt);
+        printf("두번째 크기 %d\n", distanceCnt);
         if(objList != NULL) {
             free(objList->list);
             free(objList);

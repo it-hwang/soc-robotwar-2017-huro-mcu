@@ -37,18 +37,14 @@ bool checkCenter() {
             //오른쪽으로 머리를 돌린다.
             isRight = true;
             //printf("오른쪽\n");
-            Send_Command(0xfe);
-            waitMotion();
-            Send_Command(0x3a);
-            waitMotion();
+            Send_Command(MOTION_CHECK_RIGHT);
+            sleep(1);
         }else {   
             //왼쪽으로 머리를 돌린다.
             isRight = false;
             //printf("왼쪽\n");
-            Send_Command(0xfe);
-            waitMotion();
-            Send_Command(0xc5);
-            waitMotion();
+            Send_Command(MOTION_CHECK_LEFT);
+            sleep(1);
         }
 
         pLine = captureLine(_pDefaultScreen);
@@ -75,20 +71,20 @@ bool checkCenter() {
             //printf("반대방향으로 움직인다.\n");
             if(isRight) {
                 Send_Command(MOTION_MOVE_LEFT);
-                waitMotion();
+                sleep(1);
             }else {
                 Send_Command(MOTION_MOVE_RIGHT);
-                waitMotion();
+                sleep(1);
             }
         }else {
             //같은방향으로 움직인다.
             //printf("같은방향으로 움직인다.\n");
             if(isRight) {
                 Send_Command(MOTION_MOVE_RIGHT);
-                waitMotion();
+                sleep(1);
             }else {
                 Send_Command(MOTION_MOVE_LEFT);
-                waitMotion();
+                sleep(1);
             }
         }    
     
@@ -114,18 +110,18 @@ bool checkCenter() {
             //printf("반대방향으로 3걸음 움직인다.\n");
             if(isRight) {
                 Send_Command(MOTION_MOVE_LEFT);
-                waitMotion();
+                sleep(1);
                 Send_Command(MOTION_MOVE_LEFT);
-                waitMotion();
+                sleep(1);
                 Send_Command(MOTION_MOVE_LEFT);
-                waitMotion();
+                sleep(1);
             }else {
                 Send_Command(MOTION_MOVE_RIGHT);
-                waitMotion();
+                sleep(1);
                 Send_Command(MOTION_MOVE_RIGHT);
-                waitMotion();
+                sleep(1);
                 Send_Command(MOTION_MOVE_RIGHT);
-                waitMotion();
+                sleep(1);
             }
             isException = true;
         } else {
@@ -201,14 +197,14 @@ bool checkCenter() {
             //빅 모션 한다.
             //printf("빅모션\n");
             Send_Command(bigMotion);
-            waitMotion();
+            sleep(1);
         }
 
         for(i = 0; i < smallAngleSize; ++i) {
             //스몰 모션 한다.
             //printf("스몰모션\n");
             Send_Command(smallMotion);
-            waitMotion();
+            sleep(1);
         }
 
         Line_t* checkPosition = captureLine(_pDefaultScreen);
@@ -255,10 +251,8 @@ bool checkCenter() {
 
     destroyScreen(_pDefaultScreen);
 
-    Send_Command(0xfe);
-    waitMotion();
-    Send_Command(0x80);
-    waitMotion();
+    Send_Command(MOTION_DEFAULT);
+    sleep(1);
     
     return true;
 }
@@ -301,17 +295,17 @@ bool checkAngle(void) {
             isRight = true;
             //printf("오른쪽\n");
             Send_Command(0xfe);
-            waitMotion();
+            sleep(1);
             Send_Command(0x3a);
-            waitMotion();
+            sleep(1);
         }else {   
             //왼쪽으로 머리를 돌린다.
             isRight = false;
             //printf("왼쪽\n");
             Send_Command(0xfe);
-            waitMotion();
+            sleep(1);
             Send_Command(0xc5);
-            waitMotion();
+            sleep(1);
         }
 
         pLine = captureLine(_pDefaultScreen);
@@ -374,14 +368,14 @@ bool checkAngle(void) {
             //빅 모션 한다.
             //printf("빅모션\n");
             Send_Command(bigMotion);
-            waitMotion();
+            sleep(1);
         }
 
         for(i = 0; i < smallAngleSize; ++i) {
             //스몰 모션 한다.
             //printf("스몰모션\n");
             Send_Command(smallMotion);
-            waitMotion();
+            sleep(1);
         }
 
         Line_t* checkPosition = captureLine(_pDefaultScreen);
@@ -429,9 +423,9 @@ bool checkAngle(void) {
     destroyScreen(_pDefaultScreen);
 
     Send_Command(0xfe);
-    waitMotion();
+    sleep(1);
     Send_Command(0x80);
-    waitMotion();
+    sleep(1);
     
     return true;
 }
