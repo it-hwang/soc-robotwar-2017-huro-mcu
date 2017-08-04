@@ -99,7 +99,6 @@ void uart1_buffer_read(unsigned char *buf, int size)
 	int rx_cnt=0;
 
 	while(1) {
-        printf("찍었다\n");
 		rx_cnt += rx_len;
 		rx_len = uart_rx_level(UART1);
 		uart_read(UART1, &buf[rx_cnt], rx_len);

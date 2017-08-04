@@ -10,8 +10,8 @@
 #include "check_center.h"
 
 #define MIN_CNT 300
-#define BARRICADE_CNT 2000
-#define PROGRESS_CNT 1000
+#define BARRICADE_CNT 1000
+#define PROGRESS_CNT 700
 
 ObjectList_t* _captureObject(Screen_t* pScreen, Color_t color, bool flg);
 
@@ -25,19 +25,18 @@ bool verticalBarricadeMain(void) {
 
     bool isBarricade = false;
     int distanceCnt = 0;
-
+    int distanceY;
+    int walkCnt = 0;
+    
     do{
-        Send_Command(0xff);
+    
+        Send_Command(MOTION_HEAD_DOWN);
         waitMotion();
-        Send_Command(0x35);
+        Send_Command(MOTION_HEAD_FRONT);
         waitMotion();
-        Send_Command(0xff);
-        waitMotion();
-        Send_Command(0x5c);
-        waitMotion();
-
-        objList = _captureObject(_pVerticalBarricadeScreen, COLOR_YELLOW, true);
         
+        objList = _captureObject(_pVerticalBarricadeScreen, COLOR_YELLOW, true);
+        distanceY = 0;
         distanceCnt = 0;
         if(objList != NULL){
             int i;
@@ -45,6 +44,7 @@ bool verticalBarricadeMain(void) {
                 if(objList->list[i].cnt >= MIN_CNT) {
                     if(distanceCnt < objList->list[i].cnt){
                         distanceCnt = objList->list[i].cnt;
+                        distanceY = objList->list[i].minY;
                     }
                 }
             }
@@ -53,8 +53,13 @@ bool verticalBarricadeMain(void) {
         if(distanceCnt < BARRICADE_CNT && distanceCnt > MIN_CNT) {
             Send_Command(MOTION_MOVE_FORWARD);
             waitMotion();
-            checkCenter();
-        }else if(distanceCnt >= BARRICADE_CNT) {
+            walkCnt++;
+            if(walkCnt > 2) {
+                checkCenter();
+                walkCnt = 0;
+            }
+            //checkCenter();
+        }else if(distanceY >= 70) {
             isBarricade = true;
         }
 
@@ -66,18 +71,16 @@ bool verticalBarricadeMain(void) {
     while(!isBarricade); 
     
     do{
-        Send_Command(0xff);
+        //까딱까딲
+        Send_Command(MOTION_HEAD_DOWN);
         waitMotion();
-        Send_Command(0x35);
+        Send_Command(MOTION_HEAD_FRONT);
         waitMotion();
-        Send_Command(0xff);
-        waitMotion();
-        Send_Command(0x5c);
-        waitMotion();
-        
+
         objList = _captureObject(_pVerticalBarricadeScreen, COLOR_YELLOW, true);
 
         distanceCnt = 0;
+        
         if(objList != NULL){
             int i;
             for(i = 0; i < objList->size; ++i) {
@@ -95,9 +98,9 @@ bool verticalBarricadeMain(void) {
     }while(distanceCnt > PROGRESS_CNT);
 
     sleep(1);
-    Send_Command(MOTION_MOVE_FORWARD);
+    Send_Command(MOTION_BARRICADE_RUN_FAR);
     waitMotion();
-    checkCenter();
+    //checkCenter();
    
 
     destroyScreen(_pVerticalBarricadeScreen);

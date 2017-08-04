@@ -87,66 +87,20 @@ void closeProcessor(void) {
 int runProcessor(void) {
     int i;
     for (i = 0; i < 200; ++i) {
-        //_improveSomeObstacle();
-        //Send_Command(0x01, 0xfe);
         sleep(1);
-        //detectionMineMain();
-        //verticalBarricadeMain();
+    
+        verticalBarricadeMain();
+        //checkCenter();
         //redBridgeMain();
-        Send_Command(MOTION_DEFAULT);
-        //waitMotion();
-        sleep(1);
-        checkCenter();
-        /*Send_Command(0xfe);
-        waitMotion();
-        Send_Command(0x3a);
-        waitMotion();
+        //checkCenter();
+        //detectionMineMain();
+        //checkCenter();
+        //hurdleMain();
+        //checkCenter();
+        //detectionCornerMain();
+        //checkCenter();
         
-        _pDefaultScreen = createDefaultScreen();
-        readFpgaVideoData(_pDefaultScreen);
-
-        _convertScreenToDisplay(_pDefaultScreen);
-        displayScreen(_pDefaultScreen);
-
-        Matrix8_t* pColorMatrix = createColorMatrix(_pDefaultScreen, 
-                                    pColorTables[COLOR_BLACK]);
-
-        Line_t* a = lineDetection(pColorMatrix);
-        
-        if(a != NULL) {
-            printf("Right theta %f\n", a->theta);
-            printf("Right y %d\n", a->distancePoint.y);
-            free(a);
-        }
-
-        destroyMatrix8(pColorMatrix);
-
-        Send_Command(0xfe);
-        waitMotion();
-        Send_Command(0xc5);
-        waitMotion();
-
-        readFpgaVideoData(_pDefaultScreen);
-
-        _convertScreenToDisplay(_pDefaultScreen);
-        displayScreen(_pDefaultScreen);
-
-        Matrix8_t* pColorMatrix1 = createColorMatrix(_pDefaultScreen, 
-                                    pColorTables[COLOR_BLACK]);
-
-        a = lineDetection(pColorMatrix1);
-        
-        if(a != NULL) {
-            printf("Left theta %f\n", a->theta);
-            printf("Left y %d\n", a->distancePoint.y);
-            free(a);
-        }
-
-        destroyMatrix8(pColorMatrix1);
-        destroyScreen(_pDefaultScreen);
-        */
     }
-
     return 0;
 }
 
