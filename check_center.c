@@ -65,6 +65,8 @@ bool checkCenter() {
     Line_t* pDistaceLine = NULL;
     cnt = 0;
 
+    printf("y %d\n", pLine->distancePoint.y);
+
     while(abs(distance) > 5){
         if(isException) {
             isException = false;
@@ -147,7 +149,7 @@ bool checkCenter() {
     }
 
     double distanceTheta = pDistaceLine->theta;
-    //printf("distanceTheta %f\n", distanceTheta);
+    printf("Theta %f\n", distanceTheta);
     
     if(pDistaceLine != NULL)
         free(pDistaceLine);
@@ -190,7 +192,7 @@ bool checkCenter() {
             bigMotion = MOTION_TURN_RIGHT_BIG;
             smallMotion = MOTION_TURN_RIGHT;
         }
-        printf("theta %f\n", distanceTheta);
+        printf("distanceTheta %f\n", distanceTheta);
         printf("bigAngleSize %d\n", bigAngleSize);
         printf("bigAngleSizeReminder %d\n", bigAngleSize);
         printf("smallAngleSize %d\n", smallAngleSize);
