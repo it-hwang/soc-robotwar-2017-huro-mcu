@@ -22,8 +22,8 @@ ObstacleId_t* _obstacleSequence;
 Screen_t* _pDefaultScreen;
 
 
-void _improveSomeObstacle(void);
 void _saveScreenshot(void);
+void _loadScreenshot(const char* filePath);
 
 void _defineObstacle(void) {
 	//registerObstacle(OBSTACLE_ONE, helloWorld);
@@ -85,100 +85,18 @@ void closeProcessor(void) {
 }
 
 int runProcessor(void) {
-    char input = 0;;
+    char inputs[1024] = {0,};
     while (true) {
-        printf("Input ('x' is exit): ")
-        scanf("%c", &input);
-        if (input == 'x' || input == 'X')
+        printf("Input ('x' is exit): ");
+        scanf("%s", inputs);
+        if (inputs[0] == 'x' || inputs[0] == 'X')
             break;
 
         _saveScreenshot();
+        // _loadScreenshot(inputs);
     }
 
     return 0;
-}
-
-void _improveSomeObstacle(void) {
-    ///////////////////////////////////////////////////////////////////////////
-    /*
-        이 부분에서 영상처리를 수행합니다.
-    */
-    ///////////////////////////////////////////////////////////////////////////
-    readFpgaVideoData(_pDefaultScreen);
-    Matrix8_t* pColorMatrix = createColorMatrix(_pDefaultScreen, 
-                                    pColorTables[COLOR_BLACK]);
-    
-    // 깁기
-    applyDilationToMatrix8(pColorMatrix, 1);
-    applyErosionToMatrix8(pColorMatrix, 2);
-    applyDilationToMatrix8(pColorMatrix, 1);
-  
-  
-    ObjectList_t* pMatrixObjectList;
-    pMatrixObjectList = detectObjectsLocation(pColorMatrix);
-    //printf("list size 1 %d\n", pMatrixObjectList->size);
-    if (pMatrixObjectList) {
-        int i;
-        for(i = 0; i < pMatrixObjectList->size; ++i) {
-            int x;
-            int y;
-            Object_t object = pMatrixObjectList->list[i];
-            PixelData_t* pixels = _pDefaultScreen->elements;
-
-            for(y = object.minY; y <= object.maxY; ++y) {
-                for(x = object.minX; x <= object.maxX; ++x) {
-                    int index = y * _pDefaultScreen->width + x;
-                    uint16_t* pOutput = (uint16_t*)&pixels[index];
-
-                    if(y == object.minY || y == object.maxY) {
-                        *pOutput = 0xF800;
-                    } else if(x == object.minX || x == object.maxX) {
-                        *pOutput = 0xF800;
-                    }
-                }
-            }
-
-            int index = (int)object.centerY * _pDefaultScreen->width + (int)object.centerX;
-            uint16_t* pOutput = (uint16_t*)&pixels[index];
-            *pOutput = 0x1F;
-        }
-    }
-
-    if (pMatrixObjectList){
-        free(pMatrixObjectList->list);
-        free(pMatrixObjectList);
-    }
-        
-    
-    
-    /*pMatrixObjectList = detectObjectsLocation(pColorMatrix);
-    if (pMatrixObjectList)
-        free(pMatrixObjectList);
-    */
-
-    //line-detection process    
-    
-    Line_t* line = lineDetection(pColorMatrix);
-    if(line == NULL) {
-        printf("None line!!!\n");
-    }
-    else {
-        printf("Yes line!!!\n");
-        printf("line THETA = %f\n", line->theta);
-        printf("line DistancePixel = (%d, %d)\n", line->distancePoint.x, line->distancePoint.y);
-        free(line);
-    }
-    
-    /***********************************************************************************************/
-    //sendDataToRobot(command);
-    //printf("send command to robot: %d\n", command);
-    //waitDataFromRobot();
-    
-    //free(A);
-    //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
-    destroyMatrix8(pColorMatrix);
-    _convertScreenToDisplay(_pDefaultScreen);
-    displayScreen(_pDefaultScreen);
 }
 
 
@@ -189,7 +107,7 @@ void _saveScreenshot(void) {
     char filePath[1024];
     int i = 0;
     while (true) {
-        sprintf(filePath, "./screenshots/screenshot_%d.txt", i);
+        sprintf(filePath, "./screenshots/sc%d", i);
         if (access(filePath, 0) != 0)
             break;
         i++;
@@ -201,4 +119,13 @@ void _saveScreenshot(void) {
 
     _convertScreenToDisplay(_pDefaultScreen);
     displayScreen(_pDefaultScreen);
+}
+
+void _loadScreenshot(const char* filePath) {
+    Screen_t* pScreen = scanScreen(filePath);
+    if (pScreen == NULL)
+        return;
+    
+    displayScreen(pScreen);
+    destroyScreen(pScreen);
 }

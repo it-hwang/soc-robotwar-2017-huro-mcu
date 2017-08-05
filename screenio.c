@@ -37,7 +37,7 @@ bool writeScreen(Screen_t* pScreen, const char* filePath) {
     int length = pScreen->width * pScreen->height;
     int i;
 
-    fprintf(fd, "========= Print Screen =========\n");
+    //fprintf(fd, "========= Print Screen =========\n");
     fprintf(fd, "PrintScreen\n");
     fprintf(fd, "Version   : %d\n", _VERSION);
     fprintf(fd, "Pixel Size: %d\n", sizeof(pScreen->elements[0]));
@@ -48,7 +48,7 @@ bool writeScreen(Screen_t* pScreen, const char* filePath) {
         fprintf(fd, "%x ", pScreen->elements[i]);
     }
     fprintf(fd, "\n");
-    fprintf(fd, "================================\n");
+    //fprintf(fd, "================================\n");
 
     fclose(fd);
 
@@ -88,7 +88,7 @@ Screen_t* scanScreen(const char* filePath) {
     int i;
     for (i = 0; i < length; ++i) {
         int data;
-        fscanf(pFile, "%d", &data);
+        fscanf(pFile, "%x", &data);
         pScreen->elements[i] = data;
     }
 
