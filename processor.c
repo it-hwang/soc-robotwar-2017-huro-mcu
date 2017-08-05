@@ -23,6 +23,7 @@ Screen_t* _pDefaultScreen;
 
 
 void _improveSomeObstacle(void);
+void _saveScreenshot(void);
 
 void _defineObstacle(void) {
 	//registerObstacle(OBSTACLE_ONE, helloWorld);
@@ -84,13 +85,15 @@ void closeProcessor(void) {
 }
 
 int runProcessor(void) {
-    
-    readFpgaVideoData(_pDefaultScreen);
+    char input = 0;;
+    while (true) {
+        printf("Input ('x' is exit): ")
+        scanf("%c", &input);
+        if (input == 'x' || input == 'X')
+            break;
 
-    writeScreen(_pDefaultScreen, "screenshots\\test.txt");
-
-    _convertScreenToDisplay(_pDefaultScreen);
-    displayScreen(_pDefaultScreen);
+        _saveScreenshot();
+    }
 
     return 0;
 }
@@ -174,6 +177,28 @@ void _improveSomeObstacle(void) {
     //free(A);
     //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
     destroyMatrix8(pColorMatrix);
+    _convertScreenToDisplay(_pDefaultScreen);
+    displayScreen(_pDefaultScreen);
+}
+
+
+void _saveScreenshot(void) {
+    mkdir("./screenshots", 0755);
+
+    // 적합한 파일 이름 찾기
+    char filePath[1024];
+    int i = 0;
+    while (true) {
+        sprintf(filePath, "./screenshots/screenshot_%d.txt", i);
+        if (access(filePath, 0) != 0)
+            break;
+        i++;
+    }
+
+    readFpgaVideoData(_pDefaultScreen);
+
+    writeScreen(_pDefaultScreen, filePath);
+
     _convertScreenToDisplay(_pDefaultScreen);
     displayScreen(_pDefaultScreen);
 }
