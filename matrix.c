@@ -126,6 +126,51 @@ Matrix32_t* createSubMatrix32(Matrix32_t* pMatrix32, uint16_t minX, uint16_t min
     return pMatrix;
 }
 
+void overlapMatrix8(Matrix8_t* pSourceMatrix8, Matrix8_t* pTargetMatrix8, uint16_t x, uint16_t y) {
+
+    uint16_t sourceWidth = pSourceMatrix8->width;
+    uint16_t sourceHeight = pSourceMatrix8->height;
+    uint16_t targetWidth = pTargetMatrix8->width;
+
+    int i, j;
+    for(j = y; j < sourceHeight; ++j) {
+        for(i = x; i < sourceWidth; ++i) {
+            pTargetMatrix8->elements[j * targetWidth + i] 
+                            = pSourceMatrix8->elements[j * sourceWidth + i];
+        }
+    }
+}
+
+void overlapMatrix16(Matrix16_t* pSourceMatrix16, Matrix16_t* pTargetMatrix16, uint16_t x, uint16_t y) {
+
+    uint16_t sourceWidth = pSourceMatrix16->width;
+    uint16_t sourceHeight = pSourceMatrix16->height;
+    uint16_t targetWidth = pTargetMatrix16->width;
+
+    int i, j;
+    for(j = y; j < sourceHeight; ++j) {
+        for(i = x; i < sourceWidth; ++i) {
+            pTargetMatrix16->elements[j * targetWidth + i] 
+                            = pSourceMatrix16->elements[j * sourceWidth + i];
+        }
+    }
+}
+
+void overlapMatrix32(Matrix32_t* pSourceMatrix32, Matrix32_t* pTargetMatrix32, uint16_t x, uint16_t y) {
+
+    uint16_t sourceWidth = pSourceMatrix32->width;
+    uint16_t sourceHeight = pSourceMatrix32->height;
+    uint16_t targetWidth = pTargetMatrix32->width;
+
+    int i, j;
+    for(j = y; j < sourceHeight; ++j) {
+        for(i = x; i < sourceWidth; ++i) {
+            pTargetMatrix32->elements[j * targetWidth + i] 
+                            = pSourceMatrix32->elements[j * sourceWidth + i];
+        }
+    }
+}
+
 void destroyMatrix8(Matrix8_t* pMatrix8) {
     free(pMatrix8->elements);
     free(pMatrix8);
