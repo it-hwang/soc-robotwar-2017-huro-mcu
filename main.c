@@ -3,6 +3,7 @@
 
 #include "processor.h"
 #include "terminal.h"
+#include "log.h"
 
 #define _BLOCK_TIMEOUT_MILLISECONDS		3000
 
@@ -15,6 +16,12 @@ int _blockRunning(unsigned int milliseconds);
 int main(void)
 {
 	_displayLogo();
+	
+	char logFilePath[1024];
+	if (openLogFile(logFilePath))
+		printf("[Log] File path: %s\n", logFilePath);
+	else
+		printf("[Log] Unable to create log file.");
 
 	if (_blockRunning(_BLOCK_TIMEOUT_MILLISECONDS)) {
 		printf("Program is interrupted.\n");
@@ -33,7 +40,7 @@ int main(void)
 		return 1;
 	}
 
-
+	printLog("Start processor.");
 	runProcessor();
 	closeProcessor();
 
