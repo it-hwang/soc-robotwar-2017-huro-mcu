@@ -15,6 +15,8 @@
 #include "image_filter.h"
 #include "line_detection.h"
 #include "check_center.h"
+#include "vertical_barricade.h"
+#include "red_bridge.h"
 
 ObstacleId_t* _obstacleSequence;
 
@@ -85,69 +87,22 @@ void closeProcessor(void) {
 int runProcessor(void) {
     int i;
     for (i = 0; i < 200; ++i) {
-        //_improveSomeObstacle();
-        //Send_Command(0x01, 0xfe);
-        //sleep(1);
-        /*Send_Command(0x01);
-        waitMotion();
-        Send_Command(0xfe);
-        waitMotion();
-        Send_Command(0x80);
-        waitMotion();
-        Send_Command(0xff);
-        waitMotion();
-        Send_Command(0x5c);
-        waitMotion();*/
-        verticalBarricadeMain();
-        //checkCenter();
-        /*Send_Command(0xfe);
-        waitMotion();
-        Send_Command(0x3a);
-        waitMotion();
-
-        _pDefaultScreen = createDefaultScreen();
         readFpgaVideoData(_pDefaultScreen);
 
-        _convertScreenToDisplay(_pDefaultScreen);
-        displayScreen(_pDefaultScreen);
+        Matrix16_t* pSubMatrix = createSubMatrix16(_pDefaultScreen, 60, 0, 119, 119);
 
-        Matrix8_t* pColorMatrix = createColorMatrix(_pDefaultScreen, 
-                                    pColorTables[COLOR_BLACK]);
+        Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix,
+                                        pColorTables[COLOR_BLUE]);
 
-        Line_t* a = lineDetection(pColorMatrix);
-        
-        if(a != NULL) {
-            printf("Right theta %f\n", a->theta);
-            printf("Right y %d\n", a->distancePoint.y);
-            free(a);
-        }
+        _applyColorMatrix(pSubMatrix, pColorMatrix);
+
+        overlapMatrix16(pSubMatrix, _pDefaultScreen, 60, 0);
 
         destroyMatrix8(pColorMatrix);
-
-        Send_Command(0xfe);
-        waitMotion();
-        Send_Command(0xc5);
-        waitMotion();
-
-        readFpgaVideoData(_pDefaultScreen);
-
+        destroyMatrix16(pSubMatrix);
+        
         _convertScreenToDisplay(_pDefaultScreen);
         displayScreen(_pDefaultScreen);
-
-        Matrix8_t* pColorMatrix1 = createColorMatrix(_pDefaultScreen, 
-                                    pColorTables[COLOR_BLACK]);
-
-        a = lineDetection(pColorMatrix1);
-        
-        if(a != NULL) {
-            printf("Left theta %f\n", a->theta);
-            printf("Left y %d\n", a->distancePoint.y);
-            free(a);
-        }
-
-        destroyMatrix8(pColorMatrix1);
-        destroyScreen(_pDefaultScreen);
-        */
     }
 
     return 0;

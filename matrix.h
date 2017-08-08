@@ -31,7 +31,15 @@ Matrix32_t* cloneMatrix32(Matrix32_t* pMatrix32);
 Matrix8_t* createSubMatrix8(Matrix8_t* pMatrix8, uint16_t minX, uint16_t minY, uint16_t maxX, uint16_t maxY);
 Matrix16_t* createSubMatrix16(Matrix16_t* pMatrix16, uint16_t minX, uint16_t minY, uint16_t maxX, uint16_t maxY);
 Matrix32_t* createSubMatrix32(Matrix32_t* pMatrix32, uint16_t minX, uint16_t minY, uint16_t maxX, uint16_t maxY);
+void overlapMatrix8(Matrix8_t* pSourceMatrix8, Matrix8_t* pTargetMatrix8, uint16_t x, uint16_t y);
+<<<<<<< HEAD
+void overlapMatrix16(Matrix8_t* pSourceMatrix16, Matrix8_t* pTargetMatrix16, uint16_t x, uint16_t y);
+void overlapMatrix32(Matrix8_t* pSourceMatrix32, Matrix8_t* pTargetMatrix32, uint16_t x, uint16_t y);
 
+=======
+void overlapMatrix16(Matrix16_t* pSourceMatrix16, Matrix16_t* pTargetMatrix16, uint16_t x, uint16_t y);
+void overlapMatrix32(Matrix32_t* pSourceMatrix32, Matrix32_t* pTargetMatrix32, uint16_t x, uint16_t y);
+>>>>>>> 5c68cb92da7acf903f8ea8f55facb2081be2a1b8
 void destroyMatrix8(Matrix8_t* pMatrix8);
 void destroyMatrix16(Matrix16_t* pMatrix16);
 void destroyMatrix32(Matrix32_t* pMatrix32);

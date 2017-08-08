@@ -16,11 +16,8 @@ double _getAngle(PixelLocation_t src, PixelLocation_t dst);
 
 
 //SubMatrix와 해당 SubMatrix의 LabelList를 인자로 받아 LineDetection을 진행한다.
-Line_t* lineDetection(Matrix8_t* pColorMatrix) {
+Line_t* lineDetection(Matrix8_t* pColorMatrix, Matrix8_t* pSubMatrix) {
     
-    Matrix8_t* pSubMatrix;
-    pSubMatrix = createSubMatrix8(pColorMatrix, 60, 0, 119, 119);
-
     Matrix16_t* pLabelMatrix = createMatrix16(pSubMatrix->width, pSubMatrix->height);   
     memset(pLabelMatrix->elements, 0, (pSubMatrix->height * pSubMatrix->width) * sizeof(uint16_t));
 
@@ -57,7 +54,7 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     }
 
     free(line);
-    destroyMatrix8(pSubMatrix);
+    //destroyMatrix8(pSubMatrix);
     destroyMatrix16(pLabelMatrix);
     
     if (pObjectList){
