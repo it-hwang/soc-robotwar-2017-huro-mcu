@@ -95,17 +95,25 @@ Matrix16_t* createSubMatrix16(Matrix16_t* pMatrix16, uint16_t minX, uint16_t min
     uint16_t height = maxY-minY+1;
     Matrix16_t* pMatrix = createMatrix16(width, height);
     
-    uint16_t* pSrcElements = pMatrix16->elements + minX;
-    uint16_t* pDstElements = pMatrix->elements;
-    size_t size_w = width * sizeof(uint16_t);
-    int i;
-    for(i=minY; i<=maxY; ++i) {
-        memcpy(pDstElements, pSrcElements, size_w);
-        pSrcElements += pMatrix16->width;
-        pDstElements += width;
+    int x, y;
+    for(y = 0; y < height; y++) {
+        for(x = 0; x < width; x++) {
+            pMatrix->elements[y * width + x] = pMatrix16->elements[(y+minY) * (pMatrix16->width) + (x+minX)];
+        }
     }
-   
     return pMatrix;
+
+    // uint16_t* pSrcElements = pMatrix16->elements + minX;
+    // uint16_t* pDstElements = pMatrix->elements;
+    // size_t size_w = width * sizeof(uint16_t);
+    // int i;
+    // for(i=minY; i<=maxY; ++i) {
+    //     memcpy(pDstElements, pSrcElements, size_w);
+    //     pSrcElements += pMatrix16->width;
+    //     pDstElements += width;
+    // }
+   
+    // return pMatrix;
 }
 
 Matrix32_t* createSubMatrix32(Matrix32_t* pMatrix32, uint16_t minX, uint16_t minY, uint16_t maxX, uint16_t maxY) {
@@ -113,17 +121,25 @@ Matrix32_t* createSubMatrix32(Matrix32_t* pMatrix32, uint16_t minX, uint16_t min
     uint16_t height = maxY-minY+1;
     Matrix32_t* pMatrix = createMatrix32(width, height);
     
-    uint16_t* pSrcElements = (uint16_t*)(pMatrix32->elements + minX);
-    uint16_t* pDstElements = (uint16_t*)pMatrix->elements;
-    size_t size_w = width * sizeof(uint32_t);
-    int i;
-    for(i=minY; i<=maxY; ++i) {
-        memcpy(pDstElements, pSrcElements, size_w);
-        pSrcElements += pMatrix32->width;
-        pDstElements += width;
+    int x, y;
+    for(y = 0; y < height; y++) {
+        for(x = 0; x < width; x++) {
+            pMatrix->elements[y * width + x] = pMatrix32->elements[(y+minY) * (pMatrix32->width) + (x+minX)];
+        }
     }
-   
     return pMatrix;
+    
+    // uint16_t* pSrcElements = (uint16_t*)(pMatrix32->elements + minX);
+    // uint16_t* pDstElements = (uint16_t*)pMatrix->elements;
+    // size_t size_w = width * sizeof(uint32_t);
+    // int i;
+    // for(i=minY; i<=maxY; ++i) {
+    //     memcpy(pDstElements, pSrcElements, size_w);
+    //     pSrcElements += pMatrix32->width;
+    //     pDstElements += width;
+    // }
+   
+    // return pMatrix;
 }
 
 void overlapMatrix8(Matrix8_t* pSourceMatrix8, Matrix8_t* pTargetMatrix8, uint16_t x, uint16_t y) {
