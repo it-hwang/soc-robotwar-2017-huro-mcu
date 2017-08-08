@@ -40,8 +40,10 @@ int main(void)
 		return 1;
 	}
 
-	printLog("Start processor.");
+	printLog("프로세서 시작.");
 	runProcessor();
+	
+	printLog("프로세서 종료.");
 	closeProcessor();
 
 	return 0;
