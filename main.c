@@ -18,12 +18,13 @@ int main(void)
 	_displayLogo();
 	
 	char logFilePath[1024];
-	if (openLogFile(logFilePath))
+	if (openLogFile(logFilePath) == 0)
 		printf("[Log] File path: %s\n", logFilePath);
 	else
-		printf("[Log] Unable to create log file.");
+		printf("[Log] Unable to create log file.\n");
 
 	if (_blockRunning(_BLOCK_TIMEOUT_MILLISECONDS)) {
+		printLog("사용자 요청에의해 프로그램이 중단되었습니다.");
 		printf("Program is interrupted.\n");
 		return 0;
 	}
@@ -32,10 +33,12 @@ int main(void)
 	int errorCode;
 	errorCode = openProcessor();
 	if (errorCode == PROCESSOR_GRAPHIC_ERROR) {
+		printLog("[Error] Unable to open graphic.");
 		printf("[Error] Unable to open graphic.\n");
 		return 1;
 	}
 	else if (errorCode == PROCESSOR_ROBOT_PORT_ERROR) {
+		printLog("[Error] Unable to open robot port.");
 		printf("[Error] Unable to open robot port.\n");
 		return 1;
 	}
@@ -45,6 +48,8 @@ int main(void)
 	
 	printLog("프로세서 종료.");
 	closeProcessor();
+
+	closeLogFile();
 
 	return 0;
 }
