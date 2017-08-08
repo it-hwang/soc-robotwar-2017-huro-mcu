@@ -135,9 +135,9 @@ Matrix32_t* createSubMatrix32(Matrix32_t* pMatrix32, uint16_t minX, uint16_t min
 }
 
 void overlapMatrix8(Matrix8_t* pSourceMatrix8, Matrix8_t* pTargetMatrix8, uint16_t x, uint16_t y) {
-    if (x < 0 || x + pSourceMatrix8->width > pTargetMatrix8->width)
+    if (x + pSourceMatrix8->width > pTargetMatrix8->width)
         return;
-    if (y < 0 || y + pSourceMatrix8->height > pTargetMatrix8->height)
+    if (y + pSourceMatrix8->height > pTargetMatrix8->height)
         return;
 
     uint16_t sourceWidth = pSourceMatrix8->width;
@@ -154,9 +154,9 @@ void overlapMatrix8(Matrix8_t* pSourceMatrix8, Matrix8_t* pTargetMatrix8, uint16
 }
 
 void overlapMatrix16(Matrix16_t* pSourceMatrix16, Matrix16_t* pTargetMatrix16, uint16_t x, uint16_t y) {
-    if (x < 0 || x + pSourceMatrix16->width > pTargetMatrix16->width)
+    if (x + pSourceMatrix16->width > pTargetMatrix16->width)
         return;
-    if (y < 0 || y + pSourceMatrix16->height > pTargetMatrix16->height)
+    if (y + pSourceMatrix16->height > pTargetMatrix16->height)
         return;
 
     uint16_t sourceWidth = pSourceMatrix16->width;
@@ -173,9 +173,9 @@ void overlapMatrix16(Matrix16_t* pSourceMatrix16, Matrix16_t* pTargetMatrix16, u
 }
 
 void overlapMatrix32(Matrix32_t* pSourceMatrix32, Matrix32_t* pTargetMatrix32, uint16_t x, uint16_t y) {
-    if (x < 0 || x + pSourceMatrix32->width > pTargetMatrix32->width)
+    if (x + pSourceMatrix32->width > pTargetMatrix32->width)
         return;
-    if (y < 0 || y + pSourceMatrix32->height > pTargetMatrix32->height)
+    if (y + pSourceMatrix32->height > pTargetMatrix32->height)
         return;
 
     uint16_t sourceWidth = pSourceMatrix32->width;

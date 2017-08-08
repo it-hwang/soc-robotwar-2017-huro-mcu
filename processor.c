@@ -86,7 +86,9 @@ void closeProcessor(void) {
 
 int runProcessor(void) {
     int i;
-    for (i = 0; i < 200; ++i) {
+
+    setHead(10, 10);
+    /*for (i = 0; i < 200; ++i) {
         readFpgaVideoData(_pDefaultScreen);
 
         Matrix16_t* pSubMatrix = createSubMatrix16(_pDefaultScreen, 60, 0, 119, 119);
@@ -103,7 +105,7 @@ int runProcessor(void) {
         
         _convertScreenToDisplay(_pDefaultScreen);
         displayScreen(_pDefaultScreen);
-    }
+    }*/
 
     return 0;
 }
