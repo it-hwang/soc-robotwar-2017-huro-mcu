@@ -89,7 +89,7 @@ int _blockRunning(unsigned int milliseconds) {
 			printf("Starting %d seconds before ...\n", milliseconds / 1000);
 			setConioTerminalMode();
 		}
-		usleep(0);
+		usleep(0);  // 현재 보드에서 20밀리초 정도 쉰다.
 		milliseconds -= 20;
 	}
 
