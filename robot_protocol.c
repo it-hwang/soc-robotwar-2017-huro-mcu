@@ -4,7 +4,7 @@
 #include "robot_protocol.h"
 #include "uart_api.h"
 
-#define _UART_BAUD_RATE		57600
+#define _UART_BAUD_RATE		9600
 #define _UART_BITS			8
 #define _UART_STOPS			1
 
@@ -67,13 +67,10 @@ void setHeadVertical(int angle) {
 
 	Send_Command(1);
 	waitMotion();
-	printf("1");
 	Send_Command(17);
 	waitMotion();
-	printf("2");
 	Send_Command(offset);
 	waitMotion();
-	printf("3");
 }
 
 void setHeadHorizontal(int angle) {
@@ -84,13 +81,10 @@ void setHeadHorizontal(int angle) {
 
 	Send_Command(1);
 	waitMotion();
-	printf("4");
 	Send_Command(11);
 	waitMotion();
-	printf("5");
 	Send_Command(offset);
 	waitMotion();
-	printf("6");
 }
 
 void setHead(int horizontalAngle, int verticalAngle) {
