@@ -22,6 +22,6 @@ typedef struct {
     */
 } Line_t;
 
-Line_t* lineDetection(Matrix8_t* pColorMatrix);
+Line_t* lineDetection(Matrix8_t* pColorMatrix, Matrix8_t* pSubMatrix);
 
 #endif // __LINE_DETECTION_H__
