@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "processor.h"
 #include "terminal.h"
@@ -9,20 +10,17 @@
 
 int main(void);
 
-void _displayLogo(void);
-int _blockRunning(unsigned int milliseconds);
+static void _displayLogo(void);
+static int _blockRunning(unsigned int milliseconds);
+static bool _findNextLogFileName(char* filePath);
+static void _initLog(void);
 
 
 int main(void)
 {
 	_displayLogo();
 	
-	char logFilePath[1024] = "";
-	findNextLogFileName(logFilePath);
-	if (openLogFile(logFilePath))
-		printf("[Log] File path: %s\n", logFilePath);
-	else
-		printf("[Log] Unable to create log file.\n");
+	_initLog();
 
 	if (_blockRunning(_BLOCK_TIMEOUT_MILLISECONDS)) {
 		printLog("사용자 요청에의해 프로그램이 중단되었습니다.");
@@ -61,7 +59,7 @@ void _displayLogo(void) {
 	printf("                                                              \n");
 	printf("           *****************************************          \n");
 	printf("                             Grobot                           \n");
-	printf("             Welcome to Eagle Robot Platform Board            \n");
+	printf("            Welcome to Amazon Robot Platform Board            \n");
 	printf("           *****************************************          \n");
 	printf("                                                              \n");
 }
@@ -107,4 +105,28 @@ int _blockRunning(unsigned int milliseconds) {
 
 	resetTerminalMode();
 	return 0;
+}
+
+
+bool _findNextLogFileName(char* filePath) {
+    static const int MAX_FILES = 100000000;
+
+    int i;
+    for (i = 0; i < MAX_FILES; ++i) {
+        sprintf(filePath, "./logs/log%d.txt", i);
+        if (access(filePath, 0) != F_OK)
+            return true;
+    }
+    return false;
+}
+
+
+void _initLog(void) {
+	char logFilePath[1024] = "";
+	_findNextLogFileName(logFilePath);
+
+	if (openLogFile(logFilePath))
+		printf("[Log] File path: %s\n", logFilePath);
+	else
+		printf("[Log] Unable to create log file.\n");
 }

@@ -4,7 +4,6 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include "log.h"
 
 
@@ -12,24 +11,11 @@ static FILE* _pLogFile = NULL;
 static struct timespec _startTime;
 
 
-bool findNextLogFileName(char* filePath) {
-    static const int MAX_FILES = 100000000;
-
-    int i;
-    for (i = 0; i < MAX_FILES; ++i) {
-        sprintf(filePath, "./logs/log%d.txt", i);
-        if (access(filePath, 0) != F_OK)
-            return true;
-    }
-    return false;
-}
-
 bool openLogFile(char* filePath) {
     bool hasOpened = (_pLogFile != NULL);
     if (hasOpened)
         return false;
 
-    mkdir("./logs", 0755);
     FILE* pFile = fopen(filePath, "a");
     if (pFile == NULL)
         return false;

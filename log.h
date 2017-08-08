@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 
-bool findNextLogFileName(char* filePath);
 bool openLogFile(char* filePath);
 void closeLogFile(void);
 void printLog(char* szFormat, ...);
