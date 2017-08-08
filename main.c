@@ -1,22 +1,29 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "processor.h"
 #include "terminal.h"
+#include "log.h"
 
 #define _BLOCK_TIMEOUT_MILLISECONDS		3000
 
 int main(void);
 
-void _displayLogo(void);
-int _blockRunning(unsigned int milliseconds);
+static void _displayLogo(void);
+static int _blockRunning(unsigned int milliseconds);
+static bool _findNextLogFileName(char* filePath);
+static void _initLog(void);
 
 
 int main(void)
 {
 	_displayLogo();
+	
+	_initLog();
 
 	if (_blockRunning(_BLOCK_TIMEOUT_MILLISECONDS)) {
+		printLog("사용자 요청에의해 프로그램이 중단되었습니다.");
 		printf("Program is interrupted.\n");
 		return 0;
 	}
@@ -25,17 +32,23 @@ int main(void)
 	int errorCode;
 	errorCode = openProcessor();
 	if (errorCode == PROCESSOR_GRAPHIC_ERROR) {
+		printLog("[Error] Unable to open graphic.");
 		printf("[Error] Unable to open graphic.\n");
 		return 1;
 	}
 	else if (errorCode == PROCESSOR_ROBOT_PORT_ERROR) {
+		printLog("[Error] Unable to open robot port.");
 		printf("[Error] Unable to open robot port.\n");
 		return 1;
 	}
 
-
+	printLog("프로세서 시작.");
 	runProcessor();
+	
+	printLog("프로세서 종료.");
 	closeProcessor();
+
+	closeLogFile();
 
 	return 0;
 }
@@ -46,7 +59,7 @@ void _displayLogo(void) {
 	printf("                                                              \n");
 	printf("           *****************************************          \n");
 	printf("                             Grobot                           \n");
-	printf("             Welcome to Eagle Robot Platform Board            \n");
+	printf("            Welcome to Amazon Robot Platform Board            \n");
 	printf("           *****************************************          \n");
 	printf("                                                              \n");
 }
@@ -75,7 +88,7 @@ int _blockRunning(unsigned int milliseconds) {
 			printf("Starting %d seconds before ...\n", milliseconds / 1000);
 			setConioTerminalMode();
 		}
-		usleep(0);
+		usleep(0);  // 현재 보드에서 20밀리초 정도 쉰다.
 		milliseconds -= 20;
 	}
 
@@ -92,4 +105,28 @@ int _blockRunning(unsigned int milliseconds) {
 
 	resetTerminalMode();
 	return 0;
+}
+
+
+bool _findNextLogFileName(char* filePath) {
+    static const int MAX_FILES = 100000000;
+
+    int i;
+    for (i = 0; i < MAX_FILES; ++i) {
+        sprintf(filePath, "./logs/log%d.txt", i);
+        if (access(filePath, 0) != F_OK)
+            return true;
+    }
+    return false;
+}
+
+
+void _initLog(void) {
+	char logFilePath[1024] = "";
+	_findNextLogFileName(logFilePath);
+
+	if (openLogFile(logFilePath))
+		printf("[Log] File path: %s\n", logFilePath);
+	else
+		printf("[Log] Unable to create log file.\n");
 }
