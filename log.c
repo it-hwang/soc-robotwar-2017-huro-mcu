@@ -67,14 +67,18 @@ static uint64_t _getElapsedMilliseconds(void) {
            (endTime.tv_nsec - _startTime.tv_nsec) / 1000000;
 }
 
-void printLog(char* szFormat, ...) {
-    if (_pLogFile == NULL)
-        return;
-
+static void _printLogTimestamp(void) {
     uint64_t elapsedTime = _getElapsedMilliseconds();
     int elapsedSeconds = elapsedTime / 1000;
     int elapsedMilliseconds = elapsedTime % 1000;
     fprintf(_pLogFile, "[%4d.%03d] ", elapsedSeconds, elapsedMilliseconds);
+}
+
+void printLog(char* szFormat, ...) {
+    if (_pLogFile == NULL)
+        return;
+
+    _printLogTimestamp();
 
     va_list lpStart;
     va_start(lpStart, szFormat);
