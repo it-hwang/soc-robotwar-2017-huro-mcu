@@ -1,7 +1,10 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
-int openLogFile(char* filePath);
+#include <stdbool.h>
+
+bool findNextLogFileName(char* filePath);
+bool openLogFile(char* filePath);
 void closeLogFile(void);
 void printLog(char* szFormat, ...);
 

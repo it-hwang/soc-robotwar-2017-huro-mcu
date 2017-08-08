@@ -17,8 +17,9 @@ int main(void)
 {
 	_displayLogo();
 	
-	char logFilePath[1024];
-	if (openLogFile(logFilePath) == 0)
+	char logFilePath[1024] = "";
+	findNextLogFileName(logFilePath);
+	if (openLogFile(logFilePath))
 		printf("[Log] File path: %s\n", logFilePath);
 	else
 		printf("[Log] Unable to create log file.\n");

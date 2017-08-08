@@ -1,5 +1,4 @@
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,8 +12,7 @@ static FILE* _pLogFile = NULL;
 static struct timespec _startTime;
 
 
-// 생성할 로그파일의 적합한 이름을 찾는다.
-static bool _findNextLogFileName(char* filePath) {
+bool findNextLogFileName(char* filePath) {
     static const int MAX_FILES = 100000000;
 
     int i;
@@ -26,26 +24,19 @@ static bool _findNextLogFileName(char* filePath) {
     return false;
 }
 
-int openLogFile(char* filePath) {
-    static size_t BUFFER_SIZE = 256;
-
+bool openLogFile(char* filePath) {
     bool hasOpened = (_pLogFile != NULL);
     if (hasOpened)
-        return -1;
-
-    char buffer[BUFFER_SIZE];
-    if (!_findNextLogFileName(buffer))
-        return -1;
+        return false;
 
     mkdir("./logs", 0755);
-    FILE* pFile = fopen(buffer, "w");
+    FILE* pFile = fopen(filePath, "a");
     if (pFile == NULL)
-        return -1;
+        return false;
     
     clock_gettime(CLOCK_MONOTONIC, &_startTime);
     _pLogFile = pFile;
-    strncpy(filePath, buffer, BUFFER_SIZE);
-    return 0;
+    return true;
 }
 
 
