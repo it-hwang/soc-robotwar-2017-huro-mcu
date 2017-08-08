@@ -87,9 +87,11 @@ void closeProcessor(void) {
 int runProcessor(void) {
     int i;
 
-    //setHead(10, 10);
     Send_Command(2);
-    waitMotion();
+	waitMotion();
+    setHead(90, -50);
+    //Send_Command(2);
+    //waitMotion();
     /*for (i = 0; i < 200; ++i) {
         readFpgaVideoData(_pDefaultScreen);
 
