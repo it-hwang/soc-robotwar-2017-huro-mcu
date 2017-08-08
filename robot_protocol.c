@@ -8,8 +8,6 @@
 #define _UART_BITS			8
 #define _UART_STOPS			1
 
-unsigned char* _readBuffer;
-
 typedef struct _BIOLOID_PACKET {
 	unsigned char startCode0;	// start code 0			(1byte)
 	unsigned char startCode1;	// start code 1			(1byte)
@@ -46,27 +44,19 @@ void DelayLoop(int delay_time)
 
 void Send_Command(unsigned char Ldata)
 {
-	unsigned char Command_Buffer[6] = {0,};
+	unsigned char Command_Buffer[1] = {0,};
 	
-	unsigned char Ldata1 = ~Ldata;
+	Command_Buffer[0] = Ldata;
 
-	Command_Buffer[0] = 0xff;	// Start Byte -> 0xff
-	Command_Buffer[1] = 0x55; // Start Byte1 -> 0x55
-    Command_Buffer[2] = Ldata;
-	Command_Buffer[3] = Ldata1;
-	Command_Buffer[4] = 0x00;  // 0x00
-	Command_Buffer[5] = 0xff; // 0xff
-
-	uart1_buffer_write(Command_Buffer, 6);
+	uart1_buffer_write(Command_Buffer, 1);
 }
 
 void waitMotion(void)
 {
-	_readBuffer = malloc(6 * sizeof(unsigned char));
+	unsigned char Command_Buffer[1] = {0,};
 	
-	uart1_buffer_read(_readBuffer, 6);
-
-	free(_readBuffer);
+	uart1_buffer_read(Command_Buffer, 1);
+	printf("%d\n", Command_Buffer[0]);
 }
 
 void setHeadVertical(int angle) {
@@ -77,10 +67,13 @@ void setHeadVertical(int angle) {
 
 	Send_Command(1);
 	waitMotion();
+	printf("1");
 	Send_Command(17);
 	waitMotion();
+	printf("2");
 	Send_Command(offset);
 	waitMotion();
+	printf("3");
 }
 
 void setHeadHorizontal(int angle) {
@@ -91,10 +84,13 @@ void setHeadHorizontal(int angle) {
 
 	Send_Command(1);
 	waitMotion();
+	printf("4");
 	Send_Command(11);
 	waitMotion();
+	printf("5");
 	Send_Command(offset);
 	waitMotion();
+	printf("6");
 }
 
 void setHead(int horizontalAngle, int verticalAngle) {
