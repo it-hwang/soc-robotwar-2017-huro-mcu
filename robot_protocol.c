@@ -69,5 +69,38 @@ void waitMotion(void)
 	free(_readBuffer);
 }
 
+void setHeadVertical(int angle) {
+	if (angle < -90 || angle > 90)
+		return;
+
+	int offset = angle + 100;
+
+	Send_Command(1);
+	waitMotion();
+	Send_Command(17);
+	waitMotion();
+	Send_Command(offset);
+	waitMotion();
+}
+
+void setHeadHorizontal(int angle) {
+	if (angle < -90 || angle > 90)
+		return;
+
+	int offset = angle + 100;
+
+	Send_Command(1);
+	waitMotion();
+	Send_Command(11);
+	waitMotion();
+	Send_Command(offset);
+	waitMotion();
+}
+
+void setHead(int horizontalAngle, int verticalAngle) {
+	setHeadHorizontal(horizontalAngle);
+	setHeadVertical(verticalAngle);
+}
+
 #define ERROR	0
 #define OK	1
