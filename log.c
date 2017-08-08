@@ -13,7 +13,7 @@ static FILE* _pLogFile = NULL;
 static struct timespec _startTime;
 
 
-// 생성할 로그파일의 적합한 이름을 찾습니다.
+// 생성할 로그파일의 적합한 이름을 찾는다.
 static bool _findNextLogFileName(char* filePath) {
     static const int MAX_FILES = 100000000;
 
@@ -59,6 +59,7 @@ void closeLogFile(void) {
 }
 
 
+// BUG: 제대로된 시간을 받아오지 못한다.
 static uint64_t _getElapsedMilliseconds(void) {
     static struct timespec endTime;
     clock_gettime(CLOCK_MONOTONIC, &endTime);
@@ -78,7 +79,8 @@ void printLog(char* szFormat, ...) {
     if (_pLogFile == NULL)
         return;
 
-    _printLogTimestamp();
+    // 타임스탬프 출력이 제대로 되지않아 주석처리하였다.
+    // _printLogTimestamp();
 
     va_list lpStart;
     va_start(lpStart, szFormat);
