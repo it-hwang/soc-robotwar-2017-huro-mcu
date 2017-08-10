@@ -23,4 +23,7 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* pMatrix);
 ObjectList_t* detectObjectsLocationWithLabeling(Matrix8_t* pMatrix,
                                                 Matrix16_t* pLabelMatrix);
 
+// pObject가 직사각형과의 유사한 정도를 반환한다. (범위: 0.0 ~ 1.0)
+float getRectangleCorrelation(Matrix8_t* pMatrix, Object_t* pObject);
+
 #endif //__OBJECT_DETECTION_H__
