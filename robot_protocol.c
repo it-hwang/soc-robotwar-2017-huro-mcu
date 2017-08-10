@@ -93,9 +93,8 @@ void setHead(int horizontalDegrees, int verticalDegrees) {
 }
 
 
-// TODO: 함수 내용을 작성해야한다.
-// 실험용이므로 거리가 정확하지 않아도 된다.
-// 일단은 milliMeters 신경쓰지 않고 전진보행_1만 써서 구현해도 된다.
+// TODO: 실험용으로 작성했으므로 더 섬세하게 작성해야한다.
+// 일단은 milliMeters 신경쓰지 않고 작성되었다.
 //  - 전진보행_1: 두 걸음 전진 (7cm)
 //  - 전진보행_2: 네 걸음 전진 (16cm)
 //  - 짧은전진보행: 한 걸음 전진 (3cm)
@@ -105,28 +104,90 @@ void setHead(int horizontalDegrees, int verticalDegrees) {
 //  - 빠른전진보행_1: 두 걸음 전진 (7cm)
 //  - 전진보행_빠른_바리케이드: 빠른전진보행으로 길게 전진 (40cm)
 //  - 전진보행_빠른_바리케이드_멀리: 빠른전진보행으로 길게 전진 (56cm)
-bool walkForward(int milliMeters) {
+bool walkForward(int millimeters) {
+	while (millimeters > 0) {
+		if (!runMotion(9, true))
+			return false;
+		millimeters -= 70;
+	}
 
+	return true;
 }
 
-bool walkBackward(int milliMeters) {
-
+bool walkBackward(int millimeters) {
+	while (millimeters > 0) {
+		if (!runMotion(39, true))
+			return false;
+		millimeters -= 70;
+	}
+	
+	return true;
 }
 
-bool walkLeft(int milliMeters) {
-
+bool walkLeft(int millimeters) {
+	while (millimeters > 0) {
+		if (!runMotion(4, true))
+			return false;
+		millimeters -= 20;
+	}
+	
+	return true;
 }
 
-bool walkRight(int milliMeters) {
-
+bool walkRight(int millimeters) {
+	while (millimeters > 0) {
+		if (!runMotion(5, true))
+			return false;
+		millimeters -= 20;
+	}
+	
+	return true;
 }
 
 bool turnLeft(int degrees) {
-
+	while (degrees > 0) {
+		if (!runMotion(6, true))
+			return false;
+		degrees -= 20;
+	}
+	
+	return true;
 }
 
 bool turnRight(int degrees) {
+	while (degrees > 0) {
+		if (!runMotion(7, true))
+			return false;
+		degrees -= 20;
+	}
+	
+	return true;
+}
 
+
+void udelay(uint64_t microseconds) {
+	uint64_t counter = 18.4162 * microseconds;
+	while (counter) {
+		counter--;
+	}
+}
+
+void mdelay(uint64_t milliseconds) {
+	// udelay의 인수가 너무 커지는것을 방지하기위해 나누어 처리한다.
+	while (milliseconds > 1000) {
+		udelay(1000000);
+		milliseconds -= 1000;
+	}
+	udelay(milliseconds * 1000);
+}
+
+void sdelay(uint32_t seconds) {
+	// mdelay의 인수가 너무 커지는것을 방지하기위해 나누어 처리한다.
+	while (seconds > 1000) {
+		mdelay(1000000);
+		seconds -= 1000;
+	}
+	mdelay(seconds * 1000);
 }
 
 

@@ -16,12 +16,16 @@ void setHeadVertical(int degrees);
 void setHeadHorizontal(int degrees);
 void setHead(int horizontalDegrees, int verticalDegrees);
 
-bool walkForward(int milliMeters);
-bool walkBackward(int milliMeters);
-bool walkLeft(int milliMeters);
-bool walkRight(int milliMeters);
+bool walkForward(int millimeters);
+bool walkBackward(int millimeters);
+bool walkLeft(int millimeters);
+bool walkRight(int millimeters);
 bool turnLeft(int degrees);
 bool turnRight(int degrees);
+
+void udelay(uint64_t microseconds);
+void mdelay(uint64_t milliseconds);
+void sdelay(uint32_t seconds);
 
 // 삭제 예정
 void DelayLoop(int delay_time);
