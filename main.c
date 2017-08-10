@@ -23,7 +23,7 @@ int main(void)
 	_initLog();
 
 	if (_blockRunning(_BLOCK_TIMEOUT_MILLISECONDS)) {
-		printLog("사용자 요청에의해 프로그램이 중단되었습니다.");
+		printLog("사용자 요청에의해 프로그램이 중단되었습니다.\n");
 		printf("Program is interrupted.\n");
 		return 0;
 	}
@@ -32,20 +32,20 @@ int main(void)
 	int errorCode;
 	errorCode = openProcessor();
 	if (errorCode == PROCESSOR_GRAPHIC_ERROR) {
-		printLog("[Error] Unable to open graphic.");
+		printLog("[Error] Unable to open graphic.\n");
 		printf("[Error] Unable to open graphic.\n");
 		return 1;
 	}
 	else if (errorCode == PROCESSOR_ROBOT_PORT_ERROR) {
-		printLog("[Error] Unable to open robot port.");
+		printLog("[Error] Unable to open robot port.\n");
 		printf("[Error] Unable to open robot port.\n");
 		return 1;
 	}
 
-	printLog("프로세서 시작.");
+	printLog("프로세서 시작.\n");
 	runProcessor();
 	
-	printLog("프로세서 종료.");
+	printLog("프로세서 종료.\n");
 	closeProcessor();
 
 	closeLogFile();

@@ -64,6 +64,6 @@ void printLog(char* szFormat, ...) {
     vfprintf(_pLogFile, szFormat, lpStart);
     va_end(lpStart);
 
-    fprintf(_pLogFile, "\n");
+    //fprintf(_pLogFile, "\n");
     fflush(_pLogFile);
 }
