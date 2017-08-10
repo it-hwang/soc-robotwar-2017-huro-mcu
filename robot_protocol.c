@@ -4,22 +4,9 @@
 #include "robot_protocol.h"
 #include "uart_api.h"
 
-#define _UART_BAUD_RATE		57600
+#define _UART_BAUD_RATE		9600
 #define _UART_BITS			8
 #define _UART_STOPS			1
-
-unsigned char* _readBuffer;
-
-typedef struct _BIOLOID_PACKET {
-	unsigned char startCode0;	// start code 0			(1byte)
-	unsigned char startCode1;	// start code 1			(1byte)
-	unsigned char dataLow0;		// low data				(1byte)
-	unsigned char dataLow1; 	// inverted low data	(1byte)
-	unsigned char dataHigh0;	// high data			(1byte)
-	unsigned char dataHigh1;	// inverted high data	(1byte)
-} BIOLOID_PACKET;
-
-BIOLOID_PACKET* _createPacket(void);
 
 
 int openRobotPort(void) {
@@ -38,6 +25,172 @@ void closeRobotPort(void) {
 	uart_close();
 }
 
+void sendDataToRobot(uint8_t data) {
+	unsigned char buffer[1];
+	buffer[0] = data;
+
+	uart1_buffer_write(buffer, 1);
+}
+
+uint8_t receiveDataFromRobot(void) {
+	unsigned char buffer[1] = {0};
+	uart1_buffer_read(buffer, 1);
+
+	return buffer[0];
+}
+
+
+bool runMotion(uint8_t motionId, bool wait) {
+	sendDataToRobot(motionId);
+
+	if (wait == true) {
+		return waitMotion();
+	}
+	else {
+		return true;
+	}
+}
+
+bool waitMotion(void) {
+	uint8_t receivedData = receiveDataFromRobot();
+	return true;
+}
+
+
+// BUG: 현재 머리 각도가 최초 한번밖에 조절이 안되는 문제가 있다.
+// RoboBasic 코드의 SERVO 명령어가 제대로 작동하는지가 가장 의심된다.
+void setHeadVertical(int degrees) {
+	if (degrees < -90 || degrees > 90)
+		return;
+
+	int offset = degrees + 100;
+
+	sendDataToRobot(1);
+	receiveDataFromRobot();
+	sendDataToRobot(17);
+	receiveDataFromRobot();
+	sendDataToRobot(offset);
+	waitMotion();
+}
+
+void setHeadHorizontal(int degrees) {
+	if (degrees < -90 || degrees > 90)
+		return;
+
+	int offset = degrees + 100;
+
+	sendDataToRobot(1);
+	receiveDataFromRobot();
+	sendDataToRobot(11);
+	receiveDataFromRobot();
+	sendDataToRobot(offset);
+	waitMotion();
+}
+
+void setHead(int horizontalDegrees, int verticalDegrees) {
+	setHeadHorizontal(horizontalDegrees);
+	setHeadVertical(verticalDegrees);
+}
+
+
+// TODO: 실험용으로 작성했으므로 더 섬세하게 작성해야한다.
+// 일단은 milliMeters 신경쓰지 않고 작성되었다.
+//  - 전진보행_1: 두 걸음 전진 (7cm)
+//  - 전진보행_2: 네 걸음 전진 (16cm)
+//  - 짧은전진보행: 한 걸음 전진 (3cm)
+//  - 짧은전진보행2: 한 걸음 전진 (2.5cm)
+//  - 짧은전진보행3: 한 걸음 전진 (2cm)
+//  - 짧은전진보행4: 한 걸음 전진 (1.5cm)
+//  - 빠른전진보행_1: 두 걸음 전진 (7cm)
+//  - 전진보행_빠른_바리케이드: 빠른전진보행으로 길게 전진 (40cm)
+//  - 전진보행_빠른_바리케이드_멀리: 빠른전진보행으로 길게 전진 (56cm)
+bool walkForward(int millimeters) {
+	while (millimeters > 0) {
+		if (!runMotion(9, true))
+			return false;
+		millimeters -= 70;
+	}
+
+	return true;
+}
+
+bool walkBackward(int millimeters) {
+	while (millimeters > 0) {
+		if (!runMotion(39, true))
+			return false;
+		millimeters -= 70;
+	}
+	
+	return true;
+}
+
+bool walkLeft(int millimeters) {
+	while (millimeters > 0) {
+		if (!runMotion(4, true))
+			return false;
+		millimeters -= 20;
+	}
+	
+	return true;
+}
+
+bool walkRight(int millimeters) {
+	while (millimeters > 0) {
+		if (!runMotion(5, true))
+			return false;
+		millimeters -= 20;
+	}
+	
+	return true;
+}
+
+bool turnLeft(int degrees) {
+	while (degrees > 0) {
+		if (!runMotion(6, true))
+			return false;
+		degrees -= 20;
+	}
+	
+	return true;
+}
+
+bool turnRight(int degrees) {
+	while (degrees > 0) {
+		if (!runMotion(7, true))
+			return false;
+		degrees -= 20;
+	}
+	
+	return true;
+}
+
+
+void udelay(uint64_t microseconds) {
+	uint64_t counter = 18.4162 * microseconds;
+	while (counter) {
+		counter--;
+	}
+}
+
+void mdelay(uint64_t milliseconds) {
+	// udelay의 인수가 너무 커지는것을 방지하기위해 나누어 처리한다.
+	while (milliseconds > 1000) {
+		udelay(1000000);
+		milliseconds -= 1000;
+	}
+	udelay(milliseconds * 1000);
+}
+
+void sdelay(uint32_t seconds) {
+	// mdelay의 인수가 너무 커지는것을 방지하기위해 나누어 처리한다.
+	while (seconds > 1000) {
+		mdelay(1000000);
+		seconds -= 1000;
+	}
+	mdelay(seconds * 1000);
+}
+
+
 void DelayLoop(int delay_time)
 {
 	while(delay_time)
@@ -46,28 +199,9 @@ void DelayLoop(int delay_time)
 
 void Send_Command(unsigned char Ldata)
 {
-	unsigned char Command_Buffer[6] = {0,};
+	unsigned char Command_Buffer[1] = {0,};
 	
-	unsigned char Ldata1 = ~Ldata;
+	Command_Buffer[0] = Ldata;
 
-	Command_Buffer[0] = 0xff;	// Start Byte -> 0xff
-	Command_Buffer[1] = 0x55; // Start Byte1 -> 0x55
-    Command_Buffer[2] = Ldata;
-	Command_Buffer[3] = Ldata1;
-	Command_Buffer[4] = 0x00;  // 0x00
-	Command_Buffer[5] = 0xff; // 0xff
-
-	uart1_buffer_write(Command_Buffer, 6);
+	uart1_buffer_write(Command_Buffer, 1);
 }
-
-void waitMotion(void)
-{
-	_readBuffer = malloc(6 * sizeof(unsigned char));
-	
-	uart1_buffer_read(_readBuffer, 6);
-
-	free(_readBuffer);
-}
-
-#define ERROR	0
-#define OK	1

@@ -6,33 +6,39 @@
 #define COLOR_MODEL_USE_TYPE_CHECKING     true
 
 
-typedef union {
-    struct {
-        uint8_t a;
-        uint8_t b;
-        uint8_t g;
-        uint8_t r;
+typedef struct {
+    union {
+        struct {
+            uint8_t a;
+            uint8_t b;
+            uint8_t g;
+            uint8_t r;
+        };
+        uint32_t data;
     };
-    uint32_t data;
 } Rgba_t;
 
-typedef union {
-    struct {
-        uint16_t b : 5;
-        uint16_t g : 6;
-        uint16_t r : 5;
+typedef struct {
+    union {
+        struct {
+            uint16_t b : 5;
+            uint16_t g : 6;
+            uint16_t r : 5;
+        };
+        uint16_t data;
     };
-    uint16_t data;
 } Rgb565_t;
 
-typedef union {
-    struct {
-        uint16_t b : 5;
-        uint16_t a : 1;
-        uint16_t g : 5;
-        uint16_t r : 5;
+typedef struct {
+    union {
+        struct {
+            uint16_t b : 5;
+            uint16_t a : 1;
+            uint16_t g : 5;
+            uint16_t r : 5;
+        };
+        uint16_t data;
     };
-    uint16_t data;
 } Rgab5515_t;
 
 
