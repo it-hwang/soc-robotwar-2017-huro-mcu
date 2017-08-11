@@ -134,9 +134,9 @@ Color_t _convertBlackColorV1(PixelData_t pixelData) {
     _calculateHSV(pixelData, &h, &s, &v);
 
     // i > ((a / (s - b)) + c)
-    float a = 0.02;
-    float b = 0.28;
-    float c = -0.02;
+    float a = 0.04;
+    float b = 0.18;
+    float c = 0.14;
 
     bool isGray = false;
     if (s <= b)
