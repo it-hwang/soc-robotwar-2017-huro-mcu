@@ -4,5 +4,6 @@
 #include <stdbool.h>
 
 bool verticalBarricadeMain(void);
+int measureVerticalBarricadeDistance(void);
 
 #endif // __VERTICAL_BARRICADE_H__
