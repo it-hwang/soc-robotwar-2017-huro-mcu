@@ -90,6 +90,7 @@ void setHeadHorizontal(int degrees) {
 void setHead(int horizontalDegrees, int verticalDegrees) {
 	setHeadHorizontal(horizontalDegrees);
 	setHeadVertical(verticalDegrees);
+	mdelay(1629);
 }
 
 
