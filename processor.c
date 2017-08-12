@@ -17,20 +17,25 @@
 #include "check_center.h"
 #include "vertical_barricade.h"
 #include "red_bridge.h"
+#include "white_balance.h"
+#include "log.h"
 
-ObstacleId_t* _obstacleSequence;
+static ObstacleId_t* _obstacleSequence;
 
-Screen_t* _pDefaultScreen;
+static Screen_t* _pDefaultScreen;
 
 
-void _improveSomeObstacle(void);
+static void _improveSomeObstacle(void);
 
-void _defineObstacle(void) {
+static void _adjustWhiteBalance(int r5, int g5, int b5);
+static void _adjustWhiteBalanceAuto(void);
+
+static void _defineObstacle(void) {
 	//registerObstacle(OBSTACLE_ONE, helloWorld);
 	//registerObstacle(OBSTACLE_TWO, goodbyeWorld);
 }
 
-void _convertScreenToDisplay(Screen_t* pScreen) {
+static void _convertScreenToDisplay(Screen_t* pScreen) {
     int length = pScreen->height * pScreen->width;
     int i;
     for (i = 0; i < length; ++i) {
@@ -39,7 +44,7 @@ void _convertScreenToDisplay(Screen_t* pScreen) {
     }
 }
 
-void _applyColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
+static void _applyColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
     int width = pScreen->width;
     int height = pScreen->height;
     int length = width * height;
@@ -82,34 +87,17 @@ void closeProcessor(void) {
     destroyScreen(_pDefaultScreen);
     free(_obstacleSequence);
     finalizeColor();
+    setDefaultWhiteBalanceTable(NULL);
 }
 
 int runProcessor(void) {
-    int i;
+    _adjustWhiteBalanceAuto();
 
-    Send_Command(2);
-	waitMotion();
-    setHead(90, -50);
-    //Send_Command(2);
-    //waitMotion();
-    /*for (i = 0; i < 200; ++i) {
+    for (int i = 0; i < 500; ++i) {
         readFpgaVideoData(_pDefaultScreen);
-
-        Matrix16_t* pSubMatrix = createSubMatrix16(_pDefaultScreen, 60, 0, 119, 119);
-
-        Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix,
-                                        pColorTables[COLOR_BLUE]);
-
-        _applyColorMatrix(pSubMatrix, pColorMatrix);
-
-        overlapMatrix16(pSubMatrix, _pDefaultScreen, 60, 0);
-
-        destroyMatrix8(pColorMatrix);
-        destroyMatrix16(pSubMatrix);
-        
-        _convertScreenToDisplay(_pDefaultScreen);
+        applyDefaultWhiteBalance(_pDefaultScreen);
         displayScreen(_pDefaultScreen);
-    }*/
+    }
 
     return 0;
 }
@@ -121,78 +109,96 @@ void _improveSomeObstacle(void) {
     */
     ///////////////////////////////////////////////////////////////////////////
     readFpgaVideoData(_pDefaultScreen);
-    Matrix8_t* pColorMatrix = createColorMatrix(_pDefaultScreen, 
-                                    pColorTables[COLOR_BLACK]);
-    
-    // 깁기
-    applyDilationToMatrix8(pColorMatrix, 1);
-    applyErosionToMatrix8(pColorMatrix, 2);
-    applyDilationToMatrix8(pColorMatrix, 1);
-  
-  
-    ObjectList_t* pMatrixObjectList;
-    pMatrixObjectList = detectObjectsLocation(pColorMatrix);
-    //printf("list size 1 %d\n", pMatrixObjectList->size);
-    if (pMatrixObjectList) {
-        int i;
-        for(i = 0; i < pMatrixObjectList->size; ++i) {
-            int x;
-            int y;
-            Object_t object = pMatrixObjectList->list[i];
-            PixelData_t* pixels = _pDefaultScreen->elements;
 
-            for(y = object.minY; y <= object.maxY; ++y) {
-                for(x = object.minX; x <= object.maxX; ++x) {
-                    int index = y * _pDefaultScreen->width + x;
-                    uint16_t* pOutput = (uint16_t*)&pixels[index];
-
-                    if(y == object.minY || y == object.maxY) {
-                        *pOutput = 0xF800;
-                    } else if(x == object.minX || x == object.maxX) {
-                        *pOutput = 0xF800;
-                    }
-                }
-            }
-
-            int index = (int)object.centerY * _pDefaultScreen->width + (int)object.centerX;
-            uint16_t* pOutput = (uint16_t*)&pixels[index];
-            *pOutput = 0x1F;
-        }
-    }
-
-    if (pMatrixObjectList){
-        free(pMatrixObjectList->list);
-        free(pMatrixObjectList);
-    }
-        
-    
-    
-    /*pMatrixObjectList = detectObjectsLocation(pColorMatrix);
-    if (pMatrixObjectList)
-        free(pMatrixObjectList);
-    */
-
-    //line-detection process    
-    
-    Line_t* line = lineDetection(pColorMatrix);
-    if(line == NULL) {
-        printf("None line!!!\n");
-    }
-    else {
-        printf("Yes line!!!\n");
-        printf("line THETA = %f\n", line->theta);
-        printf("line DistancePixel = (%d, %d)\n", line->distancePoint.x, line->distancePoint.y);
-        free(line);
-    }
-    
-    /***********************************************************************************************/
-    //sendDataToRobot(command);
-    //printf("send command to robot: %d\n", command);
-    //waitDataFromRobot();
-    
-    //free(A);
-    //_applyColorMatrix(_pDefaultScreen, pColorMatrix);
-    destroyMatrix8(pColorMatrix);
     _convertScreenToDisplay(_pDefaultScreen);
     displayScreen(_pDefaultScreen);
 }
+
+
+static void _adjustWhiteBalance(int r5, int g5, int b5) {
+    static const char* LOG_FUNCTION_NAME = "_adjustWhiteBalance()";
+
+    Rgab5515_t inputColor;
+    Rgab5515_t realColor;
+    inputColor.r = r5;
+    inputColor.g = g5;
+    inputColor.b = b5;
+    realColor.r = 16;
+    realColor.g = 16;
+    realColor.b = 16;
+
+    LookUpTable16_t* pWhiteBalanceTable = createWhiteBalanceTable(&inputColor, &realColor);
+    setDefaultWhiteBalanceTable(pWhiteBalanceTable);
+
+    if (pWhiteBalanceTable != NULL) {
+        printLog("[%s] inputColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+                 inputColor.r, inputColor.g, inputColor.b);
+        printLog("[%s] realColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+                 realColor.r, realColor.g, realColor.b);
+        printLog("[%s] Adjustment success.\n", LOG_FUNCTION_NAME);
+    }
+    else {
+        printLog("[%s] inputColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+                 inputColor.r, inputColor.g, inputColor.b);
+        printLog("[%s] realColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+                 realColor.r, realColor.g, realColor.b);
+        printLog("[%s] Adjustment failed.\n", LOG_FUNCTION_NAME);
+    }
+}
+
+static Rgab5515_t _getMeanRgab5515OfMatrix16(Matrix16_t* pMatrix) {
+    uint64_t totalR = 0;
+    uint64_t totalG = 0;
+    uint64_t totalB = 0;
+    
+    int length = pMatrix->width * pMatrix->height;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)pMatrix->elements;
+    for (int i = 0; i < length; ++i) {
+        totalR += pRgab5515->r;
+        totalG += pRgab5515->g;
+        totalB += pRgab5515->b;
+        pRgab5515++;
+    }
+
+    Rgab5515_t meanRgab5515;
+    meanRgab5515.r = totalR / length;
+    meanRgab5515.g = totalG / length;
+    meanRgab5515.b = totalB / length;
+    return meanRgab5515;
+}
+
+static void _fillMatrix16(Matrix16_t* pMatrix, uint16_t value) {
+    int length = pMatrix->width * pMatrix->height;
+    uint16_t* pData = pMatrix->elements;
+    for (int i = 0; i < length; ++i) {
+        *pData = value;
+        pData++;
+    }
+}
+
+static void _adjustWhiteBalanceAuto(void) {
+    setHead(0, -90);
+    mdelay(1500);
+
+    Screen_t* pScreen = createDefaultScreen();
+    readFpgaVideoData(pScreen);
+    displayScreen(pScreen);
+
+    int width = pScreen->width;
+    int height = pScreen->height;
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 10, height - 20, width - 10, height - 1);
+    Rgab5515_t meanRgab5515 = _getMeanRgab5515OfMatrix16(pSubMatrix);
+    _adjustWhiteBalance(meanRgab5515.r, meanRgab5515.g, meanRgab5515.b);
+
+    // Debug screen
+    _fillMatrix16(pScreen, meanRgab5515.data);
+    overlapMatrix16(pSubMatrix, pScreen, 10, height - 20);
+    displayScreen(pScreen);
+
+    destroyMatrix16(pSubMatrix);
+    destroyScreen(pScreen);
+
+    setHead(0, 0);
+    mdelay(1500);
+}
+
