@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define MOTION_HEAD_CENTER          73
+#define MOTION_HEAD_BOTTOM          74
+
+
 int openRobotPort(void);
 void closeRobotPort(void);
 void sendDataToRobot(uint8_t data);
@@ -11,6 +15,7 @@ uint8_t receiveDataFromRobot(void);
 
 bool runMotion(uint8_t motionId, bool wait);
 bool waitMotion(void);
+void setSpeed(uint8_t speed);
 
 void setHeadVertical(int degrees);
 void setHeadHorizontal(int degrees);

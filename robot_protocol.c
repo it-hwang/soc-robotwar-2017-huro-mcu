@@ -56,6 +56,13 @@ bool waitMotion(void) {
 	return true;
 }
 
+void setSpeed(uint8_t speed) {
+	sendDataToRobot(72);
+	receiveDataFromRobot();
+	sendDataToRobot(speed);
+	waitMotion();
+}
+
 
 // BUG: 현재 머리 각도가 최초 한번밖에 조절이 안되는 문제가 있다.
 // RoboBasic 코드의 SERVO 명령어가 제대로 작동하는지가 가장 의심된다.
@@ -90,7 +97,7 @@ void setHeadHorizontal(int degrees) {
 void setHead(int horizontalDegrees, int verticalDegrees) {
 	setHeadHorizontal(horizontalDegrees);
 	setHeadVertical(verticalDegrees);
-	mdelay(1629);
+	//mdelay(1629);
 }
 
 
