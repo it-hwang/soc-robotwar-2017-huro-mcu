@@ -42,7 +42,7 @@ typedef struct {
 } Rgab5515_t;
 
 
-#if COLOR_USE_TYPE_CHECK
+#if COLOR_MODEL_USE_TYPE_CHECKING
     static inline uint32_t rgb565ToRgbaData(Rgb565_t* pRgb565) {
         return ((uint32_t)pRgb565->r << 27) |
                ((uint32_t)pRgb565->g << 18) |
@@ -50,7 +50,7 @@ typedef struct {
     }
 
     static inline uint16_t rgb565ToRgab5515Data(Rgb565_t* pRgb565) {
-        return ((uint16_t)pRgb565->data & 0xffdf)
+        return ((uint16_t)pRgb565->data & 0xffdf);
     }
 
     static inline uint32_t rgab5515ToRgbaData(Rgab5515_t* pRgab5515) {
