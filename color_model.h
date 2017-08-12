@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define COLOR_MODEL_USE_TYPE_CHECKING     true
+#define COLOR_MODEL_USE_TYPE_CHECK  true
 
 
 typedef struct {
@@ -42,7 +42,7 @@ typedef struct {
 } Rgab5515_t;
 
 
-#if COLOR_MODEL_USE_TYPE_CHECKING
+#if COLOR_MODEL_USE_TYPE_CHECK
     static inline uint32_t rgb565ToRgbaData(Rgb565_t* pRgb565) {
         return ((uint32_t)pRgb565->r << 27) |
                ((uint32_t)pRgb565->g << 18) |
