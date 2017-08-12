@@ -61,7 +61,7 @@ typedef struct {
     }
 
     static inline uint16_t rgab5515ToRgb565Data(Rgab5515_t* pRgab5515) {
-        return ((uint16_t)pRgab5515->data & 0xffdf |
+        return (((uint16_t)pRgab5515->data & 0xffdf) |
                (((uint16_t)pRgab5515->data >> 1) & 0x0020));
     }
 
