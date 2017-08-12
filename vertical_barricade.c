@@ -1,5 +1,7 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "vertical_barricade.h"
 #include "color.h"
 #include "color_model.h"
@@ -121,6 +123,15 @@ static void _removeObjectFromList(ObjectList_t* pObjectList, Object_t* pObject) 
     pObjectList->size--;
 }
 
+static void _destroyObjectList(ObjectList_t* pObjectList) {
+    if (pObjectList == NULL)
+        return;
+
+    free(pObjectList->list);
+    free(pObjectList);
+}
+
+// pObjectList에서 minCnt보다 작은 값을 가진 객체들을 제거한다.
 static void _filterObjectsByCnt(ObjectList_t* pObjectList, int minCnt) {
     if (pObjectList == NULL)
         return;
@@ -183,8 +194,9 @@ static Object_t* _findLargestObject(ObjectList_t* pObjectList) {
     return pLargestObject;
 }
 
+// pObjectList에서 pObject와 인접한 왼쪽 객체를 찾는다.
 static Object_t* _findLeftNeighborObject(Object_t* pObject, ObjectList_t* pObjectList) {
-    static const int MARGIN_X = 5;
+    static const int MARGIN_X = 3;
 
     if (pObject == NULL)
         return NULL;
@@ -195,10 +207,11 @@ static Object_t* _findLeftNeighborObject(Object_t* pObject, ObjectList_t* pObjec
         Object_t* pCurrentObject = &(pObjectList->list[i]);
         bool isSimilarY = ((pCurrentObject->minY <= pObject->centerY) &&
                            (pCurrentObject->maxY >= pObject->centerY));
-        bool isLeftPosition = ((pCurrentObject->maxX >= pObject->minX - MARGIN_X) &&
-                               (pCurrentObject->minX < pObject->minX));
+        bool isLeft = ((pCurrentObject->maxX >= pObject->minX - MARGIN_X) &&
+                       (pCurrentObject->maxX <= pObject->maxX) &&
+                       (pCurrentObject->minX < pObject->minX));
 
-        if (isSimilarY && isLeftPosition) {
+        if (isSimilarY && isLeft) {
             return pCurrentObject;
         }
     }
@@ -206,6 +219,7 @@ static Object_t* _findLeftNeighborObject(Object_t* pObject, ObjectList_t* pObjec
     return NULL;
 }
 
+// pObjectList에서 pObject와 인접한 오른쪽 객체를 찾는다.
 static Object_t* _findRightNeighborObject(Object_t* pObject, ObjectList_t* pObjectList) {
     static const int MARGIN_X = 3;
 
@@ -219,6 +233,7 @@ static Object_t* _findRightNeighborObject(Object_t* pObject, ObjectList_t* pObje
         bool isSimilarY = ((pCurrentObject->minY <= pObject->centerY) &&
                            (pCurrentObject->maxY >= pObject->centerY));
         bool isRightPosition = ((pCurrentObject->minX <= pObject->maxX + MARGIN_X) &&
+                                (pCurrentObject->minX >= pObject->minX) &&
                                 (pCurrentObject->maxX > pObject->maxX));
 
         if (isSimilarY && isRightPosition) {
@@ -241,6 +256,7 @@ static void _mergeObject(Object_t* pSrcObject, Object_t* pDstObject) {
 }
 
 static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
+    static const char* LOG_FUNCTION_NAME = "_searchVerticalBarricade()";
     // 하단 판정 Y값
     static const int BOTTOM_Y = 60;
     // 직사각형의 형태와 유사해야한다.
@@ -248,7 +264,7 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
     // 유사도를 후하게 쳐줄 경우
     static const float MIN_RECTANGLE_CORRELATION2 = 0.45;
     // 가장 큰 물체와 크기 차이가 적어야한다.
-    static const float LARGEST_OBJECT_RELATIVE_RATIO = 0.50;
+    static const float LARGEST_OBJECT_RELATIVE_RATIO = 0.35;
 
     Matrix8_t* pBlackMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLACK]);
     Matrix8_t* pYellowMatrix = createColorMatrix(pScreen, pColorTables[COLOR_YELLOW]);
@@ -265,68 +281,85 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
         int minCnt = pLargestObject->cnt * LARGEST_OBJECT_RELATIVE_RATIO;
         _filterObjectsByCnt(pYellowObjectList, minCnt);
         _filterObjectsByCnt(pBlackObjectList, minCnt);
-        printLog("[_searchVerticalBarricade()] minCnt: %d\n", minCnt);
+        printLog("[%s] minCnt: %d\n", LOG_FUNCTION_NAME, minCnt);
 
         while (pYellowObjectList->size > 0) {
             Object_t* pMostRectangleObject = _findMostRectangleObject(pYellowMatrix, pYellowObjectList);
             float correlation = getRectangleCorrelation(pYellowMatrix, pMostRectangleObject);
             bool onBottom = (pMostRectangleObject->minY >= BOTTOM_Y);
-            printLog("[_searchVerticalBarricade()] correlation: %f\n", correlation);
+            printLog("[%s] correlation: %f\n", LOG_FUNCTION_NAME, correlation);
 
             // 바리케이드가 평소에는 직사각형으로 보인다.
-            if (!onBottom && correlation < MIN_RECTANGLE_CORRELATION)
-                break;
+            if (!onBottom && correlation < MIN_RECTANGLE_CORRELATION) {
+                _removeObjectFromList(pYellowObjectList, pMostRectangleObject);
+                continue;
+            }
             // 바리케이드가 하단에 걸치면 왜곡이 심해져서 직사각형으로 보이지 않는다.
             // 하단에 걸친경우 유사도를 후하게 쳐준다.
-            if (onBottom && correlation < MIN_RECTANGLE_CORRELATION2)
-                break;
+            if (onBottom && correlation < MIN_RECTANGLE_CORRELATION2) {
+                _removeObjectFromList(pYellowObjectList, pMostRectangleObject);
+                continue;
+            }
+
+            bool tooClose = (pMostRectangleObject->maxY == pScreen->height - 1);
+            bool tooFar = (pMostRectangleObject->minY == 0);
+            // 너무 가까우면서 너무 큰 경우는 없다. (바리케이드가 아닌 다른 물체이다.)
+            if (tooClose && tooFar) {
+                _removeObjectFromList(pYellowObjectList, pMostRectangleObject);
+                continue;
+            }
 
             Object_t* pLeftObject = _findLeftNeighborObject(pMostRectangleObject, pBlackObjectList);
             Object_t* pRightObject = _findRightNeighborObject(pMostRectangleObject, pBlackObjectList);
             bool hasNeighbor = (pLeftObject != NULL || pRightObject != NULL);
-            if (hasNeighbor) {
-                pVerticalBarricadeObject = malloc(sizeof(Object_t));
-                memcpy(pVerticalBarricadeObject, pMostRectangleObject, sizeof(Object_t));
-                pVerticalBarricadeObject->color = COLOR_NONE;
-
-                if (pLeftObject != NULL)
-                    _mergeObject(pLeftObject, pVerticalBarricadeObject);
-                if (pRightObject != NULL)
-                    _mergeObject(pRightObject, pVerticalBarricadeObject);
-
-                break;
-            }
-            else {
+            // 가깝지 않다면 이웃을 식별할 수 있다.
+            // 가깝지 않은데도 이웃이 없다면 바리케이드가 아니다.
+            if (!tooClose && !hasNeighbor) {
                 _removeObjectFromList(pYellowObjectList, pMostRectangleObject);
+                continue;
             }
+
+            pVerticalBarricadeObject = malloc(sizeof(Object_t));
+            memcpy(pVerticalBarricadeObject, pMostRectangleObject, sizeof(Object_t));
+            pVerticalBarricadeObject->color = COLOR_NONE;
+
+            if (pLeftObject != NULL)
+                _mergeObject(pLeftObject, pVerticalBarricadeObject);
+            if (pRightObject != NULL)
+                _mergeObject(pRightObject, pVerticalBarricadeObject);
+
+            break;
         }
     }
 
     if (pVerticalBarricadeObject != NULL)
-    printLog("[_searchVerticalBarricade()] 객체를 찾았습니다.\n");
+        printLog("[%s] 객체를 찾았습니다.\n", LOG_FUNCTION_NAME);
     else
-    printLog("[_searchVerticalBarricade()] 객체를 찾을 수 없습니다.\n");
+        printLog("[%s] 객체를 찾을 수 없습니다.\n", LOG_FUNCTION_NAME);
 
-    if (pYellowObjectList != NULL) {
-        free(pYellowObjectList->list);
-        free(pYellowObjectList);
-    }
-    if (pBlackObjectList != NULL) {
-        free(pBlackObjectList->list);
-        free(pBlackObjectList);
-    }
+    _destroyObjectList(pYellowObjectList);
+    _destroyObjectList(pBlackObjectList);
     destroyMatrix8(pBlackMatrix);
     destroyMatrix8(pYellowMatrix);
 
     return pVerticalBarricadeObject;
 }
 
+static void _setHeadToCheck(void) {
+    setSpeed(15);
+    runMotion(MOTION_HEAD_BOTTOM, true);
+    setSpeed(45);
+    setHead(0, -35);
+    mdelay(280);
+    setSpeed(5);
+}
+
 
 bool verticalBarricadeMain(void) {
-    setHead(0, -35);
+    for (int i = 0; i < 10; ++i) {
+        int distance = measureVerticalBarricadeDistance();
+        printf("distance: %d\n", distance);
 
-    for (int i = 0; i < 100; ++i) {
-        measureVerticalBarricadeDistance();
         char c;
         scanf("%c", &c);
     }
@@ -335,25 +368,40 @@ bool verticalBarricadeMain(void) {
 }
 
 int measureVerticalBarricadeDistance(void) {
-    //setHead(0, -35);
+    static const char* LOG_FUNCTION_NAME = "measureVerticalBarricadeDistance()";
+
+    _setHeadToCheck();
 
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoData(pScreen);
 
+    int millimeters = 0;
     Object_t* pObject = _searchVerticalBarricade(pScreen);
+    if (pObject != NULL) {
+        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
+                 pObject->minY, pObject->centerY, pObject->maxY);
+
+        // 화면 상의 위치로 실제 거리를 추측한다.
+        // BUG: 올라가는 중이거나 내려가는 중인 바리케이드라면 측정이 제대로 안될 수 있다.
+        bool tooFar = (pObject->minY == 0);
+        bool tooClose = (pObject->maxY == pScreen->height - 1);
+        if (tooFar && tooClose) {
+            millimeters = 0;    // 바리케이드가 아니다.
+        }
+        else if (tooClose || (pObject->minY > pScreen->height / 2)) {
+            millimeters = -0.9434 * pObject->minY + 156.6038;
+        }
+        else {
+            millimeters = -139.4 * log(pObject->maxY) + 740.62;
+        }
+    }
 
     _drawColorScreen(pScreen);
     _drawObjectEdge(pScreen, pObject);
-
-    printf("minY: %d, centerY: %f, maxY: %d\n", pObject->minY, pObject->centerY, pObject->maxY);
-    printLog("minY: %d, centerY: %f, maxY: %d\n", pObject->minY, pObject->centerY, pObject->maxY);
-
     displayScreen(pScreen);
 
     free(pObject);
     destroyScreen(pScreen);
 
-    //sdelay(1);
-
-    return 0;
+    return millimeters;
 }
