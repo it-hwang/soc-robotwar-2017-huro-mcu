@@ -14,55 +14,66 @@ static double _aB, _bB, _cB;
 static uint16_t _convertRealColor(PixelData_t pixelData) {
     uint16_t rgab5515Data = pixelData;
     Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
-    
-    int r = pRgab5515->r;
-    int g = pRgab5515->g;
-    int b = pRgab5515->b;
+    Rgba_t rgba;
+    rgba.data = rgab5515ToRgbaData(pRgab5515);
+
+    int r = rgba.r;
+    int g = rgba.g;
+    int b = rgba.b;
     int r2 = _aR * r * r + _bR * r + _cR;
     int g2 = _aG * g * g + _bG * g + _cG;
     int b2 = _aB * b * b + _bB * b + _cB;
 
-    pRgab5515->r = _MIN(_MAX(r2, 0), 31);
-    pRgab5515->g = _MIN(_MAX(g2, 0), 31);
-    pRgab5515->b = _MIN(_MAX(b2, 0), 31);
+    rgba.r = _MIN(_MAX(r2, 0), 255);
+    rgba.g = _MIN(_MAX(g2, 0), 255);
+    rgba.b = _MIN(_MAX(b2, 0), 255);
+    pRgab5515->data = rgbaToRgab5515Data(&rgba);
 
     return pRgab5515->data;
 }
 
-LookUpTable16_t* createWhiteBalanceTable(Rgab5515_t* pInputColor, Rgab5515_t* pRealColor) {
-    int inputR = pInputColor->r;
-    int inputG = pInputColor->g;
-    int inputB = pInputColor->b;
-    int realR = pRealColor->r;
-    int realG = pRealColor->g;
-    int realB = pRealColor->b;
+LookUpTable16_t* createWhiteBalanceTable(Rgab5515_t* pInputColor, Rgab5515_t* pRealColor,
+                                         const char* filePath, bool overwrite) {
+    Rgab5515_t grayColor;
+    grayColor.r = 16;
+    grayColor.g = 16;
+    grayColor.b = 16;
+    if (pInputColor == NULL)
+        pInputColor = &grayColor;
+    if (pRealColor == NULL)
+        pRealColor = &grayColor;
 
-    if (inputR == 0 || inputR == 31)
+    Rgba_t inputRgba;
+    Rgba_t realRgba;
+    inputRgba.data = rgab5515ToRgbaData(pInputColor);
+    realRgba.data = rgab5515ToRgbaData(pRealColor);
+
+    int inputR = inputRgba.r;
+    int inputG = inputRgba.g;
+    int inputB = inputRgba.b;
+    int realR = realRgba.r;
+    int realG = realRgba.g;
+    int realB = realRgba.b;
+
+    if (inputR == 0 || inputR == 255)
         return NULL;
-    if (inputG == 0 || inputG == 31)
+    if (inputG == 0 || inputG == 255)
         return NULL;
-    if (inputB == 0 || inputB == 31)
+    if (inputB == 0 || inputB == 255)
         return NULL;
     
-    _aR = (double)(realR - inputR) / (inputR * (inputR - 31));
-    _bR = 1.0 - (_aR * 31);
+    _aR = (double)(realR - inputR) / (inputR * (inputR - 255));
+    _bR = 1.0 - (_aR * 255);
     _cR = 0.;
-    _aG = (double)(realG - inputG) / (inputG * (inputG - 31));
-    _bG = 1.0 - (_aG * 31);
+    _aG = (double)(realG - inputG) / (inputG * (inputG - 255));
+    _bG = 1.0 - (_aG * 255);
     _cG = 0.;
-    _aB = (double)(realB - inputB) / (inputB * (inputB - 31));
-    _bB = 1.0 - (_aB * 31);
+    _aB = (double)(realB - inputB) / (inputB * (inputB - 255));
+    _bB = 1.0 - (_aB * 255);
     _cB = 0.;
 
     uint32_t length = pow(2, sizeof(PixelData_t) * 8);
-    return createLookUpTable16(NULL, (LookUpTableFunc16_t*)_convertRealColor, length, false);
-}
-
-void setDefaultWhiteBalanceTable(LookUpTable16_t* pWhiteBalanceTable) {
-    if (_pDefaultWhiteBalanceTable != NULL)
-        destroyLookUpTable16(_pDefaultWhiteBalanceTable);
-
-    _pDefaultWhiteBalanceTable = pWhiteBalanceTable;
+    return createLookUpTable16(filePath, (LookUpTableFunc16_t*)_convertRealColor, length, overwrite);
 }
 
 void applyWhiteBalance(Screen_t* pScreen, LookUpTable16_t* pWhiteBalanceTable) {
@@ -80,6 +91,22 @@ void applyWhiteBalance(Screen_t* pScreen, LookUpTable16_t* pWhiteBalanceTable) {
     }
 }
 
+void setDefaultWhiteBalanceTable(LookUpTable16_t* pWhiteBalanceTable) {
+    if (_pDefaultWhiteBalanceTable != NULL)
+        destroyLookUpTable16(_pDefaultWhiteBalanceTable);
+
+    _pDefaultWhiteBalanceTable = pWhiteBalanceTable;
+}
+
+void resetDefaultWhiteBalanceTable(void) {
+    setDefaultWhiteBalanceTable(NULL);
+}
+
 void applyDefaultWhiteBalance(Screen_t* pScreen) {
     applyWhiteBalance(pScreen, _pDefaultWhiteBalanceTable);
+}
+
+void readFpgaVideoDataWithWhiteBalance(Screen_t* pDefaultScreen) {
+    readFpgaVideoData(pDefaultScreen);
+    applyDefaultWhiteBalance(pDefaultScreen);
 }
