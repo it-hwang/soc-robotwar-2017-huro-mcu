@@ -8,7 +8,7 @@ enum {
     ROBOT_SET_SERVO_OFFSET = 1,
     ROBOT_SET_SERVO_SPEED,
     ROBOT_GET_SERVO_OFFSET,
-    ROBOT_TURN_OFF_ARM_MOTORS,
+    ROBOT_RELEASE_ARM_SERVOS,
     MOTION_BASIC_STANCE,
     MOTION_BOARD_CONNECTING_STANCE,
     MOTION_CHECK_SIDELINE_STANCE,
@@ -57,9 +57,10 @@ void closeRobotPort(void);
 void sendDataToRobot(uint8_t data);
 uint8_t receiveDataFromRobot(void);
 
-bool runMotion(uint8_t motionId, bool wait);
+bool runMotion(uint8_t motionId);
 bool waitMotion(void);
 void setServoSpeed(uint8_t speed);
+void resetServoSpeed(void);
 void setServoOffset(uint8_t servoId, uint8_t offset);
 uint8_t getServoOffset(uint8_t servoId);
 

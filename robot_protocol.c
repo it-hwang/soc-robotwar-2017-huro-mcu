@@ -40,15 +40,9 @@ uint8_t receiveDataFromRobot(void) {
 }
 
 
-bool runMotion(uint8_t motionId, bool wait) {
+bool runMotion(uint8_t motionId) {
 	sendDataToRobot(motionId);
-
-	if (wait == true) {
-		return waitMotion();
-	}
-	else {
-		return true;
-	}
+	return waitMotion();
 }
 
 bool waitMotion(void) {
@@ -64,6 +58,10 @@ void setServoSpeed(uint8_t speed) {
 	sendDataToRobot(speed);
 
 	waitMotion();
+}
+
+void resetServoSpeed(void) {
+	setServoSpeed(0);
 }
 
 void setServoOffset(uint8_t servoId, uint8_t offset) {
@@ -152,7 +150,7 @@ bool walkBackward(int millimeters) {
 
 bool walkLeft(int millimeters) {
 	while (millimeters > 0) {
-		if (!runMotion(MOTION_MOVE_LEFT_MIDDLE, true))
+		if (!runMotion(MOTION_MOVE_LEFT_MIDDLE))
 			return false;
 		millimeters -= 20;
 	}
@@ -162,7 +160,7 @@ bool walkLeft(int millimeters) {
 
 bool walkRight(int millimeters) {
 	while (millimeters > 0) {
-		if (!runMotion(MOTION_MOVE_RIGHT_MIDDLE, true))
+		if (!runMotion(MOTION_MOVE_RIGHT_MIDDLE))
 			return false;
 		millimeters -= 20;
 	}
@@ -172,7 +170,7 @@ bool walkRight(int millimeters) {
 
 bool turnLeft(int degrees) {
 	while (degrees > 0) {
-		if (!runMotion(MOTION_TURN_LEFT_MIDDLE, true))
+		if (!runMotion(MOTION_TURN_LEFT_MIDDLE))
 			return false;
 		degrees -= 20;
 	}
@@ -182,7 +180,7 @@ bool turnLeft(int degrees) {
 
 bool turnRight(int degrees) {
 	while (degrees > 0) {
-		if (!runMotion(MOTION_TURN_RIGHT_MIDDLE, true))
+		if (!runMotion(MOTION_TURN_RIGHT_MIDDLE))
 			return false;
 		degrees -= 20;
 	}
