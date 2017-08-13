@@ -252,6 +252,23 @@ static void _runAdjustWhiteBalance(void) {
 ///////////////////////////////////////////////////////////////////////////////
 // Capture Screen
 ///////////////////////////////////////////////////////////////////////////////
+static void _autoSaveScreen(Screen_t* pScreen, char* savedFilePath) {
+    mkdir("./screenshots", 0755);
+
+    // 적합한 파일 이름 찾기
+    int i = 0;
+    while (true) {
+        sprintf(savedFilePath, "./screenshots/sc%d", i);
+        bool isExists = (access(savedFilePath, F_OK) == 0);
+        if (!isExists)
+            break;
+        i++;
+    }
+
+    writeScreen(pScreen, savedFilePath);
+}
+
+
 static void _runCaptureScreen(void) {
     printLog("Capture Screen\n");
 
@@ -281,8 +298,10 @@ static void _runCaptureScreen(void) {
                 printf(">> ");
                 input = getchar();
                 if (input == '\n') {
-                    // TODO: 저장 기능 추가
-                    printf("이미지가 저장되었습니다: %s\n", "");
+                    char savedFilePath[1024];
+                    _autoSaveScreen(pDefaultScreen, savedFilePath);
+                    
+                    printf("이미지가 저장되었습니다: %s\n", savedFilePath);
                     break;
                 }
                 else if (input == 'n' || input == 'N') {
