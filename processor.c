@@ -89,6 +89,11 @@ int runProcessor(int command) {
             _runCaptureScreen();
             break;
 
+        case 4:
+            // Test
+            _runTest();
+            break;
+
         default:
             break;
     }
@@ -336,5 +341,20 @@ static void _runCaptureScreen(void) {
 static void _runTest(void) {
     printLog("Test\n");
 
+    sdelay(3);
+    setHead(0, -90);
+    sdelay(1);
+    setHead(-90, 0);
+    sdelay(1);
+    setHead(0, -90);
+    sdelay(1);
+    setHead(0, 0);
+
+    walkForward(70);
+    walkBackward(70);
+    walkLeft(40);
+    walkRight(40);
+    turnLeft(40);
+    turnRight(40);
 }
 
