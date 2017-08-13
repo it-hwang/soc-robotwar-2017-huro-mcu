@@ -75,7 +75,7 @@ Matrix8_t* createSubMatrix8(Matrix8_t* pMatrix8, uint16_t minX, uint16_t minY, u
     uint16_t height = maxY-minY+1;
     Matrix8_t* pMatrix = createMatrix8(width, height);
     
-    uint8_t* pSrcElements = pMatrix8->elements + minX;
+    uint8_t* pSrcElements = pMatrix8->elements + (minY * pMatrix8->width) + minX;
     uint8_t* pDstElements = pMatrix->elements;
     size_t size_w = width * sizeof(uint8_t);
     int i;
@@ -98,7 +98,7 @@ Matrix16_t* createSubMatrix16(Matrix16_t* pMatrix16, uint16_t minX, uint16_t min
     uint16_t height = maxY-minY+1;
     Matrix16_t* pMatrix = createMatrix16(width, height);
 
-    uint16_t* pSrcElements = pMatrix16->elements + minX;
+    uint16_t* pSrcElements = pMatrix16->elements + (minY * pMatrix16->width) + minX;
     uint16_t* pDstElements = pMatrix->elements;
     size_t size_w = width * sizeof(uint16_t);
     int i;
@@ -121,8 +121,8 @@ Matrix32_t* createSubMatrix32(Matrix32_t* pMatrix32, uint16_t minX, uint16_t min
     uint16_t height = maxY-minY+1;
     Matrix32_t* pMatrix = createMatrix32(width, height);
     
-    uint16_t* pSrcElements = (uint16_t*)(pMatrix32->elements + minX);
-    uint16_t* pDstElements = (uint16_t*)pMatrix->elements;
+    uint32_t* pSrcElements = pMatrix32->elements + (minY * pMatrix32->width) + minX;
+    uint32_t* pDstElements = pMatrix->elements;
     size_t size_w = width * sizeof(uint32_t);
     int i;
     for(i=minY; i<=maxY; ++i) {
