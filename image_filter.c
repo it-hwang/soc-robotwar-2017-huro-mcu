@@ -266,7 +266,7 @@ void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     int x;
     int y;
     int count;
-    uint8_t value;
+    uint8_t value = 0;
     uint8_t element;
     bool needErosion;
 

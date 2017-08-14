@@ -68,8 +68,8 @@ static void _drawObjectEdge(Screen_t* pScreen, Object_t* pObject) {
     for (int i = minX; i < maxX; ++i) {
         int topIndex = minY * width + i;
         int bottomIndex = maxY * width + i;
-        Rgab5515_t* pTopPixel = &(pScreen->elements[topIndex]);
-        Rgab5515_t* pBottomPixel = &(pScreen->elements[bottomIndex]);
+        Rgab5515_t* pTopPixel = (Rgab5515_t*)&(pScreen->elements[topIndex]);
+        Rgab5515_t* pBottomPixel = (Rgab5515_t*)&(pScreen->elements[bottomIndex]);
         pTopPixel->r = 0x1f;
         pTopPixel->g = 0x00;
         pTopPixel->b = 0x00;
@@ -81,8 +81,8 @@ static void _drawObjectEdge(Screen_t* pScreen, Object_t* pObject) {
     for (int i = minY; i < maxY; ++i) {
         int leftIndex = i * width + minX;
         int rightIndex = i * width + maxX;
-        Rgab5515_t* pLeftPixel = &(pScreen->elements[leftIndex]);
-        Rgab5515_t* pRightPixel = &(pScreen->elements[rightIndex]);
+        Rgab5515_t* pLeftPixel = (Rgab5515_t*)&(pScreen->elements[leftIndex]);
+        Rgab5515_t* pRightPixel = (Rgab5515_t*)&(pScreen->elements[rightIndex]);
         pLeftPixel->r = 0x1f;
         pLeftPixel->g = 0x00;
         pLeftPixel->b = 0x00;
@@ -92,20 +92,6 @@ static void _drawObjectEdge(Screen_t* pScreen, Object_t* pObject) {
     }
 }
 
-
-static int _getIndexOfObject(ObjectList_t* pObjectList, Object_t* pObject) {
-    if (pObjectList == NULL)
-        return -1;
-    if (pObject == NULL)
-        return -1;
-
-    for (int i = 0; i < pObjectList->size; ++i) {
-        Object_t* pCurrentObject = &(pObjectList->list[i]);
-        if (pCurrentObject == pObject)
-            return i;
-    }
-    return -1;
-}
 
 static void _removeObjectFromList(ObjectList_t* pObjectList, Object_t* pObject) {
     if (pObjectList == NULL)
