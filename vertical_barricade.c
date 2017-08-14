@@ -9,6 +9,7 @@
 #include "object_detection.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
+#include "white_balance.h"
 #include "log.h"
 
 #define _MIN(X,Y) ((X) < (Y) ? (X) : (Y))
@@ -332,18 +333,6 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
 }
 
 
-bool verticalBarricadeMain(void) {
-    for (int i = 0; i < 10; ++i) {
-        int distance = measureVerticalBarricadeDistance();
-        printf("distance: %d\n", distance);
-
-        char c;
-        scanf("%c", &c);
-    }
-
-    return true;
-}
-
 static void _setHead(int horizontalDegrees, int verticalDegrees) {
     static const int ERROR_RANGE = 3;
 
@@ -363,16 +352,20 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     mdelay(500);
 }
 
-
 int measureVerticalBarricadeDistance(void) {
     static const char* LOG_FUNCTION_NAME = "measureVerticalBarricadeDistance()";
+
+    // 최대 거리
+    static const int MAX_DISTANCE = 500;
+
+    // 거리 측정에 사용되는 머리 각도
     static const int HEAD_HORIZONTAL_DEGREES = 0;
     static const int HEAD_VERTICAL_DEGREES = -35;
 
     _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
 
     Screen_t* pScreen = createDefaultScreen();
-    readFpgaVideoData(pScreen);
+    readFpgaVideoDataWithWhiteBalance(pScreen);
 
     int millimeters = 0;
     Object_t* pObject = _searchVerticalBarricade(pScreen);
@@ -393,6 +386,9 @@ int measureVerticalBarricadeDistance(void) {
         else {
             millimeters = -139.4 * log(pObject->maxY) + 740.62;
         }
+
+        if (millimeters > MAX_DISTANCE)
+            millimeters = 0;
     }
 
     _drawColorScreen(pScreen);
@@ -403,4 +399,109 @@ int measureVerticalBarricadeDistance(void) {
     destroyScreen(pScreen);
 
     return millimeters;
+}
+
+
+bool verticalBarricadeMain(void) {
+    if (measureVerticalBarricadeDistance() <= 0)
+        return false;
+
+    return solveVerticalBarricade();
+}
+
+
+static bool _waitVerticalBarricadeUp(void) {
+    static const char* LOG_FUNCTION_NAME = "_waitVerticalBarricadeUp()";
+
+    // 제한 시간 (밀리초)
+    static const int STAND_BY_TIMEOUT = 15000;
+    // 반복문을 한번 도는데 걸리는 시간 (밀리초)
+    static const int LOOP_DELAY = 360;
+
+    // 사진을 MAX_COUNT회 찍어 바리케이드가 계속 없다면 사라졌다고 판단한다.
+    static const int MAX_COUNT = 2;
+
+    int elapsedTime = 0;
+    int count = 0;
+    while (count < MAX_COUNT) {
+        if (elapsedTime >= STAND_BY_TIMEOUT)
+            return false;
+        elapsedTime += LOOP_DELAY;
+
+        bool isExists = (measureVerticalBarricadeDistance() > 0);
+        if (!isExists)
+            count++;
+        else
+            count = 0;
+    }
+
+    return true;
+}
+
+static bool _approachVerticalBarricade(void) {
+    static const char* LOG_FUNCTION_NAME = "_approachVerticalBarricade()";
+
+    // 제한 시간 (밀리초)
+    static const int STAND_BY_TIMEOUT = 15000;
+    // 반복문을 한번 도는데 걸리는 시간 (밀리초)
+    static const int LOOP_DELAY = 360;
+
+    // 바리케이드 인식 거리 허용 오차 (밀리미터)
+    static const int MEASURING_ERROR = 10;
+    // 바리케이드에 다가갈 거리 (밀리미터)
+    static const int APPROACH_DISTANCE = 80;
+    // 거리 허용 오차 (밀리미터)
+    static const int APPROACH_DISTANCE_ERROR = 35;
+
+    int elapsedTime = 0;
+    int distance = 0;
+    int tempDistance1 = 0;
+    int tempDistance2 = 0;
+    while ((distance == 0) || (distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR)) {
+        if (elapsedTime >= STAND_BY_TIMEOUT)
+            return false;
+        elapsedTime += LOOP_DELAY;
+
+        tempDistance1 = tempDistance2;
+        tempDistance2 = measureVerticalBarricadeDistance();
+
+        if (tempDistance1 == 0 || tempDistance2 == 0)
+            continue;
+
+        int measuringError = abs(tempDistance2 - tempDistance1);
+        if (measuringError > MEASURING_ERROR)
+            continue;
+        
+        distance = tempDistance2;
+        bool isFar = distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR;
+        if (isFar) {
+            int walkingDistance = distance - APPROACH_DISTANCE;
+            walkForward(walkingDistance);
+
+            elapsedTime = 0;
+        }
+    }
+
+    return true;
+}
+
+bool solveVerticalBarricade(void) {
+    static const char* LOG_FUNCTION_NAME = "solveVerticalBarricade()";
+
+    printLog("[%s] 수직 바리케이드에 접근한다.\n", LOG_FUNCTION_NAME);
+    if (!_approachVerticalBarricade()) {
+        printLog("[%s] 접근 실패: 시간 초과\n", LOG_FUNCTION_NAME);
+        return false;
+    }
+
+    printLog("[%s] 수직 바리케이드가 사라질 때까지 대기한다.\n", LOG_FUNCTION_NAME);
+    if (!_waitVerticalBarricadeUp()) {
+        printLog("[%s] 대기 실패: 시간 초과\n", LOG_FUNCTION_NAME);
+        return false;
+    }
+
+    printLog("[%s] 달린다.\n", LOG_FUNCTION_NAME);
+    runWalk(ROBOT_WALK_FORWARD_FAST, 8);
+
+    return true;
 }
