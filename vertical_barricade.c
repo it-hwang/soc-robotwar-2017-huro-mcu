@@ -344,14 +344,32 @@ bool verticalBarricadeMain(void) {
     return true;
 }
 
-int measureVerticalBarricadeDistance(void) {
-    static const char* LOG_FUNCTION_NAME = "measureVerticalBarricadeDistance()";
+static void _setHead(int horizontalDegrees, int verticalDegrees) {
+    static const int ERROR_RANGE = 3;
+
+    bool isAlreadySet = true;
+    if (abs(getHeadHorizontal() - horizontalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
+    if (abs(getHeadVertical() - verticalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
+
+    if (isAlreadySet)
+        return;
 
     setServoSpeed(30);
     runMotion(MOTION_HEAD_FRONT);
-    setHead(0, -35);
+    setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
     mdelay(500);
+}
+
+
+int measureVerticalBarricadeDistance(void) {
+    static const char* LOG_FUNCTION_NAME = "measureVerticalBarricadeDistance()";
+    static const int HEAD_HORIZONTAL_DEGREES = 0;
+    static const int HEAD_VERTICAL_DEGREES = -35;
+
+    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
 
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoData(pScreen);
