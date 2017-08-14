@@ -424,3 +424,17 @@ Matrix8_t* createColorMatrix(Screen_t* pScreen, ColorTable_t* pColorTable) {
     return pColorMatrix;
 }
 
+
+void drawColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
+    int width = pScreen->width;
+    int height = pScreen->height;
+    int length = width * height;
+    PixelData_t* pScreenPixel = pScreen->elements;
+    Color_t* pColorPixel = pColorMatrix->elements;
+
+    for (int i = 0; i < length; ++i) {
+        *pScreenPixel = colorToRgab5515Data(*pColorPixel);
+        pScreenPixel++;
+        pColorPixel++;
+    }
+}

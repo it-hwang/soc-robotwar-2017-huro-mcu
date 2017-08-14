@@ -345,15 +345,6 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
     return pVerticalBarricadeObject;
 }
 
-static void _setHeadToCheck(void) {
-    setSpeed(15);
-    runMotion(MOTION_HEAD_BOTTOM, true);
-    setSpeed(45);
-    setHead(0, -35);
-    mdelay(280);
-    setSpeed(5);
-}
-
 
 bool verticalBarricadeMain(void) {
     for (int i = 0; i < 10; ++i) {
@@ -370,7 +361,11 @@ bool verticalBarricadeMain(void) {
 int measureVerticalBarricadeDistance(void) {
     static const char* LOG_FUNCTION_NAME = "measureVerticalBarricadeDistance()";
 
-    _setHeadToCheck();
+    setServoSpeed(30);
+    runMotion(MOTION_HEAD_FRONT);
+    setHead(0, -35);
+    resetServoSpeed();
+    mdelay(500);
 
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoData(pScreen);

@@ -20,6 +20,9 @@ extern const PixelCoordinate_t DEFAULT_SCREEN_HEIGHT;
 int openGraphicInterface(void);
 void closeGraphicInterface(void);
 
+void enableDirectCameraDisplay(void);
+void disableDirectCameraDisplay(void);
+
 Screen_t* createScreen(PixelCoordinate_t width, PixelCoordinate_t height);
 Screen_t* createDefaultScreen(void);
 void destroyScreen(Screen_t* pScreen);

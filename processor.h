@@ -7,6 +7,6 @@
 int openProcessor(void);
 void closeProcessor(void);
 
-int runProcessor(void);
+int runProcessor(int command);
 
 #endif //__PROCESSOR_H__
