@@ -87,7 +87,6 @@ uint8_t getServoOffset(uint8_t servoId) {
 }
 
 
-// BUG: 17번 모터(머리 수직)의 값을 받아오지 못하는 버그가 있다.
 int getHeadHorizontal(void) {
 	int offset = getServoOffset(SERVO_HEAD_HORIZONTAL);
 	int degrees = offset - 100;

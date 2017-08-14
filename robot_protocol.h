@@ -69,7 +69,6 @@ void resetServoSpeed(void);
 void setServoOffset(uint8_t servoId, uint8_t offset);
 uint8_t getServoOffset(uint8_t servoId);
 
-// BUG: 17번 모터(머리 수직)의 값을 받아오지 못하는 버그가 있다.
 int getHeadHorizontal(void);
 int getHeadVertical(void);
 
