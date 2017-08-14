@@ -89,6 +89,11 @@ int runProcessor(int command) {
             _runCaptureScreen();
             break;
 
+        case 4:
+            // Test
+            _runTest();
+            break;
+
         default:
             break;
     }
@@ -174,8 +179,9 @@ static void _fillMatrix16(Matrix16_t* pMatrix, uint16_t value) {
 
 // 고개를 숙여 브라켓에 비치는 회색영역의 색을 기준으로 화이트밸런스 테이블을 생성합니다.
 static void _adjustWhiteBalanceAuto(void) {
+    setServoSpeed(30);
     setHead(0, -90);
-    mdelay(1500);
+    mdelay(1000);
 
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoData(pScreen);
@@ -196,7 +202,7 @@ static void _adjustWhiteBalanceAuto(void) {
     destroyScreen(pScreen);
 
     setHead(0, 0);
-    mdelay(1500);
+    resetServoSpeed();
 }
 
 static void _runAdjustWhiteBalance(void) {
@@ -273,6 +279,7 @@ static void _runCaptureScreen(void) {
     printLog("Capture Screen\n");
 
     enableDirectCameraDisplay();
+    runMotion(ROBOT_RELEASE_ARM_SERVOS);
 
     while (true) {
         printf("\n");
@@ -336,5 +343,20 @@ static void _runCaptureScreen(void) {
 static void _runTest(void) {
     printLog("Test\n");
 
+    sdelay(3);
+    setHead(0, -90);
+    sdelay(1);
+    setHead(-90, 0);
+    sdelay(1);
+    setHead(0, -90);
+    sdelay(1);
+    setHead(0, 0);
+
+    walkForward(70);
+    walkBackward(70);
+    walkLeft(40);
+    walkRight(40);
+    turnLeft(40);
+    turnRight(40);
 }
 

@@ -40,37 +40,59 @@ uint8_t receiveDataFromRobot(void) {
 }
 
 
-bool runMotion(uint8_t motionId, bool wait) {
+bool runMotion(uint8_t motionId) {
 	sendDataToRobot(motionId);
-
-	if (wait == true) {
-		return waitMotion();
-	}
-	else {
-		return true;
-	}
+	return waitMotion();
 }
 
 bool waitMotion(void) {
 	uint8_t receivedData = receiveDataFromRobot();
-	return true;
+	bool isSuccess = (receivedData == 0);
+	return isSuccess;
+}
+
+void setServoSpeed(uint8_t speed) {
+	sendDataToRobot(ROBOT_SET_SERVO_SPEED);
+
+	receiveDataFromRobot();
+	sendDataToRobot(speed);
+
+	waitMotion();
+}
+
+void resetServoSpeed(void) {
+	setServoSpeed(0);
+}
+
+void setServoOffset(uint8_t servoId, uint8_t offset) {
+	sendDataToRobot(ROBOT_SET_SERVO_OFFSET);
+
+	receiveDataFromRobot();
+	sendDataToRobot(servoId);
+
+	receiveDataFromRobot();
+	sendDataToRobot(offset);
+
+	waitMotion();
+}
+
+uint8_t getServoOffset(uint8_t servoId) {
+	sendDataToRobot(ROBOT_GET_SERVO_OFFSET);
+
+	receiveDataFromRobot();
+	sendDataToRobot(servoId);
+
+	uint8_t offset = receiveDataFromRobot();
+	return offset;
 }
 
 
-// BUG: 현재 머리 각도가 최초 한번밖에 조절이 안되는 문제가 있다.
-// RoboBasic 코드의 SERVO 명령어가 제대로 작동하는지가 가장 의심된다.
 void setHeadVertical(int degrees) {
 	if (degrees < -90 || degrees > 90)
 		return;
 
 	int offset = degrees + 100;
-
-	sendDataToRobot(1);
-	receiveDataFromRobot();
-	sendDataToRobot(17);
-	receiveDataFromRobot();
-	sendDataToRobot(offset);
-	waitMotion();
+	setServoOffset(17, offset);
 }
 
 void setHeadHorizontal(int degrees) {
@@ -78,18 +100,22 @@ void setHeadHorizontal(int degrees) {
 		return;
 
 	int offset = degrees + 100;
-
-	sendDataToRobot(1);
-	receiveDataFromRobot();
-	sendDataToRobot(11);
-	receiveDataFromRobot();
-	sendDataToRobot(offset);
-	waitMotion();
+	setServoOffset(11, offset);
 }
 
 void setHead(int horizontalDegrees, int verticalDegrees) {
 	setHeadHorizontal(horizontalDegrees);
 	setHeadVertical(verticalDegrees);
+}
+
+
+bool runWalk(uint8_t walkId, uint8_t steps) {
+	sendDataToRobot(walkId);
+
+	receiveDataFromRobot();
+	sendDataToRobot(steps);
+
+	return waitMotion();
 }
 
 
@@ -105,28 +131,26 @@ void setHead(int horizontalDegrees, int verticalDegrees) {
 //  - 전진보행_빠른_바리케이드: 빠른전진보행으로 길게 전진 (40cm)
 //  - 전진보행_빠른_바리케이드_멀리: 빠른전진보행으로 길게 전진 (56cm)
 bool walkForward(int millimeters) {
-	while (millimeters > 0) {
-		if (!runMotion(9, true))
-			return false;
-		millimeters -= 70;
-	}
+	if (millimeters > 35)
+		runWalk(ROBOT_WALK_FORWARD, millimeters / 35);
+	else if (millimeters > 0)
+		runWalk(ROBOT_WALK_FORWARD, 1);
 
 	return true;
 }
 
 bool walkBackward(int millimeters) {
-	while (millimeters > 0) {
-		if (!runMotion(39, true))
-			return false;
-		millimeters -= 70;
-	}
+	if (millimeters > 35)
+		runWalk(ROBOT_WALK_BACKWARD, millimeters / 35);
+	else if (millimeters > 0)
+		runWalk(ROBOT_WALK_BACKWARD, 1);
 	
 	return true;
 }
 
 bool walkLeft(int millimeters) {
 	while (millimeters > 0) {
-		if (!runMotion(4, true))
+		if (!runMotion(MOTION_MOVE_LEFT_MIDDLE))
 			return false;
 		millimeters -= 20;
 	}
@@ -136,7 +160,7 @@ bool walkLeft(int millimeters) {
 
 bool walkRight(int millimeters) {
 	while (millimeters > 0) {
-		if (!runMotion(5, true))
+		if (!runMotion(MOTION_MOVE_RIGHT_MIDDLE))
 			return false;
 		millimeters -= 20;
 	}
@@ -146,7 +170,7 @@ bool walkRight(int millimeters) {
 
 bool turnLeft(int degrees) {
 	while (degrees > 0) {
-		if (!runMotion(6, true))
+		if (!runMotion(MOTION_TURN_LEFT_MIDDLE))
 			return false;
 		degrees -= 20;
 	}
@@ -156,7 +180,7 @@ bool turnLeft(int degrees) {
 
 bool turnRight(int degrees) {
 	while (degrees > 0) {
-		if (!runMotion(7, true))
+		if (!runMotion(MOTION_TURN_RIGHT_MIDDLE))
 			return false;
 		degrees -= 20;
 	}
