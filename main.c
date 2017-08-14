@@ -126,12 +126,14 @@ static bool _findNextLogFileName(char* filePath) {
 }
 
 
-static void _initLog(void) {
-    char logFilePath[1024] = "";
-    _findNextLogFileName(logFilePath);
+void _initLog(void) {
+    mkdir("./logs", 0755);
+	
+	char logFilePath[1024] = "";
+	_findNextLogFileName(logFilePath);
 
-    if (openLogFile(logFilePath))
-        printf("[Log] File path: %s\n", logFilePath);
-    else
-        printf("[Log] Unable to create log file.\n");
+	if (openLogFile(logFilePath))
+		printf("[Log] File path: %s\n", logFilePath);
+	else
+		printf("[Log] Unable to create log file: %s\n", logFilePath);
 }

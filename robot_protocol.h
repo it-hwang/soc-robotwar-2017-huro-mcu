@@ -52,6 +52,11 @@ enum {
     MOTION_HORIZONTAL_BARRICADE
 };
 
+enum {
+    SERVO_HEAD_HORIZONTAL = 11,
+    SERVO_HEAD_VERTICAL = 17
+};
+
 int openRobotPort(void);
 void closeRobotPort(void);
 void sendDataToRobot(uint8_t data);
@@ -64,8 +69,11 @@ void resetServoSpeed(void);
 void setServoOffset(uint8_t servoId, uint8_t offset);
 uint8_t getServoOffset(uint8_t servoId);
 
-void setHeadVertical(int degrees);
+int getHeadHorizontal(void);
+int getHeadVertical(void);
+
 void setHeadHorizontal(int degrees);
+void setHeadVertical(int degrees);
 void setHead(int horizontalDegrees, int verticalDegrees);
 
 bool runWalk(uint8_t walkId, uint8_t steps);

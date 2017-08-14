@@ -87,12 +87,24 @@ uint8_t getServoOffset(uint8_t servoId) {
 }
 
 
+int getHeadHorizontal(void) {
+	int offset = getServoOffset(SERVO_HEAD_HORIZONTAL);
+	int degrees = offset - 100;
+	return degrees;
+}
+
+int getHeadVertical(void) {
+	int offset = getServoOffset(SERVO_HEAD_VERTICAL);
+	int degrees = offset - 100;
+	return degrees;
+}
+
 void setHeadVertical(int degrees) {
 	if (degrees < -90 || degrees > 90)
 		return;
 
 	int offset = degrees + 100;
-	setServoOffset(17, offset);
+	setServoOffset(SERVO_HEAD_VERTICAL, offset);
 }
 
 void setHeadHorizontal(int degrees) {
@@ -100,7 +112,7 @@ void setHeadHorizontal(int degrees) {
 		return;
 
 	int offset = degrees + 100;
-	setServoOffset(11, offset);
+	setServoOffset(SERVO_HEAD_HORIZONTAL, offset);
 }
 
 void setHead(int horizontalDegrees, int verticalDegrees) {

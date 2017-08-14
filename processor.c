@@ -343,20 +343,15 @@ static void _runCaptureScreen(void) {
 static void _runTest(void) {
     printLog("Test\n");
 
-    sdelay(3);
-    setHead(0, -90);
-    sdelay(1);
-    setHead(-90, 0);
-    sdelay(1);
+    // 작동 알림
     setHead(0, -90);
     sdelay(1);
     setHead(0, 0);
+    sdelay(1);
 
-    walkForward(70);
-    walkBackward(70);
-    walkLeft(40);
-    walkRight(40);
-    turnLeft(40);
-    turnRight(40);
+    // 바로 움직이면 위험하므로 잠시 대기한다.
+    sdelay(3);
+    
+    verticalBarricadeMain();
 }
 

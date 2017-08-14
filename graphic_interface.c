@@ -50,7 +50,7 @@ void readFpgaVideoData(Screen_t* pDefaultScreen) {
 static void _convertRgab5515MatrixToRgb565Matrix(Screen_t* pScreen) {
     int length = pScreen->height * pScreen->width;
     
-    Rgab5515_t* pRgab5515 = pScreen->elements;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)pScreen->elements;
     for (int i = 0; i < length; ++i) {
         pRgab5515->a = pRgab5515->g;
         pRgab5515++;
