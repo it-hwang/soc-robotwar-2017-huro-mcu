@@ -367,6 +367,21 @@ void drawObjectCenter(Screen_t* pScreen, Object_t* pObject, Rgab5515_t* pPointCo
 }
 
 
+void removeSmallObjects(ObjectList_t* pObjectList, int minimumCnt) {
+    if (pObjectList == NULL)
+        return;
+
+    // 도중에 remove하여 리스트의 크기가 변해도 문제가 생기지 않도록
+    // 역순으로 리스트를 순회한다.
+    int lastIndex = pObjectList->size - 1;
+    for (int i = lastIndex; i >= 0; --i) {
+        Object_t* pObject = &(pObjectList->list[i]);
+        if (pObject->cnt < minimumCnt)
+            removeObjectFromList(pObjectList, pObject);
+    }
+}
+
+
 Object_t* findLargestObject(ObjectList_t* pObjectList) {
     if (pObjectList == NULL)
         return NULL;
@@ -385,6 +400,14 @@ Object_t* findLargestObject(ObjectList_t* pObjectList) {
     }
 
     return pLargestObject;
+}
+
+
+void destroyObject(Object_t* pObject) {
+    if (pObject == NULL)
+        return;
+
+    free(pObject);
 }
 
 
