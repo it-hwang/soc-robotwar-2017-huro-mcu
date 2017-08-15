@@ -191,6 +191,7 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
             targetObject->cnt = labelCntList[i];
             targetObject->centerX = sourceObject->centerX;
             targetObject->centerY = sourceObject->centerY;
+            targetObject->id = resultIndex + 1;
             resultIndex++;
         }
     }

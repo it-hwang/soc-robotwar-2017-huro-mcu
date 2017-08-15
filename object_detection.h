@@ -1,6 +1,7 @@
 #ifndef __OBJECT_DETECTION_H__
 #define __OBJECT_DETECTION_H__
 
+#include <stdint.h>
 #include "color.h"
 
 typedef struct{
@@ -11,6 +12,7 @@ typedef struct{
     float centerX;
     float centerY;
     Color_t color;
+    uint16_t id;
     int cnt;
 } Object_t;
 
