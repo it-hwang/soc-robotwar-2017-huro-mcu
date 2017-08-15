@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
 #include "object_detection.h"
 #include "graphic_interface.h"
 #include "matrix.h"
@@ -276,6 +277,114 @@ void _sortArray(uint16_t* array, int size) {
             }
         }
     }
+}
+
+
+void destroyObjectList(ObjectList_t* pObjectList) {
+    if (pObjectList == NULL)
+        return;
+
+    free(pObjectList->list);
+    free(pObjectList);
+}
+
+
+void removeObjectFromList(ObjectList_t* pObjectList, Object_t* pObject) {
+    if (pObjectList == NULL)
+        return;
+    if (pObject == NULL)
+        return;
+
+    // Swap two objects
+    int lastIndex = pObjectList->size - 1;
+    Object_t* pLastObject = &(pObjectList->list[lastIndex]);
+    Object_t tempObject = *pLastObject;
+    memcpy(pLastObject, pObject, sizeof(Object_t));
+    memcpy(pObject, &tempObject, sizeof(Object_t));
+
+    pObjectList->size--;
+}
+
+
+void drawObjectEdge(Screen_t* pScreen, Object_t* pObject, Rgab5515_t* pBorderColor) {
+    Rgab5515_t purpleColor;
+    purpleColor.r = 0x1f;
+    purpleColor.g = 0x00;
+    purpleColor.b = 0x1f;
+
+    if (pScreen == NULL)
+        return;
+    if (pObject == NULL)
+        return;
+    if (pBorderColor == NULL)
+        pBorderColor = &purpleColor;
+
+    int width = pScreen->width;
+    int minX = pObject->minX;
+    int minY = pObject->minY;
+    int maxX = pObject->maxX;
+    int maxY = pObject->maxY;
+
+    for (int i = minX; i < maxX; ++i) {
+        int topIndex = minY * width + i;
+        int bottomIndex = maxY * width + i;
+        Rgab5515_t* pTopPixel = (Rgab5515_t*)&(pScreen->elements[topIndex]);
+        Rgab5515_t* pBottomPixel = (Rgab5515_t*)&(pScreen->elements[bottomIndex]);
+        pTopPixel->data = pBorderColor->data;
+        pBottomPixel->data = pBorderColor->data;
+    }
+
+    for (int i = minY; i < maxY; ++i) {
+        int leftIndex = i * width + minX;
+        int rightIndex = i * width + maxX;
+        Rgab5515_t* pLeftPixel = (Rgab5515_t*)&(pScreen->elements[leftIndex]);
+        Rgab5515_t* pRightPixel = (Rgab5515_t*)&(pScreen->elements[rightIndex]);
+        pLeftPixel->data = pBorderColor->data;
+        pRightPixel->data = pBorderColor->data;
+    }
+}
+
+
+void drawObjectCenter(Screen_t* pScreen, Object_t* pObject, Rgab5515_t* pPointColor) {
+    Rgab5515_t cyanColor;
+    cyanColor.r = 0x00;
+    cyanColor.g = 0x1f;
+    cyanColor.b = 0x1f;
+
+    if (pScreen == NULL)
+        return;
+    if (pObject == NULL)
+        return;
+    if (pPointColor == NULL)
+        pPointColor = &cyanColor;
+
+    int width = pScreen->width;
+    int x = pObject->centerX;
+    int y = pObject->centerY;
+    int index = (y * width) + x;
+    Rgab5515_t* pPixel = (Rgab5515_t*)&(pScreen->elements[index]);
+    pPixel->data = pPointColor->data;
+}
+
+
+Object_t* findLargestObject(ObjectList_t* pObjectList) {
+    if (pObjectList == NULL)
+        return NULL;
+
+    int maxArea = 0;
+    Object_t* pLargestObject = NULL;
+
+    for (int i = 0; i < pObjectList->size; ++i) {
+        Object_t* pObject = &(pObjectList->list[i]);
+        int area = pObject->cnt;
+
+        if (area > maxArea) {
+            pLargestObject = pObject;
+            maxArea = area;
+        }
+    }
+
+    return pLargestObject;
 }
 
 
