@@ -6,14 +6,17 @@
 #include "color_model.h"
 #include "graphic_interface.h"
 
+
+typedef LookUpTable16_t WhiteBalanceTable_t;
+
 // pInputColor: 입력 색상
 // pRealColor : 실제 색상(목표 색상)
-LookUpTable16_t* createWhiteBalanceTable(Rgab5515_t* pInputColor, Rgab5515_t* pRealColor,
-                                         const char* filePath, bool overwrite);
+WhiteBalanceTable_t* createWhiteBalanceTable(Rgba_t* pInputColor, Rgba_t* pRealColor,
+                                             const char* filePath, bool overwrite);
 
-void applyWhiteBalance(Screen_t* pScreen, LookUpTable16_t* pWhiteBalanceTable);
+void applyWhiteBalance(Screen_t* pScreen, WhiteBalanceTable_t* pWhiteBalanceTable);
 
-void setDefaultWhiteBalanceTable(LookUpTable16_t* pWhiteBalanceTable);
+void setDefaultWhiteBalanceTable(WhiteBalanceTable_t* pWhiteBalanceTable);
 void resetDefaultWhiteBalanceTable(void);
 void applyDefaultWhiteBalance(Screen_t* pScreen);
 void readFpgaVideoDataWithWhiteBalance(Screen_t* pDefaultScreen);
