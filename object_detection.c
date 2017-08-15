@@ -403,21 +403,13 @@ Object_t* findLargestObject(ObjectList_t* pObjectList) {
 }
 
 
-void destroyObject(Object_t* pObject) {
-    if (pObject == NULL)
-        return;
-
-    free(pObject);
-}
-
-
 // pObject가 직사각형과의 유사한 정도를 반환한다. (범위: 0.0 ~ 1.0)
 float getRectangleCorrelation(Matrix8_t* pMatrix, Object_t* pObject) {
-    if (pObject == NULL)
-        return 0.;
-
     static const float AREA_CORRELATION_RATIO = 0.8;
     static const float CENTER_CORRELATION_RATIO = 0.2;
+
+    if (pObject == NULL)
+        return 0.;
 
     int width = pObject->maxX - pObject->minX + 1;
     int height = pObject->maxY - pObject->minY + 1;
