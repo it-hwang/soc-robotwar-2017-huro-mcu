@@ -388,6 +388,6 @@ static void _runTest(void) {
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
     
-    verticalBarricadeMain();
+    redBridgeMain();
 }
 
