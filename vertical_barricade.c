@@ -58,22 +58,6 @@ static void _drawColorScreen(Screen_t* pScreen) {
 }
 
 
-// pObjectList에서 minCnt보다 작은 값을 가진 객체들을 제거한다.
-static void _filterObjectsByCnt(ObjectList_t* pObjectList, int minCnt) {
-    if (pObjectList == NULL)
-        return;
-
-    // 도중에 remove하여 리스트의 크기가 변해도 문제가 생기지 않도록
-    // 역순으로 리스트를 순회한다.
-    int lastIndex = pObjectList->size - 1;
-    for (int i = lastIndex; i >= 0; --i) {
-        Object_t* pObject = &(pObjectList->list[i]);
-        if (pObject->cnt < minCnt)
-            removeObjectFromList(pObjectList, pObject);
-    }
-}
-
-
 // 가장 직각 사각형에 가까운 객체를 찾는다.
 // 만일, 유사도가 같다면, 더 큰 물체를 선택한다.
 static Object_t* _findMostRectangleObject(Matrix8_t* pMatrix, ObjectList_t* pObjectList) {
@@ -184,10 +168,10 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
     ObjectList_t* pBlackObjectList = detectObjectsLocation(pBlackMatrix);
     if (pYellowObjectList != NULL && pYellowObjectList->size > 0) {
         Object_t* pLargestObject = findLargestObject(pYellowObjectList);
-        int minCnt = pLargestObject->cnt * LARGEST_OBJECT_RELATIVE_RATIO;
-        _filterObjectsByCnt(pYellowObjectList, minCnt);
-        _filterObjectsByCnt(pBlackObjectList, minCnt);
-        printLog("[%s] minCnt: %d\n", LOG_FUNCTION_NAME, minCnt);
+        int minimumCnt = pLargestObject->cnt * LARGEST_OBJECT_RELATIVE_RATIO;
+        removeSmallObjects(pYellowObjectList, minimumCnt);
+        removeSmallObjects(pBlackObjectList, minimumCnt);
+        printLog("[%s] minimumCnt: %d\n", LOG_FUNCTION_NAME, minimumCnt);
 
         while (pYellowObjectList->size > 0) {
             Object_t* pMostRectangleObject = _findMostRectangleObject(pYellowMatrix, pYellowObjectList);
