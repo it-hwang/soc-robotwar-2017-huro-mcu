@@ -1,108 +1,185 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include <string.h>
 
+#include "red_bridge.h"
+#include "matrix.h"
 #include "color.h"
+#include "color_model.h"
 #include "graphic_interface.h"
 #include "object_detection.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
-#include "red_bridge.h"
-#include "check_center.h"
+#include "white_balance.h"
+#include "log.h"
 
-#define MIN_CNT 400
-#define RED_BRIDGE_CNT 1500
-#define RED_BRIDGE_Y 50
-#define LIMIT_TRY 10
 
-ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg);
+// 빨간 다리의 최소 면적
+static const int   _MIN_AREA        = 600;
+// 빨간 다리의 최소 유사도
+static const float _MIN_CORRELATION = 0.1;
 
-Screen_t* _pDefaultScreen;
 
-bool redBridgeMain(void) {
+static Matrix8_t* _createRedMatrix(Screen_t* pScreen) {
+    Matrix8_t* pRedMatrix = createColorMatrix(pScreen, pColorTables[COLOR_RED]);
 
-    _pDefaultScreen = createDefaultScreen();
+    // 잡음을 제거한다.
+    applyFastErosionToMatrix8(pRedMatrix, 4);
+    applyFastDilationToMatrix8(pRedMatrix, 8);
+    applyFastErosionToMatrix8(pRedMatrix, 4);
 
-    int maxRedObjectCnt = 0;
-    int maxRedObjectY = 0;
-    int falseCounter = 0;
+    return pRedMatrix;
+}
 
-    while(true) {
-        ObjectList_t* objList = _captureRedObject(_pDefaultScreen, COLOR_RED, false);
+static void _displayDebugScreen(Screen_t* pScreen, Object_t* pObject) {
+    Screen_t* pDebugScreen = cloneMatrix16(pScreen);
+    Matrix8_t* pRedMatrix = _createRedMatrix(pScreen);
 
-        if(objList != NULL) {
-            int i;
-            for(i = 0; i < objList->size; ++i) {
-                if(maxRedObjectCnt < objList->list[i].cnt) {
-                    maxRedObjectCnt = objList->list[i].cnt;
-                    maxRedObjectY = (int)objList->list[i].centerY;
-                }
-            }
-            free(objList->list);
-            free(objList);
-        }
+    drawColorMatrix(pDebugScreen, pRedMatrix);
 
-        if(maxRedObjectCnt < MIN_CNT || objList == NULL) {
-            falseCounter++;
-            if(falseCounter > LIMIT_TRY)
-                destroyScreen(_pDefaultScreen);
-                return false;
-        }else if(maxRedObjectCnt < RED_BRIDGE_CNT && maxRedObjectY < RED_BRIDGE_Y) {
-            falseCounter = 0;
-            //Send_Command()//앞으로 간다.
-            checkCenter();
-        }else {
-            //Send_Command(); 장애물 통과 모션
-            checkCenter();
-            destroyScreen(_pDefaultScreen);
-            return true;
+    drawObjectEdge(pDebugScreen, pObject, NULL);
+    drawObjectCenter(pDebugScreen, pObject, NULL);
+
+    displayScreen(pDebugScreen);
+
+    destroyMatrix16(pDebugScreen);
+    destroyMatrix8(pRedMatrix);
+}
+
+// 빨간 다리와의 유사한 정도를 반환한다. (범위: 0.0 ~ 1.0)
+//  # 크기가 클 수록 유사도가 높다.
+//  # 무게중심이 약간 하단에 존재할 수록 유사도가 높다. (사다리꼴) 
+static float _getRedBridgeCorrelation(Matrix8_t* pRedMatrix, Object_t* pRedObject) {
+    static const float AREA_CORRELATION_RATIO = 0.90;
+    static const float CENTER_CORRELATION_RATIO = 0.10;
+
+    static const float CENTER_X_RATIO = 0.50;
+    static const float CENTER_Y_RATIO = 0.70;
+
+    if (pRedMatrix == NULL)
+        return 0.;
+    if (pRedObject == NULL)
+        return 0.;
+
+    float areaCorrelation;
+    int width = pRedMatrix->width;
+    int height = pRedMatrix->height;
+    int maxArea = width * height;
+    int objectArea = pRedObject->cnt;
+    areaCorrelation = (float)objectArea / maxArea;
+
+    float centerXCorrelation;
+    float objectCenterX = pRedObject->centerX;
+    float idealCenterX = ((float)pRedObject->maxX * CENTER_X_RATIO) + ((float)pRedObject->minX * (1. - CENTER_X_RATIO));
+    int   objectWidth = pRedObject->maxX - pRedObject->minX + 1;
+    centerXCorrelation = 1.0 - (fabs(objectCenterX - idealCenterX) / objectWidth);
+    
+    float centerYCorrelation;
+    float objectCenterY = pRedObject->centerY;
+    float idealCenterY = ((float)pRedObject->maxY * CENTER_Y_RATIO) + ((float)pRedObject->minY * (1. - CENTER_Y_RATIO));
+    int   objectHeight = pRedObject->maxY - pRedObject->minY + 1;
+    centerYCorrelation = 1.0 - (fabs(objectCenterY - idealCenterY) / objectHeight);
+    
+    float centerCorrelation = (centerXCorrelation * 0.5) + (centerYCorrelation * 0.5);
+
+    return (areaCorrelation * AREA_CORRELATION_RATIO) + (centerCorrelation * CENTER_CORRELATION_RATIO);
+}
+
+// pScreen에서 빨간 다리를 찾는다.
+// 반환된 오브젝트는 free()를 통하여 해제시켜야한다.
+static Object_t* _searchRedBridge(Screen_t* pScreen) {
+    Matrix8_t* pRedMatrix = _createRedMatrix(pScreen);
+
+    ObjectList_t* pObjectList = detectObjectsLocation(pRedMatrix);
+    removeSmallObjects(pObjectList, _MIN_AREA);
+
+    // 유사도가 가장 큰 오브젝트를 찾는다.
+    Object_t* pMostSimilarObject = NULL;
+    float maxCorrelation = 0.;
+    for (int i = 0; i < pObjectList->size; ++i) {
+        Object_t* pObject = &(pObjectList->list[i]);
+
+        float correlation = _getRedBridgeCorrelation(pRedMatrix, pObject);
+        if (correlation > maxCorrelation) {
+            pMostSimilarObject = pObject;
+            maxCorrelation = correlation;
         }
     }
+
+    Object_t* pRedBridge = NULL;
+    if (maxCorrelation >= _MIN_CORRELATION) {
+        pRedBridge = (Object_t*)malloc(sizeof(Object_t));
+        memcpy(pRedBridge, pMostSimilarObject, sizeof(Object_t));
+    }
+
+    destroyMatrix8(pRedMatrix);
+    destroyObjectList(pObjectList);
+
+    return pRedBridge;
 }
 
-ObjectList_t* _captureRedObject(Screen_t* pScreen, Color_t color, bool flg) {
-        
-        readFpgaVideoData(pScreen);
+static void _setHead(int horizontalDegrees, int verticalDegrees) {
+    static const int ERROR_RANGE = 3;
 
-        Matrix8_t* pColorMatrix = createColorMatrix(pScreen, 
-                                    pColorTables[color]);
-        if(flg){
-            applyDilationToMatrix8(pColorMatrix, 1);
-            applyErosionToMatrix8(pColorMatrix, 2);
-            applyDilationToMatrix8(pColorMatrix, 1);
-        }
-        
-        ObjectList_t* objList = detectObjectsLocation(pColorMatrix);
-       
-        destroyMatrix8(pColorMatrix);
+    bool isAlreadySet = true;
+    if (abs(getHeadHorizontal() - horizontalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
+    if (abs(getHeadVertical() - verticalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
 
-        if (objList != NULL) {
-            int i;
-            for(i = 0; i < objList->size; ++i) {
-                int x;
-                int y;
-                Object_t object = objList->list[i];
-                PixelData_t* pixels = pScreen->elements;
+    if (isAlreadySet)
+        return;
 
-                for(y = object.minY; y <= object.maxY; ++y) {
-                    for(x = object.minX; x <= object.maxX; ++x) {
-                        int index = y * pScreen->width + x;
-                        uint16_t* pOutput = (uint16_t*)&pixels[index];
-
-                        if(y == object.minY || y == object.maxY) {
-                            *pOutput = 0xF800;
-                        } else if(x == object.minX || x == object.maxX) {
-                            *pOutput = 0xF800;
-                        }
-                    }
-                }
-
-                int index = (int)object.centerY * pScreen->width + (int)object.centerX;
-                uint16_t* pOutput = (uint16_t*)&pixels[index];
-                *pOutput = 0x1F;
-            }
-        }
-
-        displayScreen(pScreen);
-
-        return objList;
+    setServoSpeed(30);
+    runMotion(MOTION_HEAD_FRONT);
+    setHead(horizontalDegrees, verticalDegrees);
+    resetServoSpeed();
+    mdelay(500);
 }
+
+int measureRedBridgeDistance(void) {
+    static const char* LOG_FUNCTION_NAME = "measureRedBridgeDistance()";
+
+    // 거리 측정에 사용되는 머리 각도
+    static const int HEAD_HORIZONTAL_DEGREES = 0;
+    static const int HEAD_VERTICAL_DEGREES = -35;
+
+    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
+
+    Screen_t* pScreen = createDefaultScreen();
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+
+    int millimeters = 0;
+
+    Object_t* pObject = _searchRedBridge(pScreen);
+    if (pObject != NULL) {
+        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
+                 pObject->minY, pObject->centerY, pObject->maxY);
+
+        // 화면 상의 위치로 실제 거리를 추측한다.
+        
+    }
+
+    _displayDebugScreen(pScreen, pObject);
+
+    free(pObject);
+    destroyScreen(pScreen);
+
+    return millimeters;
+}
+
+
+bool redBridgeMain(void) {
+    for (int i = 0; i < 100; ++i) {
+        measureRedBridgeDistance();
+    }
+
+    return true;
+}
+
+
+bool solveRedBridge(void) {
+    return true;
+}
+
