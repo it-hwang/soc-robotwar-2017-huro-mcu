@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+
 #include "vertical_barricade.h"
 #include "color.h"
 #include "color_model.h"
