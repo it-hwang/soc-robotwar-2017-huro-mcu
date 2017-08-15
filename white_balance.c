@@ -27,33 +27,28 @@ static uint16_t _convertRealColor(PixelData_t pixelData) {
     rgba.r = _MIN(_MAX(r2, 0), 255);
     rgba.g = _MIN(_MAX(g2, 0), 255);
     rgba.b = _MIN(_MAX(b2, 0), 255);
+    
     pRgab5515->data = rgbaToRgab5515Data(&rgba);
-
     return pRgab5515->data;
 }
 
-LookUpTable16_t* createWhiteBalanceTable(Rgab5515_t* pInputColor, Rgab5515_t* pRealColor,
+LookUpTable16_t* createWhiteBalanceTable(Rgba_t* pInputColor, Rgba_t* pRealColor,
                                          const char* filePath, bool overwrite) {
-    Rgab5515_t grayColor;
-    grayColor.r = 16;
-    grayColor.g = 16;
-    grayColor.b = 16;
+    Rgba_t grayColor;
+    grayColor.r = 128;
+    grayColor.g = 128;
+    grayColor.b = 128;
     if (pInputColor == NULL)
         pInputColor = &grayColor;
     if (pRealColor == NULL)
         pRealColor = &grayColor;
 
-    Rgba_t inputRgba;
-    Rgba_t realRgba;
-    inputRgba.data = rgab5515ToRgbaData(pInputColor);
-    realRgba.data = rgab5515ToRgbaData(pRealColor);
-
-    int inputR = inputRgba.r;
-    int inputG = inputRgba.g;
-    int inputB = inputRgba.b;
-    int realR = realRgba.r;
-    int realG = realRgba.g;
-    int realB = realRgba.b;
+    int inputR = pInputColor->r;
+    int inputG = pInputColor->g;
+    int inputB = pInputColor->b;
+    int realR = pRealColor->r;
+    int realG = pRealColor->g;
+    int realB = pRealColor->b;
 
     if (inputR == 0 || inputR == 255)
         return NULL;
@@ -76,7 +71,7 @@ LookUpTable16_t* createWhiteBalanceTable(Rgab5515_t* pInputColor, Rgab5515_t* pR
     return createLookUpTable16(filePath, (LookUpTableFunc16_t*)_convertRealColor, length, overwrite);
 }
 
-void applyWhiteBalance(Screen_t* pScreen, LookUpTable16_t* pWhiteBalanceTable) {
+void applyWhiteBalance(Screen_t* pScreen, WhiteBalanceTable_t* pWhiteBalanceTable) {
     if (pScreen == NULL)
         return;
     if (pWhiteBalanceTable == NULL)
@@ -91,7 +86,7 @@ void applyWhiteBalance(Screen_t* pScreen, LookUpTable16_t* pWhiteBalanceTable) {
     }
 }
 
-void setDefaultWhiteBalanceTable(LookUpTable16_t* pWhiteBalanceTable) {
+void setDefaultWhiteBalanceTable(WhiteBalanceTable_t* pWhiteBalanceTable) {
     if (_pDefaultWhiteBalanceTable != NULL)
         destroyLookUpTable16(_pDefaultWhiteBalanceTable);
 

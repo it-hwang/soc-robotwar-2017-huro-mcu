@@ -31,7 +31,7 @@ static void _runAdjustWhiteBalance(void);
 static void _runCaptureScreen(void);
 static void _runTest(void);
 
-static void _adjustWhiteBalance(int r5, int g5, int b5);
+static void _adjustWhiteBalance(Rgba_t* pInputColor, Rgba_t* pRealColor);
 static void _adjustWhiteBalanceAuto(void);
 
 static void _defineObstacle(void) {
@@ -113,33 +113,37 @@ static void _runHuroC(void) {
 ///////////////////////////////////////////////////////////////////////////////
 // Adjust White Balance
 ///////////////////////////////////////////////////////////////////////////////
-static void _adjustWhiteBalance(int r5, int g5, int b5) {
+static bool _getYN(void) {
+    while (true) {
+        printf(">> ");
+        char input = getchar();
+
+        if (input != '\n')
+            while (getchar() != '\n');
+
+        if (input == 'y' || input == 'Y')
+            return true;
+        else if (input == 'n' || input == 'N')
+            return false;
+        else
+            printf("잘못된 입력입니다.\n");
+    };
+}
+
+static void _adjustWhiteBalance(Rgba_t* pInputColor, Rgba_t* pRealColor) {
     static const char* LOG_FUNCTION_NAME = "_adjustWhiteBalance()";
 
-    Rgab5515_t inputColor;
-    Rgab5515_t realColor;
-    inputColor.r = r5;
-    inputColor.g = g5;
-    inputColor.b = b5;
-    realColor.r = 16;
-    realColor.g = 16;
-    realColor.b = 16;
+    printLog("[%s] inputColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+             pInputColor->r, pInputColor->g, pInputColor->b);
+    printLog("[%s] realColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+             pRealColor->r, pRealColor->g, pRealColor->b);
 
-    LookUpTable16_t* pWhiteBalanceTable = createWhiteBalanceTable(&inputColor, &realColor, _WHITE_BALANCE_TABLE_PATH, true);
-    setDefaultWhiteBalanceTable(pWhiteBalanceTable);
-
+    LookUpTable16_t* pWhiteBalanceTable = createWhiteBalanceTable(pInputColor, pRealColor, _WHITE_BALANCE_TABLE_PATH, true);
     if (pWhiteBalanceTable != NULL) {
-        printLog("[%s] inputColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
-                 inputColor.r, inputColor.g, inputColor.b);
-        printLog("[%s] realColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
-                 realColor.r, realColor.g, realColor.b);
         printLog("[%s] Adjustment success.\n", LOG_FUNCTION_NAME);
+        setDefaultWhiteBalanceTable(pWhiteBalanceTable);
     }
     else {
-        printLog("[%s] inputColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
-                 inputColor.r, inputColor.g, inputColor.b);
-        printLog("[%s] realColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
-                 realColor.r, realColor.g, realColor.b);
         printLog("[%s] Adjustment failed.\n", LOG_FUNCTION_NAME);
     }
 }
@@ -191,7 +195,14 @@ static void _adjustWhiteBalanceAuto(void) {
     int height = pScreen->height;
     Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 10, height - 20, width - 10, height - 1);
     Rgab5515_t meanRgab5515 = _getMeanRgab5515OfMatrix16(pSubMatrix);
-    _adjustWhiteBalance(meanRgab5515.r, meanRgab5515.g, meanRgab5515.b);
+    
+    Rgba_t inputColor;
+    Rgba_t realColor;
+    inputColor.data = rgab5515ToRgbaData(&meanRgab5515);
+    realColor.r = 128;
+    realColor.g = 128;
+    realColor.b = 128;
+    _adjustWhiteBalance(&inputColor, &realColor);
 
     // Debug screen
     _fillMatrix16(pScreen, meanRgab5515.data);
@@ -203,6 +214,33 @@ static void _adjustWhiteBalanceAuto(void) {
 
     setHead(0, 0);
     resetServoSpeed();
+}
+
+static void _adjustWhiteBalanceManual(void) {
+    runMotion(ROBOT_RELEASE_ARM_SERVOS);
+    printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
+
+    int r, g, b;
+    printf("inputColor: r, g, b를 차례대로 입력하십시오. (범위: 1~254)\n");
+    printf(">> ");
+    scanf("%d %d %d", &r, &g, &b);
+
+    Rgba_t inputColor;
+    inputColor.r = r;
+    inputColor.g = g;
+    inputColor.b = b;
+
+    printf("realColor: r, g, b를 차례대로 입력하십시오. (범위: 1~254)\n");
+    printf(">> ");
+    scanf("%d %d %d", &r, &g, &b);
+
+    Rgba_t realColor;
+    realColor.r = r;
+    realColor.g = g;
+    realColor.b = b;
+    
+    _adjustWhiteBalance(&inputColor, &realColor);
+
 }
 
 static void _runAdjustWhiteBalance(void) {
@@ -219,6 +257,9 @@ static void _runAdjustWhiteBalance(void) {
         char input;
         printf(">> ");
         input = getchar();
+        if (input != '\n')
+            while (getchar() != '\n');
+
         if (input == '1') {
             printf("[자동 설정]\n");
 
@@ -227,13 +268,7 @@ static void _runAdjustWhiteBalance(void) {
         else if (input == '2') {
             printf("[수동 설정]\n");
 
-            printf("inputColor: r, g, b를 차례대로 입력하십시오. (범위: 1~30)\n");
-            
-            int r, g, b;
-            printf(">> ");
-            scanf("%d %d %d", &r, &g, &b);
-
-            _adjustWhiteBalance(r, g, b);
+            _adjustWhiteBalanceManual();
         }
         else if (input == '3') {
             printf("[화이트 밸런스 시험]\n");
@@ -280,6 +315,7 @@ static void _runCaptureScreen(void) {
 
     enableDirectCameraDisplay();
     runMotion(ROBOT_RELEASE_ARM_SERVOS);
+    printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
 
     while (true) {
         printf("\n");
