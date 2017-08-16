@@ -78,11 +78,11 @@ Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
 
     Line_t* returnLine = NULL;
 
-    PixelLocation_t centerPoint = _searchCenterPoint(pLabelMatrix, pObject, index);
+    PixelLocation_t centerPoint = _searchCenterPoint(pLabelMatrix, pObject, labelNum);
 
-    PixelLocation_t rightPoint = _searchRightPoint(pLabelMatrix, pObject, index);
+    PixelLocation_t rightPoint = _searchRightPoint(pLabelMatrix, pObject, labelNum);
 
-    PixelLocation_t leftpoint = _serchLeftPoint(pLabelMatrix, pObject, index);
+    PixelLocation_t leftpoint = _serchLeftPoint(pLabelMatrix, pObject, labelNum);
 
     double leftToCenterAngle = _getAngle(leftPoint, centerPoint);
 
@@ -102,6 +102,24 @@ Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
     }
 
     return returnLine;
+}
+
+PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
+
+    PixelLocation_t returnLocation;
+
+    int x = pObject->centerX;
+    int y = pObject->centerY+1;
+
+    do {
+        y--;
+        int index = y * pLabelMatrix->width + x;
+    }while(pLabelMatrix->elements[index] != labelNum);
+
+    returnLocation.x = x;
+    returnLocation.y = y;
+
+    return returnLocation;
 }
 
 //두 점을 이용한 기울기 계산
