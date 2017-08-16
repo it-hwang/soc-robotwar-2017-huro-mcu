@@ -301,6 +301,7 @@ int measureVerticalBarricadeDistance(void) {
     free(pObject);
     destroyScreen(pScreen);
 
+    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
     return millimeters;
 }
 
