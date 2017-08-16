@@ -65,55 +65,6 @@ bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
         return false;
     } 
 }
-//SubMatrix와 해당 SubMatrix의 LabelList를 인자로 받아 LineDetection을 진행한다.
-Line_t* lineDetection(Matrix8_t* pColorMatrix, Matrix8_t* pSubMatrix) {
-    
-    Matrix16_t* pLabelMatrix = createMatrix16(pSubMatrix->width, pSubMatrix->height);   
-    memset(pLabelMatrix->elements, 0, (pSubMatrix->height * pSubMatrix->width) * sizeof(uint16_t));
-
-    ObjectList_t* pObjectList;
-    
-    pObjectList = detectObjectsLocationWithLabeling(pSubMatrix, pLabelMatrix);
-    //printf("list size 2 %d\n", pObjectList->size);
-    int i;
-    Line_t* resultLine = (Line_t*)malloc(sizeof(Line_t));
-    resultLine->distancePoint.y = 0;
-
-    Line_t* line = (Line_t*)malloc(sizeof(Line_t));
-    bool emptyLine = true;
-    
-    for(i = 0; i < pObjectList->size; i++) {
-        Object_t* object = &(pObjectList->list[i]);
-        if(object->minX<5 && object->maxX>55) {
-            uint16_t labelNum = pLabelMatrix->elements[(int)object->centerY * pLabelMatrix->width + (int)object->centerX];
-            bool isLine = _labelToLine(pLabelMatrix, object, line, labelNum);
-            if(isLine) {
-                if(resultLine->distancePoint.y <= line->distancePoint.y) {
-                    resultLine->theta = line->theta;
-                    resultLine->distancePoint.x = line->distancePoint.x;
-                    resultLine->distancePoint.y = line->distancePoint.y;
-                    emptyLine = false;
-                }
-            }
-        }
-    }
-
-    if(emptyLine) {
-        free(resultLine);
-        resultLine = NULL;
-    }
-
-    free(line);
-    //destroyMatrix8(pSubMatrix);
-    destroyMatrix16(pLabelMatrix);
-    
-    if (pObjectList){
-        free(pObjectList->list);
-        free(pObjectList);
-    }
-
-    return resultLine;
-}
 
 bool _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* candidate, int labelNum){
     
