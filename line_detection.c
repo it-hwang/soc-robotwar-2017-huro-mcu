@@ -7,7 +7,8 @@
 
 #define PI 3.141592
 
-bool _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* candidate, int labelNum);
+bool _isClosestLine(Line_t* currentLine, Line_t* prevLine);
+bool _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
 PixelLocation_t _searchToTop(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
 PixelLocation_t _searchToBottom(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
 PixelLocation_t _searchToTopCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
@@ -25,7 +26,7 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     Line_t* pResultLine = NULL;
 
     for(int i = 0; i < pObjectList->size; ++i) {
-        Line_t* pLine = _labelToLine();
+        Line_t* pLine = _labelToLine(pColorMatrix, &pObjectList->list[i]);
 
         bool isClosestLine = false;
         if(pLine != NULL) {
@@ -42,6 +43,10 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
         } else {
             free(pLine);
         }
+    }
+
+    if(pLine != NULL) {
+        free(pLine);
     }
 
     if(pObjectList != NULL) {
@@ -66,86 +71,37 @@ bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
     } 
 }
 
-bool _labelToLine(Matrix16_t* pObjectLineMatrix, Object_t* object, Line_t* candidate, int labelNum){
-    
-    PixelLocation_t centerUpPoint;
-    PixelLocation_t centerDownPoint;
-    PixelLocation_t leftUpPoint;
-    PixelLocation_t leftDownPoint;
-    PixelLocation_t rightUpPoint;
-    PixelLocation_t rightDownPoint;
+Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
 
-    PixelLocation_t* pPixel = (PixelLocation_t*)malloc(sizeof(PixelLocation_t));
+    int index = pObject->centerY * pLabelMatrix->width + pObject->centerY;
+    int labelNum = pLabelMatrix->elements[index];
 
-    pPixel->x = (uint8_t)object->centerX;
-    pPixel->y = (uint8_t)object->centerY;
-    centerUpPoint = _searchToTopCenter(pObjectLineMatrix, pPixel, labelNum);
-    centerDownPoint = _searchToBottomCenter(pObjectLineMatrix, pPixel, labelNum);
-  
-    candidate->distancePoint = centerDownPoint;
+    Line_t* returnLine = NULL;
 
-    pPixel->x = object->minX;
-    pPixel->y = object->minY;
-    leftUpPoint = _searchToBottom(pObjectLineMatrix, pPixel, labelNum);
+    PixelLocation_t centerPoint = _searchCenterPoint(pLabelMatrix, pObject, index);
 
-    pPixel->x = object->minX;
-    pPixel->y = object->maxY;
-    leftDownPoint = _searchToTop(pObjectLineMatrix, pPixel, labelNum);
+    PixelLocation_t rightPoint = _searchRightPoint(pLabelMatrix, pObject, index);
 
-    pPixel->x = object->maxX;
-    pPixel->y = object->minY;
-    rightUpPoint = _searchToBottom(pObjectLineMatrix, pPixel, labelNum);
+    PixelLocation_t leftpoint = _serchLeftPoint(pLabelMatrix, pObject, index);
 
-    pPixel->x = object->maxX;
-    pPixel->y = object->maxY;
-    rightDownPoint = _searchToTop(pObjectLineMatrix, pPixel, labelNum);
+    double leftToCenterAngle = _getAngle(leftPoint, centerPoint);
 
-    free(pPixel);
+    double centerToLeftAngle = _getAngle(centerPoint, leftPoint);
 
-    double angleDown1 = _getAngle(leftDownPoint, centerDownPoint);
-    double angleDown2 = _getAngle(centerDownPoint, rightDownPoint);
-    double angleUp1 = _getAngle(leftUpPoint, centerUpPoint);
-    double angleUp2 = _getAngle(centerUpPoint, rightUpPoint);
+    double leftToRightAngle = _getAngle(leftPoint, rightPoint);
 
-    //printf("angelUp1 = %f\n", angleUp1);
-    //printf("angelUp2 = %f\n", angleUp2);
-    //printf("angelDown1 = %f\n", angleDown1);
-    //printf("angelDown2 = %f\n", angleDown2);
-    
-    /*
-    printf("centerPoint.x = %d\n", candidate->centerPoint.x);
-    printf("centerPoint.y = %d\n", candidate->centerPoint.y);
-    printf("minX = %d\n", object->minX);
-    printf("minY = %d\n", object->minY);
-    printf("maxX = %d\n", object->maxX);
-    printf("maxY = %d\n", object->maxY);
-   
-    printf("centerUpPoint.x = %d\n", centerUpPoint.x);
-    printf("centerUpPoint.y = %d\n", centerUpPoint.y);
+    bool isLine = _isFitRatio(leftToCenterAngle, centerToLeftAngle, leftToRightAngle);
 
-    printf("centerDownPoint.x = %d\n", centerDownPoint.x);
-    printf("centerDownPoint.y = %d\n", centerDownPoint.y);
-    
-    printf("leftUpPoint.x = %d\n", leftUpPoint.x);
-    printf("leftUpPoint.y = %d\n", leftUpPoint.y);
-    
-    printf("leftDownPoint.x = %d\n", leftDownPoint.x);
-    printf("leftDownPoint.y = %d\n", leftDownPoint.y);
-    
-    printf("rightUpPoint.x = %d\n", rightUpPoint.x);
-    printf("rightUpPoint.y = %d\n", rightUpPoint.y);
-    
-    printf("rightDownPoint.x = %d\n", rightDownPoint.x);
-    printf("rightDownPoint.y = %d\n", rightDownPoint.y);
-    */
+    if(isLine) {
+        returnLine = (Line_t*)malloc(sizeof(Line_t));
 
-    if(fabs(angleDown1 - angleDown2) <= 10) {
-        candidate->theta = (angleDown1+angleDown2)/2;
-        return true;
+        returnLine->centerPoint = centerPoint;
+        returnLine->rightPoint = rightPoint;
+        returnLine->leftPoint = leftPoint;
+        returnLine->theta = leftToRightAngle;
     }
-    else {
-        return false;
-    }
+
+    return returnLine;
 }
 
 //두 점을 이용한 기울기 계산
