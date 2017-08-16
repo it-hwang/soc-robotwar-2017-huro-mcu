@@ -15,6 +15,56 @@ PixelLocation_t _searchToBottomCenter(Matrix16_t* pObjectLineMatrix, PixelLocati
 double _getAngle(PixelLocation_t src, PixelLocation_t dst);
 
 
+Line_t* lineDetection(Matrix8_t* pColorMatrix) {
+    
+    Matrix16_t* pLabelMatrix = createMatrix16(pColorMatix->width, pColorMatrix->height);
+    memset(pLabelMatrix->elements, 0, (pSubMatrix->height * pSubMatrix->width) * sizeof(uint16_t));
+
+    ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pColorMatix, pLabelMatrix);
+
+    Line_t* pResultLine = NULL;
+
+    for(int i = 0; i < pObjectList->size; ++i) {
+        Line_t* pLine = _labelToLine();
+
+        bool isClosestLine = false;
+        if(pLine != NULL) {
+            if(pResultLline == NULL) {
+                pResultLine = pLine;
+            } else {
+                isClosestLine = _isClosestLine(pLine, pResultLine);
+            }
+        }
+
+        if(isClosestLine) {
+            free(pResultLine);
+            pResultLine = pLine;
+        } else {
+            free(pLine);
+        }
+    }
+
+    if(pObjectList != NULL) {
+        free(pObjectList->list);
+        free(pObjectList);
+    }
+
+    destroyMatrix16(pLabelMatrix);
+
+    return pResultLine;
+
+}
+
+bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
+    
+    int resultDistance = pResultLine->centerPoint.y;
+    int currentDistance = pLine->centerPoint.y;
+    if(resultDistance < currentDistance) { // 현재 라인의 거리가 더 가까운 경우
+        return true;
+    } else {
+        return false;
+    } 
+}
 //SubMatrix와 해당 SubMatrix의 LabelList를 인자로 받아 LineDetection을 진행한다.
 Line_t* lineDetection(Matrix8_t* pColorMatrix, Matrix8_t* pSubMatrix) {
     
@@ -45,7 +95,7 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix, Matrix8_t* pSubMatrix) {
                     emptyLine = false;
                 }
             }
-        }  
+        }
     }
 
     if(emptyLine) {
