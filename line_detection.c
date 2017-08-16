@@ -9,11 +9,11 @@
 
 bool _isClosestLine(Line_t* currentLine, Line_t* prevLine);
 bool _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
-PixelLocation_t _searchToTop(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
-PixelLocation_t _searchToBottom(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
-PixelLocation_t _searchToTopCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
-PixelLocation_t _searchToBottomCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum);
+PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
+PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
+PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
 double _getAngle(PixelLocation_t src, PixelLocation_t dst);
+bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle);
 
 
 Line_t* lineDetection(Matrix8_t* pColorMatrix) {
@@ -37,6 +37,8 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
             }
         }
 
+        //pLine이 기존 라인보다 가까운 경우
+        //기존 라인을 free하고 pLine의 주소를 물려준다.
         if(isClosestLine) {
             free(pResultLine);
             pResultLine = pLine;
@@ -62,8 +64,8 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
 
 bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
     
-    int resultDistance = pResultLine->centerPoint.y;
-    int currentDistance = pLine->centerPoint.y;
+    int resultDistance = prevLine->centerPoint.y;
+    int currentDistance = currentLine->centerPoint.y;
     if(resultDistance < currentDistance) { // 현재 라인의 거리가 더 가까운 경우
         return true;
     } else {
@@ -82,11 +84,11 @@ Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
 
     PixelLocation_t rightPoint = _searchRightPoint(pLabelMatrix, pObject, labelNum);
 
-    PixelLocation_t leftpoint = _serchLeftPoint(pLabelMatrix, pObject, labelNum);
+    PixelLocation_t leftpoint = _searchLeftPoint(pLabelMatrix, pObject, labelNum);
 
     double leftToCenterAngle = _getAngle(leftPoint, centerPoint);
 
-    double centerToLeftAngle = _getAngle(centerPoint, leftPoint);
+    double centerToRightAngle = _getAngle(centerPoint, rightPoint);
 
     double leftToRightAngle = _getAngle(leftPoint, rightPoint);
 
@@ -109,11 +111,12 @@ PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, 
     PixelLocation_t returnLocation;
 
     int x = pObject->centerX;
-    int y = pObject->centerY+1;
+    int y = pObject->maxY+1;
+    int index;
 
     do {
         y--;
-        int index = y * pLabelMatrix->width + x;
+        index = y * pLabelMatrix->width + x;
     }while(pLabelMatrix->elements[index] != labelNum);
 
     returnLocation.x = x;
@@ -126,12 +129,13 @@ PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, i
 
     PixelLocation_t returnLocation;
 
-    int x = pObject->minX;
-    int y = pObject->minY+1;
+    int x = pObject->maxX;
+    int y = pObject->maxY+1;
+    int index;
 
     do {
         y--;
-        int index = y * pLabelMatrix->width + x;
+        index = y * pLabelMatrix->width + x;
     }while(pLabelMatrix->elements[index] != labelNum);
 
     returnLocation.x = x;
@@ -140,16 +144,17 @@ PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, i
     return returnLocation;
 }
 
-PixelLocation_t _serchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
+PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
 
     PixelLocation_t returnLocation;
 
-    int x = pObject->maxX;
+    int x = pObject->minX;
     int y = pObject->maxY+1;
+    int index;
 
     do {
         y--;
-        int index = y * pLabelMatrix->width + x;
+        index = y * pLabelMatrix->width + x;
     }while(pLabelMatrix->elements[index] != labelNum);
 
     returnLocation.x = x;
@@ -175,86 +180,13 @@ double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
     return dAngle;
 }
 
-/*****************************************
-주어진 point를 인자로 받아 Search를 진행한다.
-*****************************************/
-PixelLocation_t _searchToTop(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum){    //위를 향한 Search
-    PixelLocation_t resultPixel; 
-    int x = pPixel->x;
-    resultPixel.x = x;
+bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle) {
     
-    int y;
-    int cnt = 0;
-    for(y=pPixel->y; y>=0; --y) {
-        uint16_t* output = &(pObjectLineMatrix->elements[y * pObjectLineMatrix->width + x]);
-        if((int)*output != labelNum) {
-            cnt++;
-        }
-        else {
-            resultPixel.y = y;
-            break;
-        }
-    }
-    return resultPixel;
-}
+    if(fabs(leftToCenterAngle - leftToRightAngle) > 20)
+        return false;
 
-PixelLocation_t _searchToBottom(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum){    //아래를 향한 Search
-    PixelLocation_t resultPixel;
-    int x = pPixel->x;
-    resultPixel.x = x;
-    
-    int y;
-    int cnt = 0;
-    for(y=pPixel->y; y<= pObjectLineMatrix->height; ++y) {
-        uint16_t* output = &(pObjectLineMatrix->elements[y * pObjectLineMatrix->width + x]);
-        if((int)*output != labelNum) {
-            cnt++;
-        }
-        else {
-            resultPixel.y = y;
-            break;
-        }
-    }
-    return resultPixel;
-}
+    if(fabs(centerToRightAngle - leftToRightAngle) > 20)
+        return false;
 
-PixelLocation_t _searchToTopCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum){    //위를 향한 Search
-    PixelLocation_t resultPixel; 
-    int x = pPixel->x;
-    resultPixel.x = x;
-    int y;
-    int cnt = 0;
-    for(y=pPixel->y; y>=0; y--) {
-        uint16_t* output = &(pObjectLineMatrix->elements[y * pObjectLineMatrix->width + x]);
-        
-        if((int)*output == labelNum) {
-            cnt++;
-        }
-        else {
-            resultPixel.y = y;
-            break;
-        }
-    }
-    return resultPixel;
-}
-
-PixelLocation_t _searchToBottomCenter(Matrix16_t* pObjectLineMatrix, PixelLocation_t* pPixel, int labelNum){    //아래를 향한 Search
-    PixelLocation_t resultPixel;
-    int x = pPixel->x;
-    resultPixel.x = x;
-    
-    int y;
-    int cnt = 0;
-    for(y=pPixel->y; y<= pObjectLineMatrix->height; y++) {
-        uint16_t* output = &(pObjectLineMatrix->elements[y * pObjectLineMatrix->width + x]);
-        if((int)*output == labelNum) {
-            cnt++;
-        }
-        else {
-            resultPixel.y = y;
-            break;
-        }
-    }
-
-    return resultPixel;
+    return true;
 }
