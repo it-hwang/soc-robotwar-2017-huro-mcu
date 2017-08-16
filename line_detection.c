@@ -140,6 +140,24 @@ PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, i
     return returnLocation;
 }
 
+PixelLocation_t _serchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
+
+    PixelLocation_t returnLocation;
+
+    int x = pObject->maxX;
+    int y = pObject->maxY+1;
+
+    do {
+        y--;
+        int index = y * pLabelMatrix->width + x;
+    }while(pLabelMatrix->elements[index] != labelNum);
+
+    returnLocation.x = x;
+    returnLocation.y = y;
+
+    return returnLocation;
+}
+
 //두 점을 이용한 기울기 계산
 double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
     int dDeltaX;
