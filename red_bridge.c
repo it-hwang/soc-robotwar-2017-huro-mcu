@@ -158,7 +158,19 @@ int measureRedBridgeDistance(void) {
                  pObject->minY, pObject->centerY, pObject->maxY);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
+        int minY = pObject->minY;
+        int maxY = pObject->maxY;
+
+        if (maxY < pScreen->height - 1)
+            millimeters = -396.1 * log(maxY) + 2063;
+        else if (minY > 0)
+            millimeters = -311.7 * log(minY) + 939.65;
+        else
+            millimeters = 1;
         
+        // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
+        if (millimeters == 0)
+            millimeters = 1;
     }
 
     _displayDebugScreen(pScreen, pObject);
@@ -166,20 +178,66 @@ int measureRedBridgeDistance(void) {
     free(pObject);
     destroyScreen(pScreen);
 
+    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
     return millimeters;
 }
 
 
 bool redBridgeMain(void) {
-    for (int i = 0; i < 100; ++i) {
-        measureRedBridgeDistance();
-    }
+    // for (int i = 0; i < 100; ++i) {
+    //     int millimeters = measureRedBridgeDistance();
+
+    //     char input;
+    //     input = getchar();
+    //     while (input != '\n')
+    //         input = getchar();
+    // }
+    solveRedBridge();
 
     return true;
 }
 
 
+static bool _approachRedBridge(void) {
+    static const char* LOG_FUNCTION_NAME = "_approachRedBridge()";
+
+    // 빨간 다리를 발견하지 못할 경우 다시 찍는 횟수
+    static const int MAX_TRIES = 10;
+
+    // 장애물에 다가갈 거리 (밀리미터)
+    static const int APPROACH_DISTANCE = 100;
+    // 거리 허용 오차 (밀리미터)
+    static const int APPROACH_DISTANCE_ERROR = 50;
+
+    int nTries = 0;
+    int distance = measureRedBridgeDistance();
+    int prevDistance = distance;
+    while (distance == 0 || distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR || distance <= prevDistance) {
+        if (nTries >= MAX_TRIES)
+            return false;
+        nTries += 1;
+
+        if (distance != 0) {
+            walkForward(distance - APPROACH_DISTANCE);
+            nTries = 0;
+        }
+
+        prevDistance = distance;
+        distance = measureRedBridgeDistance();
+    }
+
+    // 달라붙어 비비기
+    runWalk(ROBOT_WALK_FORWARD_QUICK, 20);
+    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+
+    return true;
+}
+
 bool solveRedBridge(void) {
+    _approachRedBridge();
+
+    runMotion(MOTION_CLIMB_UP_RED_BRIDGE);
+
     return true;
 }
 
