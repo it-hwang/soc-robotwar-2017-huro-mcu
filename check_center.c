@@ -76,7 +76,9 @@ static int _searchLine() {
         printLog("[%s] 좌우 최대 촬영 횟수(%d) 초과!\n", LOG_FUNCTION_NAME, tryCount);
         resultDirection = HEAD_DIRECTION_ERROR;
     }
-        
+
+    if(pLine != NULL)
+        free(pLine);
 
     destroyScreen(pScreen);
 
@@ -150,20 +152,37 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     return returnLine;
 }
 
-static bool _approachLine(headDirection, doHeadSet) {
+static Line_t* _captureLine(Screen_t* pScreen, int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_captureLine()";
 
-    if(headDirection == HEAD_DIRECTION_ERROR) {
-        return false;
+    if(headDirection == HEAD_DIRECTION_RIGHT) 
+        return _captureRightLine(pScreen);
+    else if(headDirection == HEAD_DIRECTION_LEFT)
+        return _captureLeftLine(pScreen);
+    else {
+        printLog("[%s] 잘못된 매개 변수 값!(%d)\n", LOG_FUNCTION_NAME, headDirection);
+        return NULL;
     }
-
-    if(headDirection == HEAD_DIRECTION_RIGHT) {
-
-    } else if(headDirection == HEAD_DIRECTION_LEFT{
-
-    } else {
-        return false;
-    }
+        
 }
+
+static bool _approachLine(int headDirection, bool doHeadSet) {
+    static const char* LOG_FUNCTION_NAME = "_approachLine()";
+
+    if(headDirection == HEAD_DIRECTION_ERROR)
+        return false;
+
+    if(doHeadSet)
+        _setHead(headDirection);
+
+    Screen_t* pScreen = createDefaultScreen();
+    Line_t* pLine = NULL;
+
+
+    
+
+}
+
 bool checkAngle(void) {
 
     _pDefaultScreen = createDefaultScreen();
