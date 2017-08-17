@@ -17,7 +17,6 @@ double _getAngle(PixelLocation_t src, PixelLocation_t dst);
 bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle);
 
 
-<<<<<<< HEAD
 Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     
     Matrix16_t* pLabelMatrix = createMatrix16(pColorMatix->width, pColorMatrix->height);
@@ -36,37 +35,6 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
                 pResultLine = pLine;
             } else {
                 isClosestLine = _isClosestLine(pLine, pResultLine);
-=======
-//SubMatrix와 해당 SubMatrix의 LabelList를 인자로 받아 LineDetection을 진행한다.
-Line_t* lineDetection(Matrix8_t* pColorMatrix) {
-    
-    Matrix16_t* pLabelMatrix = createMatrix16(pColorMatrix->width, pColorMatrix->height);   
-    memset(pLabelMatrix->elements, 0, (pColorMatrix->height * pColorMatrix->width) * sizeof(uint16_t));
-
-    ObjectList_t* pObjectList;
-    
-    pObjectList = detectObjectsLocationWithLabeling(pColorMatrix, pLabelMatrix);
-    //printf("list size 2 %d\n", pObjectList->size);
-    int i;
-    Line_t* resultLine = (Line_t*)malloc(sizeof(Line_t));
-    resultLine->distancePoint.y = 0;
-
-    Line_t* line = (Line_t*)malloc(sizeof(Line_t));
-    bool emptyLine = true;
-    
-    for(i = 0; i < pObjectList->size; i++) {
-        Object_t* object = &(pObjectList->list[i]);
-        if(object->minX<5 && object->maxX>55) {
-            uint16_t labelNum = pLabelMatrix->elements[(int)object->centerY * pLabelMatrix->width + (int)object->centerX];
-            bool isLine = _labelToLine(pLabelMatrix, object, line, labelNum);
-            if(isLine) {
-                if(resultLine->distancePoint.y <= line->distancePoint.y) {
-                    resultLine->theta = line->theta;
-                    resultLine->distancePoint.x = line->distancePoint.x;
-                    resultLine->distancePoint.y = line->distancePoint.y;
-                    emptyLine = false;
-                }
->>>>>>> develop
             }
         }
 
@@ -84,15 +52,7 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
         free(pLine);
     }
 
-<<<<<<< HEAD
     if(pObjectList != NULL) {
-=======
-    free(line);
-    //destroyMatrix8(pColorMatrix);
-    destroyMatrix16(pLabelMatrix);
-    
-    if (pObjectList){
->>>>>>> develop
         free(pObjectList->list);
         free(pObjectList);
     }
