@@ -9,12 +9,14 @@
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "log.h"
+#include "white_balance.h"
 
 #define CENTER 80
 #define RIGHT_ZERO_DEGREE 2
 #define LEFT_ZERO_DEGREE -5
-#define BIG_DIVIDE 15
-#define SMALL_DIVIDE 5
+#define HEAD_DIRECTION_ERROR -1
+#define HEAD_DIRECTION_RIGHT 0
+#define HEAD_DIRECTION_LEFT 1
 
 bool checkCenterMain(void) {
     static const char* LOG_FUNCTION_NAME = "checkCenterMain()";
@@ -36,7 +38,47 @@ bool checkCenterMain(void) {
         return false;
     }
 
+
     return true;
+}
+
+static int _searchLine() {
+    static const char* LOG_FUNCTION_NAME = "_searchLine()";
+    static const int LIMIT_TRY_COUNT = 6;
+
+    Screen_t* pScreen = createDefaultScreen();
+    Line_t* pLine = NULL;
+
+    int tryCount = 0;
+    int resultDirection = HEAD_DIRECTION_ERROR;
+
+    while( tryCount < LIMIT_TRY_COUNT && pLine == NULL) {
+        
+        if(resultDirection != HEAD_DIRECTION_RIGHT) {
+            printLog("[%s] 오른쪽 선을 확인 중.\n", LOG_FUNCTION_NAME);
+            resultDirection = HEAD_DIRECTION_RIGHT;
+            _setHeadRight();
+            pLine = _captureRightLine(pScreen);
+        } else {
+            printLog("[%s] 왼쪽 선을 확인 중.\n", LOG_FUNCTION_NAME);
+            resultDirection = HEAD_DIRECTION_LEFT;
+            _setHeadLeft();
+            pLine = _captureLeftLine(pScreen);
+        }
+
+        if(pLine == NULL)
+            tryCount++;
+    }
+
+    if(tryCount > LIMIT_TRY_COUNT) {
+        printLog("[%s] 좌우 최대 촬영 횟수(%d) 초과!\n", LOG_FUNCTION_NAME, tryCount);
+        resultDirection = HEAD_DIRECTION_ERROR;
+    }
+        
+
+    destroyScreen(pScreen);
+
+    return resultDirection;
 }
 
 static Line_t* _captureLine(Screen_t* pScreen) {
