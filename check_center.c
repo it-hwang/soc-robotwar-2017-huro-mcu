@@ -110,15 +110,17 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
     
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
-    
+
     return returnLine;
 }
 
 static Line_t* _captureLeftLine(Screen_t* pScreen) {
     
-    readFpgaVideoData(pScreen);     
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+    
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 120, 0, 169, 95);
 
-    Matrix8_t* pColorMatrix = createColorMatrix(pScreen, 
+    Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
                                 pColorTables[COLOR_BLACK]);
 
     applyDilationToMatrix8(pColorMatrix, 1);
@@ -128,7 +130,8 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     Line_t* returnLine = lineDetection(pColorMatrix);
     
     destroyMatrix8(pColorMatrix);
-
+    destroyMatrix16(pSubMatrix);
+    
     return returnLine;
 }
 
