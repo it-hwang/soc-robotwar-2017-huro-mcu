@@ -6,6 +6,7 @@
 #include "line_detection.h"
 
 #define PI 3.141592
+#define DIFFERENCE_OF_ANGLE 20
 
 bool _isClosestLine(Line_t* currentLine, Line_t* prevLine);
 bool _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
@@ -187,10 +188,10 @@ double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
 
 bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle) {
     
-    if(fabs(leftToCenterAngle - leftToRightAngle) > 20)
+    if(fabs(leftToCenterAngle - leftToRightAngle) > DIFFERENCE_OF_ANGLE)
         return false;
 
-    if(fabs(centerToRightAngle - leftToRightAngle) > 20)
+    if(fabs(centerToRightAngle - leftToRightAngle) > DIFFERENCE_OF_ANGLE)
         return false;
 
     return true;
