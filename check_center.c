@@ -81,7 +81,19 @@ static int _searchLine() {
     return resultDirection;
 }
 
-static Line_t* _captureLine(Screen_t* pScreen) {
+static void _setHeadRight() {
+    setHead(85, -50);
+}
+
+static void _setHeadLeft() {
+    setHead(-85, -50);
+}
+
+static void _setHeadForward() {
+    setHead(0, 0);
+}
+
+static Line_t* _captureRightLine(Screen_t* pScreen) {
         
         readFpgaVideoData(pScreen);     
 
@@ -97,6 +109,24 @@ static Line_t* _captureLine(Screen_t* pScreen) {
         destroyMatrix8(pColorMatrix);
 
         return returnLine;
+}
+
+static Line_t* _captureLeftLine(Screen_t* pScreen) {
+    
+    readFpgaVideoData(pScreen);     
+
+    Matrix8_t* pColorMatrix = createColorMatrix(pScreen, 
+                                pColorTables[COLOR_BLACK]);
+
+    applyDilationToMatrix8(pColorMatrix, 1);
+    applyErosionToMatrix8(pColorMatrix, 2);
+    applyDilationToMatrix8(pColorMatrix, 1);
+    
+    Line_t* returnLine = lineDetection(pColorMatrix);
+    
+    destroyMatrix8(pColorMatrix);
+
+    return returnLine;
 }
 
 bool checkAngle(void) {
