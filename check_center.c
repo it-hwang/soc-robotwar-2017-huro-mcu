@@ -95,20 +95,23 @@ static void _setHeadForward() {
 
 static Line_t* _captureRightLine(Screen_t* pScreen) {
         
-        readFpgaVideoData(pScreen);     
+    readFpgaVideoDataWithWhiteBalance(pScreen);
 
-        Matrix8_t* pColorMatrix = createColorMatrix(pScreen, 
-                                    pColorTables[COLOR_BLACK]);
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 10, 0, 59, 95);
 
-        applyDilationToMatrix8(pColorMatrix, 1);
-        applyErosionToMatrix8(pColorMatrix, 2);
-        applyDilationToMatrix8(pColorMatrix, 1);
-        
-        Line_t* returnLine = lineDetection(pColorMatrix);
-        
-        destroyMatrix8(pColorMatrix);
+    Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
+                                pColorTables[COLOR_BLACK]);
 
-        return returnLine;
+    applyDilationToMatrix8(pColorMatrix, 1);
+    applyErosionToMatrix8(pColorMatrix, 2);
+    applyDilationToMatrix8(pColorMatrix, 1);
+    
+    Line_t* returnLine = lineDetection(pColorMatrix);
+    
+    destroyMatrix8(pColorMatrix);
+    destroyMatrix16(pSubMatrix);
+    
+    return returnLine;
 }
 
 static Line_t* _captureLeftLine(Screen_t* pScreen) {
