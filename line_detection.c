@@ -75,6 +75,11 @@ bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
 
 Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
 
+    int objectWidth = pObject->maxX - pObject->minX;
+    
+    if(objectWidth < pLabelMatrix->width)
+        return NULL;
+
     int index = pObject->centerY * pLabelMatrix->width + pObject->centerY;
     int labelNum = pLabelMatrix->elements[index];
 
