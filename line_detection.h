@@ -14,6 +14,6 @@ typedef struct {
     PixelLocation_t leftPoint;
 } Line_t;
 
-Line_t* lineDetection(Matrix8_t* pColorMatrix, Matrix8_t* pSubMatrix);
+Line_t* lineDetection(Matrix8_t* pColorMatrix);
 
 #endif // __LINE_DETECTION_H__
