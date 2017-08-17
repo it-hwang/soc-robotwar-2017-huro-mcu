@@ -17,23 +17,25 @@
 #define HEAD_DIRECTION_ERROR -1
 #define HEAD_DIRECTION_RIGHT 0
 #define HEAD_DIRECTION_LEFT 1
+#define HEAD_DIRECTION_FORWARD 2
 
 bool checkCenterMain(void) {
     static const char* LOG_FUNCTION_NAME = "checkCenterMain()";
 
     int headDirection = _searchLine();
+    bool doHeadSet = false;
 
     if( headDirection < 0 ) {
         printLog("[%s] 라인을 찾을 수 없다.\n", LOG_FUNCTION_NAME);
         return false;
     }
 
-    if( !_approachLine(headDirection) ) {
+    if( !_approachLine(headDirection, doHeadSet) ) {
         printLog("[%s] 선에 접근 할 수 없다.\n", LOG_FUNCTION_NAME);
         return false;
     }
 
-    if( !_arrangeAngle(headDirection) ) {
+    if( !_arrangeAngle(headDirection, doHeadSet) ) {
         printLog("[%s] 각도를 정렬에 실패했다.\n", LOG_FUNCTION_NAME);
         return false;
     }
@@ -93,6 +95,19 @@ static void _setHeadForward() {
     setHead(0, 0);
 }
 
+static void _setHead(int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_setHead()";
+
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        _setHeadRight();
+    else if(headDirection == HEAD_DIRECTION_LEFT)
+        _setHeadLeft();
+    else if(headDirection == HEAD_DIRECTION_FORWARD)
+        _setHeadForward();
+    else
+        printLog("[%s] 잘못된 매개 변수 값!(%d)\n", LOG_FUNCTION_NAME, headDirection);
+}
+
 static Line_t* _captureRightLine(Screen_t* pScreen) {
         
     readFpgaVideoDataWithWhiteBalance(pScreen);
@@ -135,6 +150,20 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     return returnLine;
 }
 
+static bool _approachLine(headDirection, doHeadSet) {
+
+    if(headDirection == HEAD_DIRECTION_ERROR) {
+        return false;
+    }
+
+    if(headDirection == HEAD_DIRECTION_RIGHT) {
+
+    } else if(headDirection == HEAD_DIRECTION_LEFT{
+
+    } else {
+        return false;
+    }
+}
 bool checkAngle(void) {
 
     _pDefaultScreen = createDefaultScreen();
