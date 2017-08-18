@@ -190,12 +190,11 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
 }
 
 static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
-    static const int LINE_WIDTH = (int)pLine->leftPoint.x - pLine->rigthPoint.x + 1;
-
+    
     PixelData_t* pixels = pScreen->elements;
 
+    int lineWidth = (int)pLine->leftPoint.x - pLine->rightPoint.x + 1;
     int centerX = (int)pLine->centerPoint.x + minX;
-    int centerY = (int)pLine->centerPoint.y + minY;
 
     for(int x = minX; x <= centerX; ++x) {
         int y = (int)pLine->leftPoint.y;
@@ -204,7 +203,7 @@ static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
         *pOutput = 0xF800;
     }
 
-    for(int x = minX + LINE_WIDTH - 1; x >= centerX; --x) {
+    for(int x = minX + lineWidth - 1; x >= centerX; --x) {
         int y = (int)pLine->rightPoint.y;
         int index = y * pScreen->width + x;
         uint16_t* pOutput = (uint16_t*)&pixels[index];
@@ -365,6 +364,6 @@ static void _moveForSetGradient(int lineGradient) {
         turnLeft(lineGradient);
     } else {
         printLog("[%s] 오른쪽으로 회전. 기울기(%d)\n", LOG_FUNCTION_NAME, lineGradient);
-        turnRigth(lineGradient);
+        turnRight(lineGradient);
     }
 }

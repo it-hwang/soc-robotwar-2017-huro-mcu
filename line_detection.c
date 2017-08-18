@@ -17,17 +17,17 @@ static double _getAngle(PixelLocation_t src, PixelLocation_t dst);
 static bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle);
 
 
-static Line_t* lineDetection(Matrix8_t* pColorMatrix) {
+Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     
-    Matrix16_t* pLabelMatrix = createMatrix16(pColorMatix->width, pColorMatrix->height);
-    memset(pLabelMatrix->elements, 0, (pColorMatix->height * pColorMatix->width) * sizeof(uint16_t));
+    Matrix16_t* pLabelMatrix = createMatrix16(pColorMatrix->width, pColorMatrix->height);
+    memset(pLabelMatrix->elements, 0, (pLabelMatrix->height * pLabelMatrix->width) * sizeof(uint16_t));
 
     ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pColorMatrix, pLabelMatrix);
 
     Line_t* pResultLine = NULL;
 
     for(int i = 0; i < pObjectList->size; ++i) {
-        Line_t* pLine = _labelToLine(pColorMatrix, &pObjectList->list[i]);
+        Line_t* pLine = _labelToLine(pLabelMatrix, &pObjectList->list[i]);
 
         bool isClosestLine = false;
         if(pLine != NULL) {
@@ -94,7 +94,7 @@ static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
 
     double leftToRightAngle = _getAngle(leftPoint, rightPoint);
 
-    bool isLine = _isFitRatio(leftToCenterAngle, centerToLeftAngle, leftToRightAngle);
+    bool isLine = _isFitRatio(leftToCenterAngle, centerToRightAngle, leftToRightAngle);
 
     if(isLine) {
         returnLine = (Line_t*)malloc(sizeof(Line_t));
