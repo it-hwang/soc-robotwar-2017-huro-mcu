@@ -297,3 +297,14 @@ static int _getZeroGradient(int headDirection) {
         return LEFT_ZERO_GRADIENT;
 }
 
+static void _moveForSetGradient(int lineGradient) {
+    static const char* LOG_FUNCTION_NAME = "_moveForSetGradient()";
+
+    if(lineGradient < 0) {
+        printLog("[%s] 왼쪽으로 회전. 기울기(%d)\n", LOG_FUNCTION_NAME, lineGradient);
+        turnLeft(lineGradient);
+    } else {
+        printLog("[%s] 오른쪽으로 회전. 기울기(%d)\n", LOG_FUNCTION_NAME, lineGradient);
+        turnRigth(lineGradient);
+    }
+}
