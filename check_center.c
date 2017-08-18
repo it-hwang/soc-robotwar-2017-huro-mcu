@@ -17,7 +17,6 @@
 #define HEAD_DIRECTION_ERROR -1
 #define HEAD_DIRECTION_RIGHT 0
 #define HEAD_DIRECTION_LEFT 1
-#define HEAD_DIRECTION_FORWARD 2
 
 bool checkCenterMain(void) {
     static const char* LOG_FUNCTION_NAME = "checkCenterMain()";
@@ -40,6 +39,7 @@ bool checkCenterMain(void) {
         return false;
     }
 
+    _setStandardStand();
 
     return true;
 }
@@ -86,15 +86,27 @@ static int _searchLine() {
 }
 
 static void _setHeadRight() {
+    setServoSpeed(30);
+    runMotion(MOTION_CHECK_SIDELINE_STANCE);
     setHead(85, -50);
+    mdelay(500);
+    resetServoSpeed();
 }
 
 static void _setHeadLeft() {
+    setServoSpeed(30);
+    runMotion(MOTION_CHECK_SIDELINE_STANCE);
     setHead(-85, -50);
+    mdelay(500);
+    resetServoSpeed();
 }
 
-static void _setHeadForward() {
+static void _setStandardStand() {
+    setServoSpeed(30);
+    runMotion(MOTION_BASIC_STANCE);
     setHead(0, 0);
+    mdelay(500);
+    resetServoSpeed();
 }
 
 static void _setHead(int headDirection) {
@@ -104,8 +116,6 @@ static void _setHead(int headDirection) {
         _setHeadRight();
     else if(headDirection == HEAD_DIRECTION_LEFT)
         _setHeadLeft();
-    else if(headDirection == HEAD_DIRECTION_FORWARD)
-        _setHeadForward();
     else
         printLog("[%s] 잘못된 매개 변수 값!(%d)\n", LOG_FUNCTION_NAME, headDirection);
 }
@@ -125,6 +135,11 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
     
     Line_t* returnLine = lineDetection(pColorMatrix);
     
+    drawColorMatrix(pSubMatrix, pColorMatrix);
+    overlapMatrix16(pSubMatrix, pScreen, 10, 0);
+    
+    _drawLine(pScreen, returnLine, 10, 0);
+
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
 
@@ -146,10 +161,38 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     
     Line_t* returnLine = lineDetection(pColorMatrix);
     
+    drawColorMatrix(pSubMatrix, pColorMatrix);
+    overlapMatrix16(pSubMatrix, pScreen, 120, 0);
+    
+    _drawLine(pScreen, returnLine, 120, 0);
+
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
     
     return returnLine;
+}
+
+static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
+    static const int LINE_WIDTH = (int)pLine->leftPoint.x - pLine->rigthPoint.x + 1;
+
+    PixelData_t* pixels = pScreen->elements;
+
+    int centerX = (int)pLine->centerPoint.x + minX;
+    int centerY = (int)pLine->centerPoint.y + minY;
+
+    for(int x = minX; x <= centerX; ++x) {
+        int y = (int)pLine->leftPoint.y;
+        int index = y * pScreen->width + x;
+        uint16_t* pOutput = (uint16_t*)&pixels[index];
+        *pOutput = 0xF800;
+    }
+
+    for(int x = minX + LINE_WIDTH - 1; x >= centerX; --x) {
+        int y = (int)pLine->rightPoint.y;
+        int index = y * pScreen->width + x;
+        uint16_t* pOutput = (uint16_t*)&pixels[index];
+        *pOutput = 0xF800;
+    }
 }
 
 static Line_t* _captureLine(Screen_t* pScreen, int headDirection) {
