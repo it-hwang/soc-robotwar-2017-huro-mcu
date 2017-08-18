@@ -9,7 +9,7 @@
 #define DIFFERENCE_OF_ANGLE 20
 
 bool _isClosestLine(Line_t* currentLine, Line_t* prevLine);
-bool _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
+Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
 PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
 PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
 PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
@@ -20,7 +20,7 @@ bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double lef
 Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     
     Matrix16_t* pLabelMatrix = createMatrix16(pColorMatix->width, pColorMatrix->height);
-    memset(pLabelMatrix->elements, 0, (pSubMatrix->height * pSubMatrix->width) * sizeof(uint16_t));
+    memset(pLabelMatrix->elements, 0, (pColorMatix->height * pColorMatix->width) * sizeof(uint16_t));
 
     ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pColorMatrix, pLabelMatrix);
 
@@ -31,7 +31,7 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
 
         bool isClosestLine = false;
         if(pLine != NULL) {
-            if(pResultLline == NULL) {
+            if(pResultLine == NULL) {
                 pResultLine = pLine;
             } else {
                 isClosestLine = _isClosestLine(pLine, pResultLine);
@@ -46,10 +46,6 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
         } else {
             free(pLine);
         }
-    }
-
-    if(pLine != NULL) {
-        free(pLine);
     }
 
     if(pObjectList != NULL) {
@@ -71,7 +67,7 @@ bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
         return true;
     } else {
         return false;
-    } 
+    }
 }
 
 Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
@@ -90,7 +86,7 @@ Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
 
     PixelLocation_t rightPoint = _searchRightPoint(pLabelMatrix, pObject, labelNum);
 
-    PixelLocation_t leftpoint = _searchLeftPoint(pLabelMatrix, pObject, labelNum);
+    PixelLocation_t leftPoint = _searchLeftPoint(pLabelMatrix, pObject, labelNum);
 
     double leftToCenterAngle = _getAngle(leftPoint, centerPoint);
 
