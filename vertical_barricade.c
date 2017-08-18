@@ -145,6 +145,7 @@ static void _mergeObject(Object_t* pSrcObject, Object_t* pDstObject) {
     pDstObject->cnt = pDstObject->cnt + pSrcObject->cnt;
 }
 
+// BUG: 간혹 잡음을 바리케이드로 인식하는 경우가 있다.
 static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
     static const char* LOG_FUNCTION_NAME = "_searchVerticalBarricade()";
     // 하단 판정 Y값
@@ -249,10 +250,11 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
         return;
 
     setServoSpeed(30);
-    runMotion(MOTION_HEAD_FRONT);
+    // runMotion(MOTION_HEAD_FRONT);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
-    mdelay(500);
+    // mdelay(500);
+    mdelay(800);
 }
 
 int measureVerticalBarricadeDistance(void) {
@@ -298,7 +300,8 @@ int measureVerticalBarricadeDistance(void) {
     drawObjectEdge(pScreen, pObject, NULL);
     displayScreen(pScreen);
 
-    free(pObject);
+    if (pObject != NULL)
+        free(pObject);
     destroyScreen(pScreen);
 
     printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
