@@ -216,6 +216,10 @@ static void _moveForSetDistance(int lineDistanceFromRobot, int headDirection) {
         _walkSameDirection(headDirection);
     }
 }
+
+static _walkDifferentDirection(int headDirection) {
+    
+}
 bool checkAngle(void) {
 
     _pDefaultScreen = createDefaultScreen();
