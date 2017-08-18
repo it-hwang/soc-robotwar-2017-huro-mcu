@@ -22,7 +22,7 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     Matrix16_t* pLabelMatrix = createMatrix16(pColorMatix->width, pColorMatrix->height);
     memset(pLabelMatrix->elements, 0, (pSubMatrix->height * pSubMatrix->width) * sizeof(uint16_t));
 
-    ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pColorMatix, pLabelMatrix);
+    ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pColorMatrix, pLabelMatrix);
 
     Line_t* pResultLine = NULL;
 

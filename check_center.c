@@ -168,6 +168,8 @@ static Line_t* _captureLine(Screen_t* pScreen, int headDirection) {
 
 static bool _approachLine(int headDirection, bool doHeadSet) {
     static const char* LOG_FUNCTION_NAME = "_approachLine()";
+    static const int RANGE_OF_DISTANCE = 5;
+    static const int LIMIT_TRY_COUNT = 5;
 
     if(headDirection == HEAD_DIRECTION_ERROR)
         return false;
@@ -178,11 +180,42 @@ static bool _approachLine(int headDirection, bool doHeadSet) {
     Screen_t* pScreen = createDefaultScreen();
     Line_t* pLine = NULL;
 
+    int lineDistanceFromRobot = 0;
+    int tryCount = 0;
 
-    
+    do {
+        pLine = _captureLine(pScreen, headDirection);
 
+        if(pLine != NULL) {
+            lineDistanceFromRobot = CENTER - pLine->centerPoint.y;
+            tryCount = 0;
+            _moveForSetDistance(lineDistanceFromRobot, headDirection);
+            printLog("[%s] 중앙으로 부터 거리차(%d) 머리 방향(%d)\n", LOG_FUNCTION_NAME, lineDistanceFromRobot, headDirection);
+            free(pLine);
+        } else {
+            tryCount++;
+            lineDistanceFromRobot = RANGE_OF_DISTANCE;
+        }
+    } while(abs(lineDistanceFromRobot) >= RANGE_OF_DISTANCE && tryCount < LIMIT_TRY_COUNT);
+
+    if(tryCount > LIMIT_TRY_COUNT){
+        printLog("[%s] 좌우 최대 촬영 횟수(%d) 초과!\n", LOG_FUNCTION_NAME, tryCount);
+        return false;
+    } else
+        return true;
 }
 
+static void _moveForSetDistance(int lineDistanceFromRobot, int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_moveForSetDistance()";
+
+    if( lineDistanceFromRobot < 0) {
+        printLog("[%s] 다른 방향으로 이동. 머리방향(%d)\n", LOG_FUNCTION_NAME, headDirection);
+        _walkDifferentDirection(headDirection);
+    } else {
+        printLog("[%s] 같은 방향으로 이동. 머리방향(%d)\n", LOG_FUNCTION_NAME, headDirection);
+        _walkSameDirection(headDirection);
+    }
+}
 bool checkAngle(void) {
 
     _pDefaultScreen = createDefaultScreen();
