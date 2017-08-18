@@ -18,6 +18,23 @@
 #define HEAD_DIRECTION_RIGHT 0
 #define HEAD_DIRECTION_LEFT 1
 
+static int _searchLine(void);
+static void _setHeadRight(void);
+static void _setHeadLeft(void);
+static void _setStandardStand(void);
+static void _setHead(int headDirection);
+static Line_t* _captureRightLine(Screen_t* pScreen);
+static Line_t* _captureLeftLine(Screen_t* pScreen);
+static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY);
+static Line_t* _captureLine(Screen_t* pScreen, int headDirection);
+static bool _approachLine(int headDirection, bool doHeadSet);
+static void _moveForSetDistance(int lineDistanceFromRobot, int headDirection);
+static void _walkDifferentDirection(int headDirection);
+static void _walkSameDirection(int headDirection);
+static bool _arrangeAngle(int headDirection, bool doHeadSet);
+static int _getZeroGradient(int headDirection);
+static void _moveForSetGradient(int lineGradient);
+
 bool checkCenterMain(void) {
     static const char* LOG_FUNCTION_NAME = "checkCenterMain()";
 
@@ -44,7 +61,7 @@ bool checkCenterMain(void) {
     return true;
 }
 
-static int _searchLine() {
+static int _searchLine(void) {
     static const char* LOG_FUNCTION_NAME = "_searchLine()";
     static const int LIMIT_TRY_COUNT = 6;
 
@@ -85,7 +102,7 @@ static int _searchLine() {
     return resultDirection;
 }
 
-static void _setHeadRight() {
+static void _setHeadRight(void) {
     setServoSpeed(30);
     runMotion(MOTION_CHECK_SIDELINE_STANCE);
     setHead(85, -50);
@@ -93,7 +110,7 @@ static void _setHeadRight() {
     resetServoSpeed();
 }
 
-static void _setHeadLeft() {
+static void _setHeadLeft(void) {
     setServoSpeed(30);
     runMotion(MOTION_CHECK_SIDELINE_STANCE);
     setHead(-85, -50);
@@ -101,7 +118,7 @@ static void _setHeadLeft() {
     resetServoSpeed();
 }
 
-static void _setStandardStand() {
+static void _setStandardStand(void) {
     setServoSpeed(30);
     runMotion(MOTION_BASIC_STANCE);
     setHead(0, 0);

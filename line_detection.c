@@ -8,16 +8,16 @@
 #define PI 3.141592
 #define DIFFERENCE_OF_ANGLE 20
 
-bool _isClosestLine(Line_t* currentLine, Line_t* prevLine);
-Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
-PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
-PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
-PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
-double _getAngle(PixelLocation_t src, PixelLocation_t dst);
-bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle);
+static bool _isClosestLine(Line_t* currentLine, Line_t* prevLine);
+static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
+static PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
+static PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
+static PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
+static double _getAngle(PixelLocation_t src, PixelLocation_t dst);
+static bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle);
 
 
-Line_t* lineDetection(Matrix8_t* pColorMatrix) {
+static Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     
     Matrix16_t* pLabelMatrix = createMatrix16(pColorMatix->width, pColorMatrix->height);
     memset(pLabelMatrix->elements, 0, (pColorMatix->height * pColorMatix->width) * sizeof(uint16_t));
@@ -59,7 +59,7 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
 
 }
 
-bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
+static bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
     
     int resultDistance = prevLine->centerPoint.y;
     int currentDistance = currentLine->centerPoint.y;
@@ -70,7 +70,7 @@ bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
     }
 }
 
-Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
+static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
 
     int objectWidth = pObject->maxX - pObject->minX;
     
@@ -108,7 +108,7 @@ Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
     return returnLine;
 }
 
-PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
+static PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
 
     PixelLocation_t returnLocation;
 
@@ -127,7 +127,7 @@ PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, 
     return returnLocation;
 }
 
-PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
+static PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
 
     PixelLocation_t returnLocation;
 
@@ -146,7 +146,7 @@ PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, i
     return returnLocation;
 }
 
-PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
+static PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
 
     PixelLocation_t returnLocation;
 
@@ -166,7 +166,7 @@ PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, in
 }
 
 //두 점을 이용한 기울기 계산
-double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
+static double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
     int dDeltaX;
     int dDeltaY;
 
@@ -182,7 +182,7 @@ double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
     return dAngle;
 }
 
-bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle) {
+static bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle) {
     
     if(fabs(leftToCenterAngle - leftToRightAngle) > DIFFERENCE_OF_ANGLE)
         return false;
