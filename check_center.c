@@ -217,9 +217,28 @@ static void _moveForSetDistance(int lineDistanceFromRobot, int headDirection) {
     }
 }
 
-static _walkDifferentDirection(int headDirection) {
-    
+static void _walkDifferentDirection(int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_walkDifferentDirection()";
+
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        walkLeft(5);
+    else if( headDirection == HEAD_DIRECTION_LEFT)
+        walkRight(5);
+    else
+        printLog("[%s] 잘못된 매개 변수 값!(%d)\n", LOG_FUNCTION_NAME, headDirection);
 }
+
+static void _walkSameDirection(int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_walkSameDirection()";
+
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        walkRight(5);
+    else if( headDirection == HEAD_DIRECTION_LEFT)
+        walkLeft(5);
+    else 
+        printLog("[%s] 잘못된 매개 변수 값!(%d)\n", LOG_FUNCTION_NAME, headDirection);
+}
+
 bool checkAngle(void) {
 
     _pDefaultScreen = createDefaultScreen();
