@@ -26,7 +26,7 @@ bool detectionCornerMain(void) {
 
         if(pLine != NULL) {
             falseCounter = 0;
-            distanceLine = (int)pLine->distancePoint.y;
+            distanceLine = (int)pLine->centerPoint.y;
             free(pLine);
 
             if(distanceLine > FIT_DISTANCE) {

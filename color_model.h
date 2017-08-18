@@ -3,40 +3,46 @@
 
 #include <stdint.h>
 
-#define COLOR_MODEL_USE_TYPE_CHECKING     true
+#define COLOR_MODEL_USE_TYPE_CHECK  true
 
 
-typedef union {
-    struct {
-        uint8_t a;
-        uint8_t b;
-        uint8_t g;
-        uint8_t r;
+typedef struct {
+    union {
+        struct {
+            uint8_t a;
+            uint8_t b;
+            uint8_t g;
+            uint8_t r;
+        };
+        uint32_t data;
     };
-    uint32_t data;
 } Rgba_t;
 
-typedef union {
-    struct {
-        uint16_t b : 5;
-        uint16_t g : 6;
-        uint16_t r : 5;
+typedef struct {
+    union {
+        struct {
+            uint16_t b : 5;
+            uint16_t g : 6;
+            uint16_t r : 5;
+        };
+        uint16_t data;
     };
-    uint16_t data;
 } Rgb565_t;
 
-typedef union {
-    struct {
-        uint16_t b : 5;
-        uint16_t a : 1;
-        uint16_t g : 5;
-        uint16_t r : 5;
+typedef struct {
+    union {
+        struct {
+            uint16_t b : 5;
+            uint16_t a : 1;
+            uint16_t g : 5;
+            uint16_t r : 5;
+        };
+        uint16_t data;
     };
-    uint16_t data;
 } Rgab5515_t;
 
 
-#if COLOR_USE_TYPE_CHECK
+#if COLOR_MODEL_USE_TYPE_CHECK
     static inline uint32_t rgb565ToRgbaData(Rgb565_t* pRgb565) {
         return ((uint32_t)pRgb565->r << 27) |
                ((uint32_t)pRgb565->g << 18) |
@@ -44,7 +50,7 @@ typedef union {
     }
 
     static inline uint16_t rgb565ToRgab5515Data(Rgb565_t* pRgb565) {
-        return ((uint16_t)pRgb565->data & 0xffdf)
+        return ((uint16_t)pRgb565->data & 0xffdf);
     }
 
     static inline uint32_t rgab5515ToRgbaData(Rgab5515_t* pRgab5515) {
@@ -55,7 +61,7 @@ typedef union {
     }
 
     static inline uint16_t rgab5515ToRgb565Data(Rgab5515_t* pRgab5515) {
-        return ((uint16_t)pRgab5515->data & 0xffdf |
+        return (((uint16_t)pRgab5515->data & 0xffdf) |
                (((uint16_t)pRgab5515->data >> 1) & 0x0020));
     }
 

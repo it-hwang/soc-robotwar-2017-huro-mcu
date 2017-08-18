@@ -2,6 +2,7 @@
 
 #include "graphic_interface.h"
 #include "graphic_api.h"
+#include "color_model.h"
 
 const PixelCoordinate_t DEFAULT_SCREEN_WIDTH = 180;
 const PixelCoordinate_t DEFAULT_SCREEN_HEIGHT = 120;
@@ -18,6 +19,14 @@ int openGraphicInterface(void) {
 void closeGraphicInterface(void) {
     direct_camera_display_on();
     close_graphic();
+}
+
+void enableDirectCameraDisplay(void) {
+    direct_camera_display_on();
+}
+
+void disableDirectCameraDisplay(void) {
+    direct_camera_display_off();
 }
 
 
@@ -38,8 +47,23 @@ void readFpgaVideoData(Screen_t* pDefaultScreen) {
     read_fpga_video_data(pDefaultScreen->elements);
 }
 
+static void _convertRgab5515MatrixToRgb565Matrix(Screen_t* pScreen) {
+    int length = pScreen->height * pScreen->width;
+    
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)pScreen->elements;
+    for (int i = 0; i < length; ++i) {
+        pRgab5515->a = pRgab5515->g;
+        pRgab5515++;
+    }
+}
+
 void displayScreen(Screen_t* pDefaultScreen) {
+    Screen_t* pScreen = cloneMatrix16(pDefaultScreen);
+    _convertRgab5515MatrixToRgb565Matrix(pScreen);
+
     clear_screen();
-    draw_fpga_video_data_full(pDefaultScreen->elements);
+    draw_fpga_video_data_full(pScreen->elements);
     flip();
+
+    destroyMatrix16(pScreen);
 }

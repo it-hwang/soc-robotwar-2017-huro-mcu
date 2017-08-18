@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -5,6 +6,7 @@
 #include "object_detection.h"
 #include "graphic_interface.h"
 #include "matrix.h"
+#include "log.h"
 
 #define _LABEL_SIZE 1001
 
@@ -273,4 +275,33 @@ void _sortArray(uint16_t* array, int size) {
             }
         }
     }
+}
+
+
+// pObject가 직사각형과의 유사한 정도를 반환한다. (범위: 0.0 ~ 1.0)
+float getRectangleCorrelation(Matrix8_t* pMatrix, Object_t* pObject) {
+    if (pObject == NULL)
+        return 0.;
+
+    static const float AREA_CORRELATION_RATIO = 0.8;
+    static const float CENTER_CORRELATION_RATIO = 0.2;
+
+    int width = pObject->maxX - pObject->minX + 1;
+    int height = pObject->maxY - pObject->minY + 1;
+    int objectArea = pObject->cnt;
+    int rectangleArea = width * height;
+    float areaCorrelation = (float)objectArea / rectangleArea;
+
+    float objectCenterX = pObject->centerX;
+    float objectCenterY = pObject->centerY;
+    float rectangleCenterX = (float)(pObject->maxX + pObject->minX) / 2;
+    float rectangleCenterY = (float)(pObject->maxY + pObject->minY) / 2;
+    float deltaCenterX = rectangleCenterX - objectCenterX;
+    float deltaCenterY = rectangleCenterY - objectCenterY;
+    float centerDistance = sqrtf(deltaCenterX*deltaCenterX + deltaCenterY*deltaCenterY);
+    float radius = sqrtf(width*width + height*height) / 2;
+    float centerCorrelation = 1.0 - (centerDistance / radius);
+
+    return (areaCorrelation   * AREA_CORRELATION_RATIO) +
+           (centerCorrelation * CENTER_CORRELATION_RATIO);
 }

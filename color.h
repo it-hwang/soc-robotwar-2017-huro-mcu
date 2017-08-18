@@ -42,6 +42,6 @@ static inline PixelData_t colorToRgab5515Data(Color_t color) {
 }
 
 Matrix8_t* createColorMatrix(Screen_t* pScreen, ColorTable_t* pColorTable);
-
+void drawColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix);
 
 #endif // __COLOR_RECOGNITION_H__
