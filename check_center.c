@@ -289,3 +289,11 @@ static bool _arrangeAngle(int headDirection, bool doHeadSet) {
     }
     
 }
+
+static int _getZeroGradient(int headDirection) {
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        return RIGHT_ZERO_GRADIENT;
+    else
+        return LEFT_ZERO_GRADIENT;
+}
+
