@@ -12,6 +12,7 @@
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "white_balance.h"
+#include "check_bridge_center.h"
 #include "log.h"
 
 
@@ -448,9 +449,7 @@ static bool _climbUp(void) {
 }
 
 static bool _alignToCenter(void) {
-    // TODO: 로봇을 중앙 정렬 시킨다.
-    //       일단은 check_center 알고리즘을 사용하지만,
-    //       시간을 단축하기 위해 더 빠른 방법을 고안해야한다.
+    checkBridgeCenterMain(COLOR_RED);
 
     return true;
 }
