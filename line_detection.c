@@ -19,7 +19,8 @@ static bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, dou
 
 
 Line_t* lineDetection(Matrix8_t* pColorMatrix) {
-    
+    static const char* LOG_FUNCTION_NAME = "lineDetection()";
+
     Matrix16_t* pLabelMatrix = createMatrix16(pColorMatrix->width, pColorMatrix->height);
     memset(pLabelMatrix->elements, 0, (pLabelMatrix->height * pLabelMatrix->width) * sizeof(uint16_t));
 
@@ -57,6 +58,9 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     }
 
     destroyMatrix16(pLabelMatrix);
+
+    printLog("[%s] 최종 라인 기울기(%f).\n", LOG_FUNCTION_NAME, pResultLine->theta);
+    printLog("[%s] 최종 라인 거리(%f).\n", LOG_FUNCTION_NAME, pResultLine->centerPoint.y);
 
     return pResultLine;
 }

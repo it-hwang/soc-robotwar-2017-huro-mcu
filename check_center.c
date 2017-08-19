@@ -64,6 +64,8 @@ bool checkCenterMain(void) {
 
     _setStandardStand();
 
+    printLog("[%s] 중앙 정렬 완료.\n", LOG_FUNCTION_NAME);
+
     return true;
 }
 
@@ -91,14 +93,18 @@ static int _searchLine(void) {
             pLine = _captureLeftLine(pScreen);
         }
 
-        if(pLine == NULL)
+        if(pLine == NULL){
             tryCount++;
+            printLog("[%s] 선을 확인 하지 못하여 다시 찍는 중.\n", LOG_FUNCTION_NAME);
+        }
+            
     }
 
     if(tryCount >= LIMIT_TRY_COUNT) {
         printLog("[%s] 좌우 최대 촬영 횟수(%d) 초과!\n", LOG_FUNCTION_NAME, tryCount);
         resultDirection = HEAD_DIRECTION_ERROR;
-    }
+    } else
+        printLog("[%s] 선 확인 완료. 머리 방향(%d)\n", LOG_FUNCTION_NAME, resultDirection);
 
     if(pLine != NULL)
         free(pLine);
@@ -261,10 +267,12 @@ static bool _approachLine(int headDirection, bool doHeadSet) {
             if(abs(lineDistanceFromRobot) < RANGE_OF_DISTANCE)
                 break;
 
-            _moveForSetDistance(lineDistanceFromRobot, headDirection);
             printLog("[%s] 중앙으로 부터 거리차(%d) 머리 방향(%d)\n", LOG_FUNCTION_NAME, lineDistanceFromRobot, headDirection);
+            _moveForSetDistance(lineDistanceFromRobot, headDirection);
+            
             free(pLine);
         } else {
+            printLog("[%s] 선을 확인 하지 못하여 다시 찍는 중.\n", LOG_FUNCTION_NAME);
             tryCount++;
             lineDistanceFromRobot = RANGE_OF_DISTANCE;
         }
@@ -278,8 +286,11 @@ static bool _approachLine(int headDirection, bool doHeadSet) {
     if(tryCount >= LIMIT_TRY_COUNT){
         printLog("[%s] 최대 촬영 횟수(%d) 초과!\n", LOG_FUNCTION_NAME, tryCount);
         return false;
-    } else
+    } else {
+        printLog("[%s] 거리 조절 완료. 머리 방향(%d)\n", LOG_FUNCTION_NAME, headDirection);
         return true;
+    }
+        
 }
 
 static void _moveForSetDistance(int lineDistanceFromRobot, int headDirection) {
@@ -344,10 +355,12 @@ static bool _arrangeAngle(int headDirection, bool doHeadSet) {
             if(abs(lineGradient) < RANGE_OF_GRADIENT)
                 break;
 
-            _moveForSetGradient(lineGradient);
             printLog("[%s] 중앙으로 부터 각도차(%d) 머리 방향(%d)\n", LOG_FUNCTION_NAME, lineGradient, headDirection);
+            _moveForSetGradient(lineGradient);
+            
             free(pLine);
         } else {
+            printLog("[%s] 선을 확인 하지 못하여 다시 찍는 중.\n", LOG_FUNCTION_NAME);
             tryCount++;
             lineGradient = RANGE_OF_GRADIENT;
         }
@@ -359,8 +372,10 @@ static bool _arrangeAngle(int headDirection, bool doHeadSet) {
     destroyScreen(pScreen);
 
     if(tryCount >= LIMIT_TRY_COUNT) {
+        printLog("[%s] 최대 촬영 횟수(%d) 초과!\n", LOG_FUNCTION_NAME, tryCount);
         return false;
     } else {
+        printLog("[%s] 각도 조절 완료. 머리 방향(%d)\n", LOG_FUNCTION_NAME, headDirection);
         return true;
     }
     
