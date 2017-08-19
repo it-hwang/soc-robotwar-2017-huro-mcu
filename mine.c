@@ -196,9 +196,6 @@ static bool _measureMineOffsetX(Screen_t* pScreen, int* pOffsetX) {
 
     _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
 
-    Screen_t* pScreen = createDefaultScreen();
-    readFpgaVideoDataWithWhiteBalance(pScreen);
-
     Object_t* pObject = _searchClosestMine(pScreen);
     bool hasFound = (pObject != NULL);
 
@@ -216,7 +213,6 @@ static bool _measureMineOffsetX(Screen_t* pScreen, int* pOffsetX) {
 
     if (pObject != NULL)
         free(pObject);
-    destroyScreen(pScreen);
     
     if (pOffsetX != NULL)
         *pOffsetX = offsetX;
@@ -278,6 +274,7 @@ bool mineMain(void) {
     //         input = getchar();
     // }
     // return true;
+    solveMine();
 
     return false;
 }
@@ -285,6 +282,9 @@ bool mineMain(void) {
 
 static bool _approachMine(void) {
     static const char* LOG_FUNCTION_NAME = "_approachMine()";
+
+    // 빨간 다리를 발견하지 못할 경우 다시 찍는 횟수
+    static const int MAX_TRIES = 10;
 
     // 장애물에 다가갈 거리 (밀리미터)
     static const int APPROACH_DISTANCE = 20;
@@ -294,25 +294,18 @@ static bool _approachMine(void) {
     int nTries;
     for (nTries = 0; nTries < MAX_TRIES; ++nTries) {
         // 앞뒤 정렬
-        int distance = measureRedBridgeDistance();
+        int distance = measureMineDistance();
         bool hasFound = (distance != 0);
         if (!hasFound)
             continue;
         
-        if (distance <= APPROACH_DISTANCE) {
+        if (distance <= APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
             printLog("[%s] 접근 완료.\n", LOG_FUNCTION_NAME);
             break;
         }
-        else if (distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
+        else {
             printLog("[%s] 전진보행으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
             walkForward(distance - APPROACH_DISTANCE);
-            mdelay(500);
-            nTries = 0;
-        }
-        else {
-            printLog("[%s] 종종걸음으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
-            int nSteps = distance / WALK_FORWARD_QUICK_DISTANCE_PER_STEP;
-            runWalk(ROBOT_FORWARD_QUICK, nSteps);
             mdelay(500);
             nTries = 0;
         }
@@ -321,16 +314,13 @@ static bool _approachMine(void) {
         printLog("[%s] 시간 초과!\n", LOG_FUNCTION_NAME);
         return false;
     }
-
-    // 달라붙어 비비기
-    runWalk(ROBOT_FORWARD_QUICK, 4);
-    runWalk(ROBOT_FORWARD_QUICK_THRESHOLD, 4);
     
     return true;
-} 
+}
 
 
 bool solveMine(void) {
-    
+    _approachMine();
+
     return false;
 }
