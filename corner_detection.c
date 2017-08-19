@@ -8,14 +8,14 @@
 #include "image_filter.h"
 #include "check_center.h"
 #include "detection_corner.h"
+#include "log.h"
 
 #define CAPTURE_ERROR -1
 #define RIGHT_SIDE_CLEAR 0
 #define LEFT_SIDE_CLEAR 1
 #define NO_CLEAR_SIDE 2
 
-#define FIT_DISTANCE 80
-#define LIMIT_TRY 10
+#define FIT_FRONT_DISTANCE 50
 
 Screen_t* _pDefaultScreen;
 
@@ -23,6 +23,8 @@ bool cornerDetection(void) {
     static const char* LOG_FUNCTION_NAME = "cornerDetection()";
 
     int turnWhere = _lookAround();
+
+    _setHeadForward();
 
     if(turnWhere < 0) {
         printLog("[%s] 라인을 찾을 수 없습니다.\n", LOG_FUNCTION_NAME);
@@ -47,7 +49,6 @@ bool cornerDetection(void) {
 }
 
 static int _lookAround() {
-    static const char* LOG_FUNCTION_NAME = "_captureAround()";
     static const int INIT_STATE = -1;
     static const int LIMIT_TRY_COUNT = 2;
 
@@ -67,7 +68,8 @@ static int _lookAround() {
 }
 
 static int _captureBothSide(void) {
-    
+    static const char* LOG_FUNCTION_NAME = "_captureBothSide()";
+
     Screen_t* pScreen = createDefaultScreen();
 
     _setHeadLeft();
@@ -80,17 +82,20 @@ static int _captureBothSide(void) {
 
     if(leftLine == NULL && rightLine != NULL) {
         free(rightLine);
+        printLog("[%s] 오른쪽에서 선을 찾았습니다.\n", LOG_FUNCTION_NAME);
         return LEFT_SIDE_CLEAR;
     }
 
     if(leftLine != NULL && rightLine == NULL) {
         free(leftLine);
+        printLog("[%s] 왼쪽에서 선을 찾았습니다.\n", LOG_FUNCTION_NAME);
         return RIGHT_SIDE_CLEAR;
     }
 
     if(leftLine != NULL && rightLine != NULL) {
         free(leftLine);
         free(rightLine);
+        printLog("[%s] 양쪽에서 선을 찾았습니다.\n", LOG_FUNCTION_NAME);
         return NO_CLEAR_SIDE;
     }
 
@@ -109,6 +114,14 @@ static void _setHeadLeft(void) {
     setServoSpeed(30);
     runMotion(MOTION_CHECK_SIDELINE_STANCE);
     setHead(-85, -50);
+    mdelay(1000);
+    resetServoSpeed();
+}
+
+static void _setHeadForward(void) {
+    setServoSpeed(30);
+    runMotion(MOTION_BASIC_STANCE);
+    setHead(0, -50);
     mdelay(1000);
     resetServoSpeed();
 }
@@ -172,7 +185,34 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
 
-return returnLine;
+    return returnLine;
+}
+
+static Line_t* _captureForwardLine(Screen_t* pScreen) {
+    
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 45, 0, 64, 110);
+
+    Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
+                                pColorTables[COLOR_BLACK]);
+
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    applyFastErosionToMatrix8(pColorMatrix, 2);
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+
+    Line_t* returnLine = lineDetection(pColorMatrix);
+
+    drawColorMatrix(pSubMatrix, pColorMatrix);
+    overlapMatrix16(pSubMatrix, pScreen, 45, 0);
+
+    _drawLine(pScreen, returnLine, 45, 0);
+    displayScreen(pScreen);
+
+    destroyMatrix8(pColorMatrix);
+    destroyMatrix16(pSubMatrix);
+
+    return returnLine;
 }
 
 static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
@@ -197,38 +237,15 @@ static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
     }
 }
 
-bool cornerDetection(void) {
+static bool _moveUntilSeeLine() {
+    static const char* LOG_FUNCTION_NAME = "_moveUntilSeeLine()";
+    static const int RANGE_OF_DISTANCE = 5;
+    static const int LIMIT_TRY_COUNT = 10;
 
-    _pDefaultScreen = createDefaultScreen();
+    _setHeadForward();
 
-    int distanceLine = 0;
-    int falseCounter = 0;
+    Screen_t* pScreen = createDefaultScreen();
+
     
-    while(true) {
-        Line_t* pLine = captureLine(_pDefaultScreen);
 
-        if(pLine != NULL) {
-            falseCounter = 0;
-            distanceLine = (int)pLine->distancePoint.y;
-            free(pLine);
-
-            if(distanceLine > FIT_DISTANCE) {
-                //Send_Command(); //앞으로 간다.
-                //waitMotion();
-                checkCenter();
-            }else {
-                //Send_Command(); //90도 회전
-                //waitMotion();
-                checkCenter();
-                destroyScreen(_pDefaultScreen);
-                return true;
-            }
-        }else {
-            falseCounter++;
-            if(falsesCounter > LIMIT_TRY) {
-                destroyScreen(_pDefaultScreen);
-                return false;
-            }
-        }
-    }
 }
