@@ -266,7 +266,7 @@ static bool _measureRedBridgeOffsetX(int* pOffsetX) {
     if (pOffsetX != NULL)
         *pOffsetX = offsetX;
 
-    printLog("[%s] offsetX: %d\n", LOG_FUNCTION_NAME, *pOffsetX);
+    printLog("[%s] offsetX: %d\n", LOG_FUNCTION_NAME, offsetX);
     return hasFound;
 }
 
