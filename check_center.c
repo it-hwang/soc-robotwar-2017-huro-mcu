@@ -11,9 +11,9 @@
 #include "log.h"
 #include "white_balance.h"
 
-#define CENTER 80
-#define RIGHT_ZERO_GRADIENT 2
-#define LEFT_ZERO_GRADIENT -5
+#define CENTER 50
+#define RIGHT_ZERO_GRADIENT 4
+#define LEFT_ZERO_GRADIENT -9
 #define HEAD_DIRECTION_ERROR -1
 #define HEAD_DIRECTION_RIGHT 0
 #define HEAD_DIRECTION_LEFT 1
@@ -45,17 +45,23 @@ bool checkCenterMain(void) {
         printLog("[%s] 라인을 찾을 수 없다.\n", LOG_FUNCTION_NAME);
         return false;
     }
-/*
-    if( !_approachLine(headDirection, doHeadSet) ) {
-        printLog("[%s] 선에 접근 할 수 없다.\n", LOG_FUNCTION_NAME);
-        return false;
-    }
 
     if( !_arrangeAngle(headDirection, doHeadSet) ) {
         printLog("[%s] 각도를 정렬에 실패했다.\n", LOG_FUNCTION_NAME);
         return false;
     }
-*/
+
+    if( !_approachLine(headDirection, doHeadSet) ) {
+        printLog("[%s] 선에 접근 할 수 없다.\n", LOG_FUNCTION_NAME);
+        return false;
+    }
+    
+
+    if( !_arrangeAngle(headDirection, doHeadSet) ) {
+        printLog("[%s] 각도를 정렬에 실패했다.\n", LOG_FUNCTION_NAME);
+        return false;
+    }
+
     _setStandardStand();
 
     return true;
@@ -106,7 +112,7 @@ static void _setHeadRight(void) {
     setServoSpeed(30);
     runMotion(MOTION_CHECK_SIDELINE_STANCE);
     setHead(85, -50);
-    mdelay(500);
+    mdelay(1000);
     resetServoSpeed();
 }
 
@@ -114,7 +120,7 @@ static void _setHeadLeft(void) {
     setServoSpeed(30);
     runMotion(MOTION_CHECK_SIDELINE_STANCE);
     setHead(-85, -50);
-    mdelay(500);
+    mdelay(1000);
     resetServoSpeed();
 }
 
@@ -122,7 +128,7 @@ static void _setStandardStand(void) {
     setServoSpeed(30);
     runMotion(MOTION_BASIC_STANCE);
     setHead(0, 0);
-    mdelay(500);
+    mdelay(1000);
     resetServoSpeed();
 }
 
@@ -141,21 +147,21 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
         
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
-    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 10, 0, 59, 95);
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 70, 0, 89, 110);
 
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
                                 pColorTables[COLOR_BLACK]);
-
-    applyDilationToMatrix8(pColorMatrix, 1);
-    applyErosionToMatrix8(pColorMatrix, 2);
-    applyDilationToMatrix8(pColorMatrix, 1);
-    
+    /*
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    applyFastErosionToMatrix8(pColorMatrix, 2);
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    */
     Line_t* returnLine = lineDetection(pColorMatrix);
     
     drawColorMatrix(pSubMatrix, pColorMatrix);
-    overlapMatrix16(pSubMatrix, pScreen, 10, 0);
+    overlapMatrix16(pSubMatrix, pScreen, 70, 0);
     
-    _drawLine(pScreen, returnLine, 10, 0);
+    _drawLine(pScreen, returnLine, 70, 0);
     displayScreen(pScreen);
     
     destroyMatrix8(pColorMatrix);
@@ -168,21 +174,22 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     
     readFpgaVideoDataWithWhiteBalance(pScreen);
     
-    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 120, 0, 169, 95);
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 90, 0, 109, 110);
 
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
                                 pColorTables[COLOR_BLACK]);
 
-    applyDilationToMatrix8(pColorMatrix, 1);
-    applyErosionToMatrix8(pColorMatrix, 2);
-    applyDilationToMatrix8(pColorMatrix, 1);
+    /*applyFastDilationToMatrix8(pColorMatrix, 1);
+    applyFastErosionToMatrix8(pColorMatrix, 2);
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    */
     
     Line_t* returnLine = lineDetection(pColorMatrix);
     
     drawColorMatrix(pSubMatrix, pColorMatrix);
-    overlapMatrix16(pSubMatrix, pScreen, 120, 0);
+    overlapMatrix16(pSubMatrix, pScreen, 90, 0);
     
-    _drawLine(pScreen, returnLine, 120, 0);
+    _drawLine(pScreen, returnLine, 90, 0);
     displayScreen(pScreen);
 
     destroyMatrix8(pColorMatrix);
@@ -195,18 +202,18 @@ static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
     
     PixelData_t* pixels = pScreen->elements;
 
-    int lineWidth = (int)pLine->leftPoint.x - pLine->rightPoint.x + 1;
+    
     int centerX = (int)pLine->centerPoint.x + minX;
 
     for(int x = minX; x <= centerX; ++x) {
-        int y = (int)pLine->leftPoint.y;
+        int y = (int)pLine->leftPoint.y + minY;
         int index = y * pScreen->width + x;
         uint16_t* pOutput = (uint16_t*)&pixels[index];
         *pOutput = 0xF800;
     }
 
-    for(int x = minX + lineWidth - 1; x >= centerX; --x) {
-        int y = (int)pLine->rightPoint.y;
+    for(int x = minX + pLine->rightPoint.x; x >= centerX; --x) {
+        int y = (int)pLine->rightPoint.y + minY;
         int index = y * pScreen->width + x;
         uint16_t* pOutput = (uint16_t*)&pixels[index];
         *pOutput = 0xF800;
@@ -230,7 +237,7 @@ static Line_t* _captureLine(Screen_t* pScreen, int headDirection) {
 static bool _approachLine(int headDirection, bool doHeadSet) {
     static const char* LOG_FUNCTION_NAME = "_approachLine()";
     static const int RANGE_OF_DISTANCE = 5;
-    static const int LIMIT_TRY_COUNT = 5;
+    static const int LIMIT_TRY_COUNT = 10;
 
     if(headDirection == HEAD_DIRECTION_ERROR)
         return false;
@@ -243,13 +250,17 @@ static bool _approachLine(int headDirection, bool doHeadSet) {
 
     int lineDistanceFromRobot = 0;
     int tryCount = 0;
-
+    
     do {
         pLine = _captureLine(pScreen, headDirection);
 
         if(pLine != NULL) {
             lineDistanceFromRobot = CENTER - pLine->centerPoint.y;
             tryCount = 0;
+
+            if(abs(lineDistanceFromRobot) < RANGE_OF_DISTANCE)
+                break;
+
             _moveForSetDistance(lineDistanceFromRobot, headDirection);
             printLog("[%s] 중앙으로 부터 거리차(%d) 머리 방향(%d)\n", LOG_FUNCTION_NAME, lineDistanceFromRobot, headDirection);
             free(pLine);
@@ -257,7 +268,7 @@ static bool _approachLine(int headDirection, bool doHeadSet) {
             tryCount++;
             lineDistanceFromRobot = RANGE_OF_DISTANCE;
         }
-    } while(abs(lineDistanceFromRobot) >= RANGE_OF_DISTANCE && tryCount < LIMIT_TRY_COUNT);
+    } while(tryCount < LIMIT_TRY_COUNT);
 
     if(pLine != NULL)
         free(pLine);
@@ -307,8 +318,8 @@ static void _walkSameDirection(int headDirection) {
 
 static bool _arrangeAngle(int headDirection, bool doHeadSet) {
     static const char* LOG_FUNCTION_NAME = "_arrangeAngle()";
-    static const int RANGE_OF_GRADIENT = 10;
-    static const int LIMIT_TRY_COUNT = 5;
+    static const int RANGE_OF_GRADIENT = 5;
+    static const int LIMIT_TRY_COUNT = 10;
 
     if(headDirection == HEAD_DIRECTION_ERROR)
         return false;
@@ -329,14 +340,18 @@ static bool _arrangeAngle(int headDirection, bool doHeadSet) {
         if(pLine != NULL) {
             lineGradient = (int)pLine->theta - zeroGradient;
             tryCount = 0;
+
+            if(abs(lineGradient) < RANGE_OF_GRADIENT)
+                break;
+
             _moveForSetGradient(lineGradient);
-            printLog("[%s] 중앙으로 부터 거리차(%d) 머리 방향(%d)\n", LOG_FUNCTION_NAME, lineGradient, headDirection);
+            printLog("[%s] 중앙으로 부터 각도차(%d) 머리 방향(%d)\n", LOG_FUNCTION_NAME, lineGradient, headDirection);
             free(pLine);
         } else {
             tryCount++;
             lineGradient = RANGE_OF_GRADIENT;
         }
-    } while(abs(lineGradient) >= RANGE_OF_GRADIENT && tryCount < LIMIT_TRY_COUNT);
+    } while(tryCount < LIMIT_TRY_COUNT);
 
     if(pLine != NULL)
         free(pLine);
