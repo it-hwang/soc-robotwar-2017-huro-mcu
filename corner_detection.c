@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "color.h"
 #include "graphic_interface.h"
@@ -29,17 +30,7 @@ static bool _moveUntilSeeLine();
 static void _moveToDestination(int turnWhere);
 
 bool cornerDetectionMain(void) {
-    for (int i = 0; i < 100; ++i) {
-        int millimeters = measureFrontLineDistance();
-
-        char input;
-        input = getchar();
-        while (input != '\n')
-            input = getchar();
-    }
-    return true;
-
-    /* static const char* LOG_FUNCTION_NAME = "cornerDetection()";
+    static const char* LOG_FUNCTION_NAME = "cornerDetection()";
 
     int turnWhere = _lookAround();
 
@@ -64,7 +55,7 @@ bool cornerDetectionMain(void) {
 
     _moveToDestination(turnWhere);
 
-    return true; */
+    return true;
 }
 
 static int _lookAround() {
@@ -90,12 +81,12 @@ static int _captureBothSide(void) {
     static const char* LOG_FUNCTION_NAME = "_captureBothSide()";
 
     Screen_t* pScreen = createDefaultScreen();
+    
+    _setHeadRight();
+    Line_t* rightLine = _captureRightLine(pScreen);
 
     _setHeadLeft();
     Line_t* leftLine = _captureLeftLine(pScreen);
-
-    _setHeadRight();
-    Line_t* rightLine = _captureRightLine(pScreen);
 
     destroyScreen(pScreen);
 
@@ -211,7 +202,7 @@ static Line_t* _captureForwardLine(Screen_t* pScreen) {
     
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
-    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 45, 0, 64, 110);
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 75, 0, 104, 119);
 
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
                                 pColorTables[COLOR_BLACK]);
@@ -223,9 +214,9 @@ static Line_t* _captureForwardLine(Screen_t* pScreen) {
     Line_t* returnLine = lineDetection(pColorMatrix);
 
     drawColorMatrix(pSubMatrix, pColorMatrix);
-    overlapMatrix16(pSubMatrix, pScreen, 45, 0);
+    overlapMatrix16(pSubMatrix, pScreen, 75, 0);
 
-    _drawLine(pScreen, returnLine, 45, 0);
+    _drawLine(pScreen, returnLine, 75, 0);
     displayScreen(pScreen);
 
     destroyMatrix8(pColorMatrix);
@@ -310,14 +301,13 @@ int measureFrontLineDistance(void) {
     Line_t* pLine = _captureForwardLine(pScreen);
 
     if (pLine != NULL) {
-        printLog("[%s] leftPointY: %d, centerPointY: %f, rigthPointY: %d\n", LOG_FUNCTION_NAME,
+        printLog("[%s] leftPointY: %d, centerPointY: %d, rigthPointY: %d\n", LOG_FUNCTION_NAME,
                  pLine->leftPoint.y, pLine->centerPoint.y, pLine->rightPoint.y);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
         int distance = pLine->centerPoint.y;
-
         
-        millimeters = -396.1 * log(distance) + 2063;
+        millimeters = 655.21 * exp(-0.016 * distance);
         // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
         if (millimeters <= 0)
             millimeters = 1;
