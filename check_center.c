@@ -8,417 +8,397 @@
 #include "graphic_interface.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
+#include "log.h"
+#include "white_balance.h"
 
-#define CENTER 80
-#define RIGHT_ZERO_DEGREE 2
-#define LEFT_ZERO_DEGREE -5
-#define BIG_DIVIDE 15
-#define SMALL_DIVIDE 5
+#define CENTER 50
+#define RIGHT_ZERO_GRADIENT 4
+#define LEFT_ZERO_GRADIENT -8
+#define HEAD_DIRECTION_ERROR -1
+#define HEAD_DIRECTION_RIGHT 0
+#define HEAD_DIRECTION_LEFT 1
 
-Screen_t* _pDefaultScreen;
+static int _searchLine(void);
+static void _setHeadRight(void);
+static void _setHeadLeft(void);
+static void _setStandardStand(void);
+static void _setHead(int headDirection);
+static Line_t* _captureRightLine(Screen_t* pScreen);
+static Line_t* _captureLeftLine(Screen_t* pScreen);
+static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY);
+static Line_t* _captureLine(Screen_t* pScreen, int headDirection);
+static bool _approachLine(int headDirection, bool doHeadSet);
+static void _moveForSetDistance(int lineDistanceFromRobot, int headDirection);
+static void _walkDifferentDirection(int headDirection);
+static void _walkSameDirection(int headDirection);
+static bool _arrangeAngle(int headDirection, bool doHeadSet);
+static int _getZeroGradient(int headDirection);
+static void _moveForSetGradient(int lineGradient);
 
-bool checkCenter() {
+bool checkCenterMain(void) {
+    static const char* LOG_FUNCTION_NAME = "checkCenterMain()";
 
-    _pDefaultScreen = createDefaultScreen();
+    int headDirection = _searchLine();
+    bool doHeadSet = false;
 
-    bool isRight = false;
-    Line_t* pLine;
-    int cnt = 0;
+    if( headDirection < 0 ) {
+        printLog("[%s] 라인을 찾을 수 없다.\n", LOG_FUNCTION_NAME);
+        _setStandardStand();
+        return false;
+    }
 
-    do {
-        if(cnt > 5) {
-            cnt = 0;
-            //머리 상하각도를 조절한다.
-            //printf("cnt 5이상! 머리각도 조절\n");
-        }
+    if( !_arrangeAngle(headDirection, doHeadSet) ) {
+        printLog("[%s] 각도를 정렬에 실패했다.\n", LOG_FUNCTION_NAME);
+        _setStandardStand();
+        return false;
+    }
 
-        if(!isRight) {
-            //오른쪽으로 머리를 돌린다.
-            isRight = true;
-            //printf("오른쪽\n");
-            Send_Command(0xfe);
-            waitMotion();
-            Send_Command(0x3a);
-            waitMotion();
-        }else {   
-            //왼쪽으로 머리를 돌린다.
-            isRight = false;
-            //printf("왼쪽\n");
-            Send_Command(0xfe);
-            waitMotion();
-            Send_Command(0xc5);
-            waitMotion();
-        }
-
-        pLine = captureLine(_pDefaultScreen);
-
-        cnt++;
-
-        displayScreen(_pDefaultScreen);
-        
-    } while(pLine == NULL);
-
-    ///함수 시작
-    int distance = CENTER - pLine->distancePoint.y;
-    int isException = false;
-    Line_t* pDistaceLine = NULL;
-    cnt = 0;
-
-    while(abs(distance) > 5){
-        if(isException) {
-            isException = false;
-        }else if(distance < 0) {
-            //반대방향으로 움직인다.
-            //printf("반대방향으로 움직인다.\n");
-            if(isRight) {
-                Send_Command(0x0b);
-                waitMotion();
-            }else {
-                Send_Command(0x07);
-                waitMotion();
-            }
-        }else {
-            //같은방향으로 움직인다.
-            //printf("같은방향으로 움직인다.\n");
-            if(isRight) {
-                Send_Command(0x07);
-                waitMotion();
-            }else {
-                Send_Command(0x0b);
-                waitMotion();
-            }
-        }    
+    if( !_approachLine(headDirection, doHeadSet) ) {
+        printLog("[%s] 선에 접근 할 수 없다.\n", LOG_FUNCTION_NAME);
+        _setStandardStand();
+        return false;
+    }
     
-        if(pDistaceLine != NULL){
-            free(pDistaceLine);
-        }
 
-        pDistaceLine = captureLine(_pDefaultScreen);//free 필요
-        //printf("찍었다.\n");
-        
-        displayScreen(_pDefaultScreen);
-        cnt = 0;
-        while(cnt < 5 && pDistaceLine == NULL) {
-            pDistaceLine = captureLine(_pDefaultScreen);
-            cnt++;
-            //printf("다시찍는중\n");
-           
-            displayScreen(_pDefaultScreen);
-        }
-
-        if(pDistaceLine == NULL) {
-            //반대방향으로 3걸음 움직인다.
-            //printf("반대방향으로 3걸음 움직인다.\n");
-            if(isRight) {
-                Send_Command(0x0b);
-                waitMotion();
-                Send_Command(0x0b);
-                waitMotion();
-                Send_Command(0x0b);
-                waitMotion();
-            }else {
-                Send_Command(0x07);
-                waitMotion();
-                Send_Command(0x07);
-                waitMotion();
-                Send_Command(0x07);
-                waitMotion();
-            }
-            isException = true;
-        } else {
-            distance = CENTER - pDistaceLine->distancePoint.y;
-        }
+    if( !_arrangeAngle(headDirection, doHeadSet) ) {
+        printLog("[%s] 각도를 정렬에 실패했다.\n", LOG_FUNCTION_NAME);
+        _setStandardStand();
+        return false;
     }
 
-    if(distance <= 5) {
-        pDistaceLine = captureLine(_pDefaultScreen);
-        
-        displayScreen(_pDefaultScreen);
+    _setStandardStand();
 
-        cnt = 0;
-        while(cnt < 5 && pDistaceLine == NULL) {
-            pDistaceLine = captureLine(_pDefaultScreen);
-            cnt++;
-            
-            displayScreen(_pDefaultScreen);
-            //printf("거리 다시찍는중..\n");
-        }
-    }
-
-    double distanceTheta = pDistaceLine->theta;
-    //printf("distanceTheta %f\n", distanceTheta);
-    
-    if(pDistaceLine != NULL)
-        free(pDistaceLine);
-    
-    bool isGood;
-
-    int zeroDegree;
-    if(isRight) {
-        zeroDegree = RIGHT_ZERO_DEGREE;
-    } else {
-        zeroDegree = LEFT_ZERO_DEGREE;
-    }
-
-    
-    if((distanceTheta >= zeroDegree - 4) &&
-        (distanceTheta <= zeroDegree + 4)) {
-        isGood = true;
-    } else {
-        isGood = false;
-    }
-
-    while(!isGood) {
-        if(isRight) {
-            distanceTheta -= RIGHT_ZERO_DEGREE;
-        } else {
-            distanceTheta -= LEFT_ZERO_DEGREE;
-        }
-        
-        int bigAngleSize = (abs((int)distanceTheta) / BIG_DIVIDE);
-        int bigAngleSizeRemainer = (abs((int)distanceTheta) % BIG_DIVIDE);
-        int smallAngleSize = (abs((int)bigAngleSizeRemainer) / SMALL_DIVIDE);
-
-        unsigned char bigMotion;
-        unsigned char smallMotion;
-
-        if(distanceTheta < 0) {
-            bigMotion = 0x10;
-            smallMotion = 0x13;
-        } else {
-            bigMotion = 0x0f;
-            smallMotion = 0x12;
-        }
-        printf("theta %f\n", distanceTheta);
-        printf("bigAngleSize %d\n", bigAngleSize);
-        printf("bigAngleSizeReminder %d\n", bigAngleSize);
-        printf("smallAngleSize %d\n", smallAngleSize);
-        int i;
-        for(i = 0; i < bigAngleSize; ++i) {
-            //빅 모션 한다.
-            //printf("빅모션\n");
-            Send_Command(bigMotion);
-            waitMotion();
-        }
-
-        for(i = 0; i < smallAngleSize; ++i) {
-            //스몰 모션 한다.
-            //printf("스몰모션\n");
-            Send_Command(smallMotion);
-            waitMotion();
-        }
-
-        Line_t* checkPosition = captureLine(_pDefaultScreen);
-        
-        
-        displayScreen(_pDefaultScreen);
-
-        cnt = 0;
-        while(checkPosition == NULL && cnt < 3) {
-            checkPosition = captureLine(_pDefaultScreen);
-
-            
-            displayScreen(_pDefaultScreen);
-        }
-
-        if(checkPosition != NULL) {
-            if(isRight) {
-                zeroDegree = RIGHT_ZERO_DEGREE;
-            } else {
-                zeroDegree = LEFT_ZERO_DEGREE;
-            }
-
-            
-            if((checkPosition->theta >= zeroDegree - 4) &&
-                (checkPosition->theta <= zeroDegree + 4)) {
-                isGood = true;
-            } else {
-                distanceTheta = checkPosition->theta;
-            }
-
-            free(checkPosition);
-        } else {
-            isGood = true;
-        }
-        
-    }
-
-    //////함수 끝
-
-
-    if(pLine != NULL) {
-        free(pLine);
-    }
-
-    destroyScreen(_pDefaultScreen);
+    printLog("[%s] 중앙 정렬 완료.\n", LOG_FUNCTION_NAME);
 
     return true;
 }
 
-Line_t* captureLine(Screen_t* pScreen) {
-        
-        readFpgaVideoData(pScreen);     
+static int _searchLine(void) {
+    static const char* LOG_FUNCTION_NAME = "_searchLine()";
+    static const int LIMIT_TRY_COUNT = 6;
 
-        Matrix8_t* pColorMatrix = createColorMatrix(pScreen, 
-                                    pColorTables[COLOR_BLACK]);
+    Screen_t* pScreen = createDefaultScreen();
+    Line_t* pLine = NULL;
 
-        applyDilationToMatrix8(pColorMatrix, 1);
-        applyErosionToMatrix8(pColorMatrix, 2);
-        applyDilationToMatrix8(pColorMatrix, 1);
-        
-        Line_t* returnLine = lineDetection(pColorMatrix);
-        
-        destroyMatrix8(pColorMatrix);
+    int tryCount = 0;
+    int resultDirection = HEAD_DIRECTION_ERROR;
 
-        return returnLine;
+    while( tryCount < LIMIT_TRY_COUNT && pLine == NULL) {
+        
+        if(resultDirection != HEAD_DIRECTION_RIGHT) {
+            printLog("[%s] 오른쪽 선을 확인 중.\n", LOG_FUNCTION_NAME);
+            resultDirection = HEAD_DIRECTION_RIGHT;
+            _setHeadRight();
+            pLine = _captureRightLine(pScreen);
+        } else {
+            printLog("[%s] 왼쪽 선을 확인 중.\n", LOG_FUNCTION_NAME);
+            resultDirection = HEAD_DIRECTION_LEFT;
+            _setHeadLeft();
+            pLine = _captureLeftLine(pScreen);
+        }
+
+        if(pLine == NULL){
+            tryCount++;
+            printLog("[%s] 선을 확인 하지 못하여 다시 찍는 중.\n", LOG_FUNCTION_NAME);
+        }
+            
+    }
+
+    if(tryCount >= LIMIT_TRY_COUNT) {
+        printLog("[%s] 좌우 최대 촬영 횟수(%d) 초과!\n", LOG_FUNCTION_NAME, tryCount);
+        resultDirection = HEAD_DIRECTION_ERROR;
+    } else
+        printLog("[%s] 선 확인 완료. 머리 방향(%d)\n", LOG_FUNCTION_NAME, resultDirection);
+
+    if(pLine != NULL)
+        free(pLine);
+
+    destroyScreen(pScreen);
+
+    return resultDirection;
 }
 
-bool checkAngle(void) {
+static void _setHeadRight(void) {
+    setServoSpeed(30);
+    runMotion(MOTION_CHECK_SIDELINE_STANCE);
+    setHead(85, -50);
+    mdelay(1000);
+    resetServoSpeed();
+}
 
-    _pDefaultScreen = createDefaultScreen();
+static void _setHeadLeft(void) {
+    setServoSpeed(30);
+    runMotion(MOTION_CHECK_SIDELINE_STANCE);
+    setHead(-85, -50);
+    mdelay(1000);
+    resetServoSpeed();
+}
 
-    bool isRight = false;
-    Line_t* pLine;
-    int cnt = 0;
+static void _setStandardStand(void) {
+    setServoSpeed(30);
+    runMotion(MOTION_BASIC_STANCE);
+    setHead(0, 0);
+    mdelay(1000);
+    resetServoSpeed();
+}
+
+static void _setHead(int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_setHead()";
+
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        _setHeadRight();
+    else if(headDirection == HEAD_DIRECTION_LEFT)
+        _setHeadLeft();
+    else
+        printLog("[%s] 잘못된 매개 변수 값!(%d)\n", LOG_FUNCTION_NAME, headDirection);
+}
+
+static Line_t* _captureRightLine(Screen_t* pScreen) {
+        
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 70, 0, 89, 110);
+
+    Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
+                                pColorTables[COLOR_BLACK]);
+    
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    applyFastErosionToMatrix8(pColorMatrix, 2);
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    
+    Line_t* returnLine = lineDetection(pColorMatrix);
+    
+    drawColorMatrix(pSubMatrix, pColorMatrix);
+    overlapMatrix16(pSubMatrix, pScreen, 70, 0);
+    
+    _drawLine(pScreen, returnLine, 70, 0);
+    displayScreen(pScreen);
+    
+    destroyMatrix8(pColorMatrix);
+    destroyMatrix16(pSubMatrix);
+
+    return returnLine;
+}
+
+static Line_t* _captureLeftLine(Screen_t* pScreen) {
+    
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+    
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 90, 0, 109, 110);
+
+    Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
+                                pColorTables[COLOR_BLACK]);
+
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    applyFastErosionToMatrix8(pColorMatrix, 2);
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    
+    Line_t* returnLine = lineDetection(pColorMatrix);
+    
+    drawColorMatrix(pSubMatrix, pColorMatrix);
+    overlapMatrix16(pSubMatrix, pScreen, 90, 0);
+    
+    _drawLine(pScreen, returnLine, 90, 0);
+    displayScreen(pScreen);
+
+    destroyMatrix8(pColorMatrix);
+    destroyMatrix16(pSubMatrix);
+    
+    return returnLine;
+}
+
+static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
+    
+    PixelData_t* pixels = pScreen->elements;
+
+    
+    int centerX = (int)pLine->centerPoint.x + minX;
+
+    for(int x = minX; x <= centerX; ++x) {
+        int y = (int)pLine->leftPoint.y + minY;
+        int index = y * pScreen->width + x;
+        uint16_t* pOutput = (uint16_t*)&pixels[index];
+        *pOutput = 0xF800;
+    }
+
+    for(int x = minX + pLine->rightPoint.x; x >= centerX; --x) {
+        int y = (int)pLine->rightPoint.y + minY;
+        int index = y * pScreen->width + x;
+        uint16_t* pOutput = (uint16_t*)&pixels[index];
+        *pOutput = 0xF800;
+    }
+}
+
+static Line_t* _captureLine(Screen_t* pScreen, int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_captureLine()";
+
+    if(headDirection == HEAD_DIRECTION_RIGHT) 
+        return _captureRightLine(pScreen);
+    else if(headDirection == HEAD_DIRECTION_LEFT)
+        return _captureLeftLine(pScreen);
+    else {
+        printLog("[%s] 잘못된 매개 변수 값!(%d)\n", LOG_FUNCTION_NAME, headDirection);
+        return NULL;
+    }
+        
+}
+
+static bool _approachLine(int headDirection, bool doHeadSet) {
+    static const char* LOG_FUNCTION_NAME = "_approachLine()";
+    static const int RANGE_OF_DISTANCE = 5;
+    static const int LIMIT_TRY_COUNT = 10;
+
+    if(headDirection == HEAD_DIRECTION_ERROR)
+        return false;
+
+    if(doHeadSet)
+        _setHead(headDirection);
+
+    Screen_t* pScreen = createDefaultScreen();
+    Line_t* pLine = NULL;
+
+    int lineDistanceFromRobot = 0;
+    int tryCount = 0;
+    
+    do {
+        pLine = _captureLine(pScreen, headDirection);
+
+        if(pLine != NULL) {
+            lineDistanceFromRobot = CENTER - pLine->centerPoint.y;
+            tryCount = 0;
+
+            if(abs(lineDistanceFromRobot) < RANGE_OF_DISTANCE)
+                break;
+
+            printLog("[%s] 중앙으로 부터 거리차(%d) 머리 방향(%d)\n", LOG_FUNCTION_NAME, lineDistanceFromRobot, headDirection);
+            _moveForSetDistance(lineDistanceFromRobot, headDirection);
+            
+            free(pLine);
+        } else {
+            printLog("[%s] 선을 확인 하지 못하여 다시 찍는 중.\n", LOG_FUNCTION_NAME);
+            tryCount++;
+            lineDistanceFromRobot = RANGE_OF_DISTANCE;
+        }
+    } while(tryCount < LIMIT_TRY_COUNT);
+
+    if(pLine != NULL)
+        free(pLine);
+
+    destroyScreen(pScreen);
+
+    if(tryCount >= LIMIT_TRY_COUNT){
+        printLog("[%s] 최대 촬영 횟수(%d) 초과!\n", LOG_FUNCTION_NAME, tryCount);
+        return false;
+    } else {
+        printLog("[%s] 거리 조절 완료. 머리 방향(%d)\n", LOG_FUNCTION_NAME, headDirection);
+        return true;
+    }
+        
+}
+
+static void _moveForSetDistance(int lineDistanceFromRobot, int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_moveForSetDistance()";
+
+    if( lineDistanceFromRobot < 0) {
+        printLog("[%s] 다른 방향으로 이동. 머리방향(%d)\n", LOG_FUNCTION_NAME, headDirection);
+        _walkDifferentDirection(headDirection);
+    } else {
+        printLog("[%s] 같은 방향으로 이동. 머리방향(%d)\n", LOG_FUNCTION_NAME, headDirection);
+        _walkSameDirection(headDirection);
+    }
+}
+
+static void _walkDifferentDirection(int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_walkDifferentDirection()";
+
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        walkLeft(5);
+    else if( headDirection == HEAD_DIRECTION_LEFT)
+        walkRight(5);
+    else
+        printLog("[%s] 잘못된 매개 변수 값!(%d)\n", LOG_FUNCTION_NAME, headDirection);
+}
+
+static void _walkSameDirection(int headDirection) {
+    static const char* LOG_FUNCTION_NAME = "_walkSameDirection()";
+
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        walkRight(5);
+    else if( headDirection == HEAD_DIRECTION_LEFT)
+        walkLeft(5);
+    else 
+        printLog("[%s] 잘못된 매개 변수 값!(%d)\n", LOG_FUNCTION_NAME, headDirection);
+}
+
+static bool _arrangeAngle(int headDirection, bool doHeadSet) {
+    static const char* LOG_FUNCTION_NAME = "_arrangeAngle()";
+    static const int RANGE_OF_GRADIENT = 5;
+    static const int LIMIT_TRY_COUNT = 10;
+
+    if(headDirection == HEAD_DIRECTION_ERROR)
+        return false;
+
+    if(doHeadSet)
+        _setHead(headDirection);
+
+    Screen_t* pScreen = createDefaultScreen();
+    Line_t* pLine = NULL;
+
+    int zeroGradient = _getZeroGradient(headDirection);
+    int lineGradient = 0;
+    int tryCount = 0;
 
     do {
-        if(cnt > 5) {
-            cnt = 0;
-            //머리 상하각도를 조절한다.
-            //printf("cnt 5이상! 머리각도 조절\n");
-        }
+        pLine = _captureLine(pScreen, headDirection);
 
-        if(!isRight) {
-            //오른쪽으로 머리를 돌린다.
-            isRight = true;
-            //printf("오른쪽\n");
-            Send_Command(0xfe);
-            waitMotion();
-            Send_Command(0x3a);
-            waitMotion();
-        }else {   
-            //왼쪽으로 머리를 돌린다.
-            isRight = false;
-            //printf("왼쪽\n");
-            Send_Command(0xfe);
-            waitMotion();
-            Send_Command(0xc5);
-            waitMotion();
-        }
+        if(pLine != NULL) {
+            lineGradient = (int)pLine->theta - zeroGradient;
+            tryCount = 0;
 
-        pLine = captureLine(_pDefaultScreen);
+            if(abs(lineGradient) < RANGE_OF_GRADIENT)
+                break;
 
-        cnt++;
-
-        displayScreen(_pDefaultScreen);
-        
-    } while(pLine == NULL);
-
-
-    double distanceTheta = pLine->theta;
-    //printf("distanceTheta %f\n", distanceTheta);
-    
-    bool isGood;
-
-    int zeroDegree;
-    if(isRight) {
-        zeroDegree = RIGHT_ZERO_DEGREE;
-    } else {
-        zeroDegree = LEFT_ZERO_DEGREE;
-    }
-
-    
-    if((distanceTheta >= zeroDegree - 4) &&
-        (distanceTheta <= zeroDegree + 4)) {
-        isGood = true;
-    } else {
-        isGood = false;
-    }
-
-    while(!isGood) {
-        if(isRight) {
-            distanceTheta -= RIGHT_ZERO_DEGREE;
-        } else {
-            distanceTheta -= LEFT_ZERO_DEGREE;
-        }
-        
-        int bigAngleSize = (abs((int)distanceTheta) / BIG_DIVIDE);
-        int bigAngleSizeRemainer = (abs((int)distanceTheta) % BIG_DIVIDE);
-        int smallAngleSize = (abs((int)bigAngleSizeRemainer) / SMALL_DIVIDE);
-
-        unsigned char bigMotion;
-        unsigned char smallMotion;
-
-        if(distanceTheta < 0) {
-            bigMotion = 0x10;
-            smallMotion = 0x13;
-        } else {
-            bigMotion = 0x0f;
-            smallMotion = 0x12;
-        }
-        /*printf("theta %f\n", distanceTheta);
-        printf("bigAngleSize %d\n", bigAngleSize);
-        printf("bigAngleSizeReminder %d\n", bigAngleSize);
-        printf("smallAngleSize %d\n", smallAngleSize);
-        */
-        int i;
-        for(i = 0; i < bigAngleSize; ++i) {
-            //빅 모션 한다.
-            //printf("빅모션\n");
-            Send_Command(bigMotion);
-            waitMotion();
-        }
-
-        for(i = 0; i < smallAngleSize; ++i) {
-            //스몰 모션 한다.
-            //printf("스몰모션\n");
-            Send_Command(smallMotion);
-            waitMotion();
-        }
-
-        Line_t* checkPosition = captureLine(_pDefaultScreen);
-        
-        
-        displayScreen(_pDefaultScreen);
-
-        cnt = 0;
-        while(checkPosition == NULL && cnt < 3) {
-            checkPosition = captureLine(_pDefaultScreen);
-
+            printLog("[%s] 중앙으로 부터 각도차(%d) 머리 방향(%d)\n", LOG_FUNCTION_NAME, lineGradient, headDirection);
+            _moveForSetGradient(lineGradient);
             
-            displayScreen(_pDefaultScreen);
-        }
-
-        if(checkPosition != NULL) {
-            if(isRight) {
-                zeroDegree = RIGHT_ZERO_DEGREE;
-            } else {
-                zeroDegree = LEFT_ZERO_DEGREE;
-            }
-
-            
-            if((checkPosition->theta >= zeroDegree - 4) &&
-                (checkPosition->theta <= zeroDegree + 4)) {
-                isGood = true;
-            } else {
-                distanceTheta = checkPosition->theta;
-            }
-
-            free(checkPosition);
+            free(pLine);
         } else {
-            isGood = true;
+            printLog("[%s] 선을 확인 하지 못하여 다시 찍는 중.\n", LOG_FUNCTION_NAME);
+            tryCount++;
+            lineGradient = RANGE_OF_GRADIENT;
         }
-        
-    }
+    } while(tryCount < LIMIT_TRY_COUNT);
 
-    //////함수 끝
-
-
-    if(pLine != NULL) {
+    if(pLine != NULL)
         free(pLine);
+
+    destroyScreen(pScreen);
+
+    if(tryCount >= LIMIT_TRY_COUNT) {
+        printLog("[%s] 최대 촬영 횟수(%d) 초과!\n", LOG_FUNCTION_NAME, tryCount);
+        return false;
+    } else {
+        printLog("[%s] 각도 조절 완료. 머리 방향(%d)\n", LOG_FUNCTION_NAME, headDirection);
+        return true;
     }
+    
+}
 
-    destroyScreen(_pDefaultScreen);
+static int _getZeroGradient(int headDirection) {
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        return RIGHT_ZERO_GRADIENT;
+    else
+        return LEFT_ZERO_GRADIENT;
+}
 
-    return true;
+static void _moveForSetGradient(int lineGradient) {
+    static const char* LOG_FUNCTION_NAME = "_moveForSetGradient()";
+
+    if(lineGradient < 0) {
+        printLog("[%s] 왼쪽으로 회전. 기울기(%d)\n", LOG_FUNCTION_NAME, lineGradient);
+        turnLeft(lineGradient * -1);
+    } else {
+        printLog("[%s] 오른쪽으로 회전. 기울기(%d)\n", LOG_FUNCTION_NAME, lineGradient);
+        turnRight(lineGradient);
+    }
 }

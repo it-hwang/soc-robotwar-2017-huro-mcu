@@ -4,69 +4,40 @@
 #include <math.h>
 
 #include "line_detection.h"
+#include "log.h"
 
 #define PI 3.141592
-#define DIFFERENCE_OF_ANGLE 20
+#define DIFFERENCE_OF_ANGLE 10
 
-bool _isClosestLine(Line_t* currentLine, Line_t* prevLine);
-bool _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
-PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
-PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
-PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
-double _getAngle(PixelLocation_t src, PixelLocation_t dst);
-bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle);
+static bool _isClosestLine(Line_t* currentLine, Line_t* prevLine);
+static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
+static PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
+static PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
+static PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum);
+static double _getAngle(PixelLocation_t src, PixelLocation_t dst);
+static bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle);
 
 
-<<<<<<< HEAD
 Line_t* lineDetection(Matrix8_t* pColorMatrix) {
-    
-    Matrix16_t* pLabelMatrix = createMatrix16(pColorMatix->width, pColorMatrix->height);
-    memset(pLabelMatrix->elements, 0, (pSubMatrix->height * pSubMatrix->width) * sizeof(uint16_t));
+    static const char* LOG_FUNCTION_NAME = "lineDetection()";
 
-    ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pColorMatix, pLabelMatrix);
+    Matrix16_t* pLabelMatrix = createMatrix16(pColorMatrix->width, pColorMatrix->height);
+    memset(pLabelMatrix->elements, 0, (pLabelMatrix->height * pLabelMatrix->width) * sizeof(uint16_t));
+
+    ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pColorMatrix, pLabelMatrix);
 
     Line_t* pResultLine = NULL;
 
     for(int i = 0; i < pObjectList->size; ++i) {
-        Line_t* pLine = _labelToLine(pColorMatrix, &pObjectList->list[i]);
-
+        Line_t* pLine = _labelToLine(pLabelMatrix, &pObjectList->list[i]);
+        
         bool isClosestLine = false;
         if(pLine != NULL) {
-            if(pResultLline == NULL) {
+            if(pResultLine == NULL) {
                 pResultLine = pLine;
+                pLine = NULL;
             } else {
                 isClosestLine = _isClosestLine(pLine, pResultLine);
-=======
-//SubMatrix와 해당 SubMatrix의 LabelList를 인자로 받아 LineDetection을 진행한다.
-Line_t* lineDetection(Matrix8_t* pColorMatrix) {
-    
-    Matrix16_t* pLabelMatrix = createMatrix16(pColorMatrix->width, pColorMatrix->height);   
-    memset(pLabelMatrix->elements, 0, (pColorMatrix->height * pColorMatrix->width) * sizeof(uint16_t));
-
-    ObjectList_t* pObjectList;
-    
-    pObjectList = detectObjectsLocationWithLabeling(pColorMatrix, pLabelMatrix);
-    //printf("list size 2 %d\n", pObjectList->size);
-    int i;
-    Line_t* resultLine = (Line_t*)malloc(sizeof(Line_t));
-    resultLine->distancePoint.y = 0;
-
-    Line_t* line = (Line_t*)malloc(sizeof(Line_t));
-    bool emptyLine = true;
-    
-    for(i = 0; i < pObjectList->size; i++) {
-        Object_t* object = &(pObjectList->list[i]);
-        if(object->minX<5 && object->maxX>55) {
-            uint16_t labelNum = pLabelMatrix->elements[(int)object->centerY * pLabelMatrix->width + (int)object->centerX];
-            bool isLine = _labelToLine(pLabelMatrix, object, line, labelNum);
-            if(isLine) {
-                if(resultLine->distancePoint.y <= line->distancePoint.y) {
-                    resultLine->theta = line->theta;
-                    resultLine->distancePoint.x = line->distancePoint.x;
-                    resultLine->distancePoint.y = line->distancePoint.y;
-                    emptyLine = false;
-                }
->>>>>>> develop
             }
         }
 
@@ -76,34 +47,27 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
             free(pResultLine);
             pResultLine = pLine;
         } else {
-            free(pLine);
+            if(pLine != NULL)
+                free(pLine);
         }
     }
 
-    if(pLine != NULL) {
-        free(pLine);
-    }
-
-<<<<<<< HEAD
     if(pObjectList != NULL) {
-=======
-    free(line);
-    //destroyMatrix8(pColorMatrix);
-    destroyMatrix16(pLabelMatrix);
-    
-    if (pObjectList){
->>>>>>> develop
         free(pObjectList->list);
         free(pObjectList);
     }
 
     destroyMatrix16(pLabelMatrix);
 
-    return pResultLine;
+    if(pResultLine != NULL) {
+        printLog("[%s] 최종 라인 기울기(%f).\n", LOG_FUNCTION_NAME, pResultLine->theta);
+        printLog("[%s] 최종 라인 거리(%f).\n", LOG_FUNCTION_NAME, pResultLine->centerPoint.y);
+    }
 
+    return pResultLine;
 }
 
-bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
+static bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
     
     int resultDistance = prevLine->centerPoint.y;
     int currentDistance = currentLine->centerPoint.y;
@@ -111,12 +75,13 @@ bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
         return true;
     } else {
         return false;
-    } 
+    }
 }
 
-Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
+static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
+    static const char* LOG_FUNCTION_NAME = "_labelToLine()";
 
-    int objectWidth = pObject->maxX - pObject->minX;
+    int objectWidth = pObject->maxX - pObject->minX + 1;
     
     if(objectWidth < pLabelMatrix->width)
         return NULL;
@@ -130,7 +95,7 @@ Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
 
     PixelLocation_t rightPoint = _searchRightPoint(pLabelMatrix, pObject, labelNum);
 
-    PixelLocation_t leftpoint = _searchLeftPoint(pLabelMatrix, pObject, labelNum);
+    PixelLocation_t leftPoint = _searchLeftPoint(pLabelMatrix, pObject, labelNum);
 
     double leftToCenterAngle = _getAngle(leftPoint, centerPoint);
 
@@ -138,9 +103,14 @@ Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
 
     double leftToRightAngle = _getAngle(leftPoint, rightPoint);
 
-    bool isLine = _isFitRatio(leftToCenterAngle, centerToLeftAngle, leftToRightAngle);
+    bool isLine = _isFitRatio(leftToCenterAngle, centerToRightAngle, leftToRightAngle);
 
     if(isLine) {
+        printLog("[%s] 왼쪽 기울기(%f).\n", LOG_FUNCTION_NAME, leftToCenterAngle);
+        printLog("[%s] 오른쪽 기울기(%f).\n", LOG_FUNCTION_NAME, centerToRightAngle);
+        printLog("[%s] 전체 기울기(%f).\n", LOG_FUNCTION_NAME, leftToRightAngle);
+        printLog("[%s] 중앙 거리(%d).\n", LOG_FUNCTION_NAME, centerPoint.y);
+
         returnLine = (Line_t*)malloc(sizeof(Line_t));
 
         returnLine->centerPoint = centerPoint;
@@ -152,7 +122,7 @@ Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
     return returnLine;
 }
 
-PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
+static PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
 
     PixelLocation_t returnLocation;
 
@@ -171,7 +141,7 @@ PixelLocation_t _searchCenterPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, 
     return returnLocation;
 }
 
-PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
+static PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
 
     PixelLocation_t returnLocation;
 
@@ -190,7 +160,7 @@ PixelLocation_t _searchRightPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, i
     return returnLocation;
 }
 
-PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
+static PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, int labelNum) {
 
     PixelLocation_t returnLocation;
 
@@ -210,7 +180,7 @@ PixelLocation_t _searchLeftPoint(Matrix16_t* pLabelMatrix, Object_t* pObject, in
 }
 
 //두 점을 이용한 기울기 계산
-double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
+static double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
     int dDeltaX;
     int dDeltaY;
 
@@ -226,7 +196,7 @@ double _getAngle(PixelLocation_t src, PixelLocation_t dst) {
     return dAngle;
 }
 
-bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle) {
+static bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, double leftToRightAngle) {
     
     if(fabs(leftToCenterAngle - leftToRightAngle) > DIFFERENCE_OF_ANGLE)
         return false;
