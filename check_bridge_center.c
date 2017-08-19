@@ -3,15 +3,16 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "check_center.h"
+#include "check_bridge_center.h"
 #include "object_detection.h"
 #include "graphic_interface.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "log.h"
 #include "white_balance.h"
+#include "line_detection.h"
 
-#define CENTER 50
+#define CENTER 65
 #define RIGHT_ZERO_GRADIENT 4
 #define LEFT_ZERO_GRADIENT -8
 #define HEAD_DIRECTION_ERROR -1
@@ -34,10 +35,14 @@ static void _walkSameDirection(int headDirection);
 static bool _arrangeAngle(int headDirection, bool doHeadSet);
 static int _getZeroGradient(int headDirection);
 static void _moveForSetGradient(int lineGradient);
+static void _notMatrix8(Matrix8_t* pMatrix);
 
-bool checkCenterMain(void) {
-    static const char* LOG_FUNCTION_NAME = "checkCenterMain()";
+static Color_t _bridgeColor = COLOR_NONE;
 
+bool checkBridgeCenterMain(Color_t bridgeColor) {
+    static const char* LOG_FUNCTION_NAME = "checkBridgeCenterMain()";
+
+    _bridgeColor = bridgeColor;
     int headDirection = _searchLine();
     bool doHeadSet = false;
 
@@ -160,13 +165,16 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
     Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 70, 0, 89, 110);
 
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
-                                pColorTables[COLOR_BLACK]);
+                                pColorTables[_bridgeColor]);
     
     applyFastDilationToMatrix8(pColorMatrix, 1);
     applyFastErosionToMatrix8(pColorMatrix, 2);
     applyFastDilationToMatrix8(pColorMatrix, 1);
+
+    Matrix8_t* pLineMatrix = cloneMatrix8(pColorMatrix);
+    _notMatrix8(pLineMatrix);
     
-    Line_t* returnLine = lineDetection(pColorMatrix);
+    Line_t* returnLine = lineDetection(pLineMatrix);
     
     drawColorMatrix(pSubMatrix, pColorMatrix);
     overlapMatrix16(pSubMatrix, pScreen, 70, 0);
@@ -174,6 +182,7 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
     _drawLine(pScreen, returnLine, 70, 0);
     displayScreen(pScreen);
     
+    destroyMatrix8(pLineMatrix);
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
 
@@ -187,13 +196,16 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 90, 0, 109, 110);
 
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
-                                pColorTables[COLOR_BLACK]);
+                                pColorTables[_bridgeColor]);
 
     applyFastDilationToMatrix8(pColorMatrix, 1);
     applyFastErosionToMatrix8(pColorMatrix, 2);
     applyFastDilationToMatrix8(pColorMatrix, 1);
+
+    Matrix8_t* pLineMatrix = cloneMatrix8(pColorMatrix);
+    _notMatrix8(pLineMatrix);
     
-    Line_t* returnLine = lineDetection(pColorMatrix);
+    Line_t* returnLine = lineDetection(pLineMatrix);
     
     drawColorMatrix(pSubMatrix, pColorMatrix);
     overlapMatrix16(pSubMatrix, pScreen, 90, 0);
@@ -201,6 +213,7 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     _drawLine(pScreen, returnLine, 90, 0);
     displayScreen(pScreen);
 
+    destroyMatrix8(pLineMatrix);
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
     
@@ -218,14 +231,14 @@ static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
         int y = (int)pLine->leftPoint.y + minY;
         int index = y * pScreen->width + x;
         uint16_t* pOutput = (uint16_t*)&pixels[index];
-        *pOutput = 0xF800;
+        *pOutput = 0xF81F;
     }
 
     for(int x = minX + pLine->rightPoint.x; x >= centerX; --x) {
         int y = (int)pLine->rightPoint.y + minY;
         int index = y * pScreen->width + x;
         uint16_t* pOutput = (uint16_t*)&pixels[index];
-        *pOutput = 0xF800;
+        *pOutput = 0xF81F;
     }
 }
 
@@ -400,5 +413,15 @@ static void _moveForSetGradient(int lineGradient) {
     } else {
         printLog("[%s] 오른쪽으로 회전. 기울기(%d)\n", LOG_FUNCTION_NAME, lineGradient);
         turnRight(lineGradient);
+    }
+}
+
+static void _notMatrix8(Matrix8_t* pMatrix) {
+    int length = pMatrix->width * pMatrix->height;
+
+    uint8_t* pElement = pMatrix->elements;
+    for (int i = 0; i < length; ++i) {
+        *pElement = !(*pElement);
+        pElement++;
     }
 }

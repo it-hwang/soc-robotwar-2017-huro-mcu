@@ -4,9 +4,10 @@
 #include <math.h>
 
 #include "line_detection.h"
+#include "log.h"
 
 #define PI 3.141592
-#define DIFFERENCE_OF_ANGLE 20
+#define DIFFERENCE_OF_ANGLE 10
 
 static bool _isClosestLine(Line_t* currentLine, Line_t* prevLine);
 static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject);
@@ -18,9 +19,10 @@ static bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, dou
 
 
 Line_t* lineDetection(Matrix8_t* pColorMatrix) {
-    
+    static const char* LOG_FUNCTION_NAME = "lineDetection()";
+
     Matrix16_t* pLabelMatrix = createMatrix16(pColorMatrix->width, pColorMatrix->height);
-    memset(pLabelMatrix->elements, 0, (pColorMatrix->height * pColorMatrix->width) * sizeof(uint16_t));
+    memset(pLabelMatrix->elements, 0, (pLabelMatrix->height * pLabelMatrix->width) * sizeof(uint16_t));
 
     ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pColorMatrix, pLabelMatrix);
 
@@ -28,11 +30,12 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
 
     for(int i = 0; i < pObjectList->size; ++i) {
         Line_t* pLine = _labelToLine(pLabelMatrix, &pObjectList->list[i]);
-
+        
         bool isClosestLine = false;
         if(pLine != NULL) {
             if(pResultLine == NULL) {
                 pResultLine = pLine;
+                pLine = NULL;
             } else {
                 isClosestLine = _isClosestLine(pLine, pResultLine);
             }
@@ -44,7 +47,8 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
             free(pResultLine);
             pResultLine = pLine;
         } else {
-            free(pLine);
+            if(pLine != NULL)
+                free(pLine);
         }
     }
 
@@ -55,8 +59,12 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
 
     destroyMatrix16(pLabelMatrix);
 
-    return pResultLine;
+    if(pResultLine != NULL) {
+        printLog("[%s] 최종 라인 기울기(%f).\n", LOG_FUNCTION_NAME, pResultLine->theta);
+        printLog("[%s] 최종 라인 거리(%f).\n", LOG_FUNCTION_NAME, pResultLine->centerPoint.y);
+    }
 
+    return pResultLine;
 }
 
 static bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
@@ -67,12 +75,13 @@ static bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
         return true;
     } else {
         return false;
-    } 
+    }
 }
 
 static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
+    static const char* LOG_FUNCTION_NAME = "_labelToLine()";
 
-    int objectWidth = pObject->maxX - pObject->minX;
+    int objectWidth = pObject->maxX - pObject->minX + 1;
     
     if(objectWidth < pLabelMatrix->width)
         return NULL;
@@ -97,6 +106,11 @@ static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
     bool isLine = _isFitRatio(leftToCenterAngle, centerToRightAngle, leftToRightAngle);
 
     if(isLine) {
+        printLog("[%s] 왼쪽 기울기(%f).\n", LOG_FUNCTION_NAME, leftToCenterAngle);
+        printLog("[%s] 오른쪽 기울기(%f).\n", LOG_FUNCTION_NAME, centerToRightAngle);
+        printLog("[%s] 전체 기울기(%f).\n", LOG_FUNCTION_NAME, leftToRightAngle);
+        printLog("[%s] 중앙 거리(%d).\n", LOG_FUNCTION_NAME, centerPoint.y);
+
         returnLine = (Line_t*)malloc(sizeof(Line_t));
 
         returnLine->centerPoint = centerPoint;

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
 #include "object_detection.h"
 #include "graphic_interface.h"
 #include "matrix.h"
@@ -191,6 +192,7 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
             targetObject->cnt = labelCntList[i];
             targetObject->centerX = sourceObject->centerX;
             targetObject->centerY = sourceObject->centerY;
+            targetObject->id = resultIndex + 1;
             resultIndex++;
         }
     }
@@ -278,13 +280,136 @@ void _sortArray(uint16_t* array, int size) {
 }
 
 
+void destroyObjectList(ObjectList_t* pObjectList) {
+    if (pObjectList == NULL)
+        return;
+
+    free(pObjectList->list);
+    free(pObjectList);
+}
+
+
+void removeObjectFromList(ObjectList_t* pObjectList, Object_t* pObject) {
+    if (pObjectList == NULL)
+        return;
+    if (pObject == NULL)
+        return;
+
+    // Swap two objects
+    int lastIndex = pObjectList->size - 1;
+    Object_t* pLastObject = &(pObjectList->list[lastIndex]);
+    Object_t tempObject = *pLastObject;
+    memcpy(pLastObject, pObject, sizeof(Object_t));
+    memcpy(pObject, &tempObject, sizeof(Object_t));
+
+    pObjectList->size--;
+}
+
+
+void drawObjectEdge(Screen_t* pScreen, Object_t* pObject, Rgab5515_t* pBorderColor) {
+    Rgab5515_t purpleColor;
+    purpleColor.r = 0x1f;
+    purpleColor.g = 0x00;
+    purpleColor.b = 0x1f;
+
+    if (pScreen == NULL)
+        return;
+    if (pObject == NULL)
+        return;
+    if (pBorderColor == NULL)
+        pBorderColor = &purpleColor;
+
+    int width = pScreen->width;
+    int minX = pObject->minX;
+    int minY = pObject->minY;
+    int maxX = pObject->maxX;
+    int maxY = pObject->maxY;
+
+    for (int i = minX; i < maxX; ++i) {
+        int topIndex = minY * width + i;
+        int bottomIndex = maxY * width + i;
+        Rgab5515_t* pTopPixel = (Rgab5515_t*)&(pScreen->elements[topIndex]);
+        Rgab5515_t* pBottomPixel = (Rgab5515_t*)&(pScreen->elements[bottomIndex]);
+        pTopPixel->data = pBorderColor->data;
+        pBottomPixel->data = pBorderColor->data;
+    }
+
+    for (int i = minY; i < maxY; ++i) {
+        int leftIndex = i * width + minX;
+        int rightIndex = i * width + maxX;
+        Rgab5515_t* pLeftPixel = (Rgab5515_t*)&(pScreen->elements[leftIndex]);
+        Rgab5515_t* pRightPixel = (Rgab5515_t*)&(pScreen->elements[rightIndex]);
+        pLeftPixel->data = pBorderColor->data;
+        pRightPixel->data = pBorderColor->data;
+    }
+}
+
+
+void drawObjectCenter(Screen_t* pScreen, Object_t* pObject, Rgab5515_t* pPointColor) {
+    Rgab5515_t cyanColor;
+    cyanColor.r = 0x00;
+    cyanColor.g = 0x1f;
+    cyanColor.b = 0x1f;
+
+    if (pScreen == NULL)
+        return;
+    if (pObject == NULL)
+        return;
+    if (pPointColor == NULL)
+        pPointColor = &cyanColor;
+
+    int width = pScreen->width;
+    int x = pObject->centerX;
+    int y = pObject->centerY;
+    int index = (y * width) + x;
+    Rgab5515_t* pPixel = (Rgab5515_t*)&(pScreen->elements[index]);
+    pPixel->data = pPointColor->data;
+}
+
+
+void removeSmallObjects(ObjectList_t* pObjectList, int minimumCnt) {
+    if (pObjectList == NULL)
+        return;
+
+    // 도중에 remove하여 리스트의 크기가 변해도 문제가 생기지 않도록
+    // 역순으로 리스트를 순회한다.
+    int lastIndex = pObjectList->size - 1;
+    for (int i = lastIndex; i >= 0; --i) {
+        Object_t* pObject = &(pObjectList->list[i]);
+        if (pObject->cnt < minimumCnt)
+            removeObjectFromList(pObjectList, pObject);
+    }
+}
+
+
+Object_t* findLargestObject(ObjectList_t* pObjectList) {
+    if (pObjectList == NULL)
+        return NULL;
+
+    int maxArea = 0;
+    Object_t* pLargestObject = NULL;
+
+    for (int i = 0; i < pObjectList->size; ++i) {
+        Object_t* pObject = &(pObjectList->list[i]);
+        int area = pObject->cnt;
+
+        if (area > maxArea) {
+            pLargestObject = pObject;
+            maxArea = area;
+        }
+    }
+
+    return pLargestObject;
+}
+
+
 // pObject가 직사각형과의 유사한 정도를 반환한다. (범위: 0.0 ~ 1.0)
 float getRectangleCorrelation(Matrix8_t* pMatrix, Object_t* pObject) {
-    if (pObject == NULL)
-        return 0.;
-
     static const float AREA_CORRELATION_RATIO = 0.8;
     static const float CENTER_CORRELATION_RATIO = 0.2;
+
+    if (pObject == NULL)
+        return 0.;
 
     int width = pObject->maxX - pObject->minX + 1;
     int height = pObject->maxY - pObject->minY + 1;
