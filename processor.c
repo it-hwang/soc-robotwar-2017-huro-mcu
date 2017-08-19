@@ -18,6 +18,7 @@
 #include "check_center.h"
 #include "vertical_barricade.h"
 #include "red_bridge.h"
+#include "corner_detection.h"
 #include "white_balance.h"
 #include "log.h"
 #include "screenio.h"
@@ -389,6 +390,6 @@ static void _runTest(void) {
     sdelay(3);
     
     //verticalBarricadeMain();
-    checkCenterMain();
+    cornerDetectionMain();
 }
 
