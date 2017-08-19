@@ -9,12 +9,44 @@
 #include "check_center.h"
 #include "detection_corner.h"
 
+#define CAPTURE_ERROR -1
+#define RIGHT_SIDE_CLEAR 0
+#define LEFT_SIDE_CLEAR 1
+#define NO_CLEAR_SIDE 2
+
 #define FIT_DISTANCE 80
 #define LIMIT_TRY 10
 
 Screen_t* _pDefaultScreen;
 
-bool detectionCornerMain(void) {
+bool cornerDetection(void) {
+    static const char* LOG_FUNCTION_NAME = "cornerDetection()";
+
+    int turnWhere = _lookAround();
+
+    if(turnWhere < 0) {
+        printLog("[%s] 라인을 찾을 수 없습니다.\n", LOG_FUNCTION_NAME);
+        return false;
+    }
+
+    if(turnWhere == NO_CLEAR_SIDE) {
+        printLog("[%s] 이건 코너가 아닙니다.\n", LOG_FUNCTION_NAME);
+        return false;
+    }
+
+    if( !_moveUntilSeeLine() ) {
+        printLog("[%s] 선에 접근할 수 없습니다.\n", LOG_FUNCTION_NAME);
+        return false;
+    } 
+    
+    checkCenterMain();
+
+    _moveToDestination(turnWhere);
+
+    return true;
+}
+
+bool cornerDetection(void) {
 
     _pDefaultScreen = createDefaultScreen();
 
