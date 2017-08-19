@@ -15,12 +15,20 @@
 #define LEFT_SIDE_CLEAR 1
 #define NO_CLEAR_SIDE 2
 
-#define FIT_FRONT_DISTANCE 50
-
 Screen_t* _pDefaultScreen;
 
-bool cornerDetection(void) {
-    static const char* LOG_FUNCTION_NAME = "cornerDetection()";
+bool cornerDetectionMain(void) {
+    for (int i = 0; i < 100; ++i) {
+        int millimeters = _measureFrontLineDistance();
+
+        char input;
+        input = getchar();
+        while (input != '\n')
+            input = getchar();
+    }
+    return true;
+
+    /* static const char* LOG_FUNCTION_NAME = "cornerDetection()";
 
     int turnWhere = _lookAround();
 
@@ -45,7 +53,7 @@ bool cornerDetection(void) {
 
     _moveToDestination(turnWhere);
 
-    return true;
+    return true; */
 }
 
 static int _lookAround() {
@@ -239,13 +247,82 @@ static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
 
 static bool _moveUntilSeeLine() {
     static const char* LOG_FUNCTION_NAME = "_moveUntilSeeLine()";
-    static const int RANGE_OF_DISTANCE = 5;
-    static const int LIMIT_TRY_COUNT = 10;
+    
+    // 빨간 다리를 발견하지 못할 경우 다시 찍는 횟수
+    static const int MAX_TRIES = 10;
+    // 장애물에 다가갈 거리 (밀리미터)
+    static const int APPROACH_DISTANCE = 250;
+    // 거리 허용 오차 (밀리미터)
+    static const int APPROACH_DISTANCE_ERROR = 50;
+    
+    int nTries;
+    for (nTries = 0; nTries < MAX_TRIES; ++nTries) {    
+        // 앞뒤 정렬
+        int distance = measureFrontLineDistance();
+        bool hasFound = (distance != 0);
+        if (!hasFound)
+            continue;
+        
+        if (distance <= APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
+            printLog("[%s] 접근 완료.\n", LOG_FUNCTION_NAME);
+            break;
+        }
+        else {
+            printLog("[%s] 전진보행으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
+            walkForward(distance - APPROACH_DISTANCE);
+            mdelay(500);
+            nTries = 0;
+        }
+    }
 
-    _setHeadForward();
+    if (nTries >= MAX_TRIES) {
+        printLog("[%s] 시간 초과!\n", LOG_FUNCTION_NAME);
+        return false;
+    }
+    
+    return true;
+}
+
+int measureFrontLineDistance(void) {
+    static const char* LOG_FUNCTION_NAME = "measureFrontLineDistance()";
+
+    // 거리 측정에 사용되는 머리 각도
+    static const int HEAD_HORIZONTAL_DEGREES = 0;
+    static const int HEAD_VERTICAL_DEGREES = -50;
+
+    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
 
     Screen_t* pScreen = createDefaultScreen();
 
-    
+    int millimeters = 0;
 
+    Line_t* pLine = _captureForwardLine(pScreen);
+
+    if (pLine != NULL) {
+        printLog("[%s] leftPointY: %d, centerPointY: %f, rigthPointY: %d\n", LOG_FUNCTION_NAME,
+                 pLine->leftPoint.y, pLine->centerPoint.y, pLine->rightPoint.y);
+
+        // 화면 상의 위치로 실제 거리를 추측한다.
+        int distance = pLine->cneterPoint.y;
+
+        
+        millimeters = -396.1 * log(distance) + 2063;
+        // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
+        if (millimeters <= 0)
+            millimeters = 1;
+    }
+
+    if (pLine != NULL)
+        free(pLine);
+    destroyScreen(pScreen);
+
+    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
+    return millimeters;
+}
+
+static void _moveToDestination(int turnWhere) {
+    if(turnWhere == RIGHT_SIDE_CLEAR)
+        trunRight(90);
+    else if(turnWhere == LEFT_SIDE_CLEAR)
+        turnLeft(90);
 }
