@@ -45,7 +45,7 @@ bool checkCenterMain(void) {
         printLog("[%s] 라인을 찾을 수 없다.\n", LOG_FUNCTION_NAME);
         return false;
     }
-
+/*
     if( !_approachLine(headDirection, doHeadSet) ) {
         printLog("[%s] 선에 접근 할 수 없다.\n", LOG_FUNCTION_NAME);
         return false;
@@ -55,7 +55,7 @@ bool checkCenterMain(void) {
         printLog("[%s] 각도를 정렬에 실패했다.\n", LOG_FUNCTION_NAME);
         return false;
     }
-
+*/
     _setStandardStand();
 
     return true;
@@ -156,7 +156,8 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
     overlapMatrix16(pSubMatrix, pScreen, 10, 0);
     
     _drawLine(pScreen, returnLine, 10, 0);
-
+    displayScreen(pScreen);
+    
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
 
@@ -182,6 +183,7 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     overlapMatrix16(pSubMatrix, pScreen, 120, 0);
     
     _drawLine(pScreen, returnLine, 120, 0);
+    displayScreen(pScreen);
 
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
