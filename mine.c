@@ -64,7 +64,8 @@ static Matrix8_t* _createBlackMatrix(Screen_t* pScreen) {
     // 잡음을 제거한다.
     applyFastErosionToMatrix8(pBlackMatrix, 1);
     applyFastDilationToMatrix8(pBlackMatrix, 2);
-    applyFastErosionToMatrix8(pBlackMatrix, 1);
+    applyFastErosionToMatrix8(pBlackMatrix, 3);
+    applyFastDilationToMatrix8(pBlackMatrix, 2);
 
     return pBlackMatrix;
 }
@@ -115,11 +116,12 @@ static void _displayDebugScreen(Screen_t* pScreen, Object_t* pMine, Object_t* pO
 
 static bool _isMine(Screen_t* pScreen, Object_t* pObject) {
     bool tooFar = (pObject->minY < 3);
+    bool tooClose = (pObject->minY >= pScreen->height - 3);
 
     int objectWidth = pObject->maxX - pObject->minX + 1;
     bool tooWide = (objectWidth >= pScreen->width);
 
-    return (!tooFar && !tooWide);
+    return (!tooFar && !tooClose && !tooWide);
 }
 
 static Object_t* _searchClosestMine(Screen_t* pScreen) {
@@ -132,15 +134,17 @@ static Object_t* _searchClosestMine(Screen_t* pScreen) {
     // 지뢰 오브젝트 중에 가장 가까이 있는 오브젝트를 찾는다.
     Object_t* pClosestObject = NULL;
     int closestMaxY = 0;
-    for (int i = 0; i < pObjectList->size; ++i) {
-        Object_t* pObject = &(pObjectList->list[i]);
+    if (pObjectList != NULL) {
+        for (int i = 0; i < pObjectList->size; ++i) {
+            Object_t* pObject = &(pObjectList->list[i]);
 
-        if (!_isMine(pSubScreen, pObject))
-            continue;
-        
-        if (pObject->maxY > closestMaxY) {
-            pClosestObject = pObject;
-            closestMaxY = pObject->maxY;
+            if (!_isMine(pSubScreen, pObject))
+                continue;
+            
+            if (pObject->maxY > closestMaxY) {
+                pClosestObject = pObject;
+                closestMaxY = pObject->maxY;
+            }
         }
     }
 
@@ -150,11 +154,75 @@ static Object_t* _searchClosestMine(Screen_t* pScreen) {
         memcpy(pClosestMine, pClosestObject, sizeof(Object_t));
     }
 
+    destroyObjectList(pObjectList);
     destroyMatrix8(pBlackMatrix);
     destroyMatrix16(pSubScreen);
-    // TODO: 리스트 제거 함수를 넣어야한다.
 
-    return pClosestObject;
+    return pClosestMine;
+}
+
+static int _measureMineDistance(Screen_t* pScreen) {
+    static const char* LOG_FUNCTION_NAME = "_measureMineDistance()";
+
+    Object_t* pObject = _searchClosestMine(pScreen);
+    
+    int millimeters = 0;
+    if (pObject != NULL) {
+        printLog("[%s] minX: %d, centerX: %f, maxX: %d\n", LOG_FUNCTION_NAME,
+                 pObject->minX, pObject->centerX, pObject->maxX);
+        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
+                pObject->minY, pObject->centerY, pObject->maxY);
+
+        int maxY = pObject->maxY;
+        millimeters = -2.6954 * maxY + 292.29;
+        
+        if (millimeters <= 0)
+            millimeters = 1;
+    }
+
+    if (pObject != NULL)
+        free(pObject);
+
+    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
+    return millimeters;
+}
+
+static bool _measureMineOffsetX(Screen_t* pScreen, int* pOffsetX) {
+    static const char* LOG_FUNCTION_NAME = "_measureMineOffsetX()";
+
+    // 거리 측정에 사용되는 머리 각도
+    static const int HEAD_HORIZONTAL_DEGREES = 0;
+    static const int HEAD_VERTICAL_DEGREES = -35;
+
+    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
+
+    Screen_t* pScreen = createDefaultScreen();
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+
+    Object_t* pObject = _searchClosestMine(pScreen);
+    bool hasFound = (pObject != NULL);
+
+    int offsetX = 0;
+    if (pObject != NULL) {
+        printLog("[%s] minX: %d, centerX: %f, maxX: %d\n", LOG_FUNCTION_NAME,
+                 pObject->minX, pObject->centerX, pObject->maxX);
+        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
+                 pObject->minY, pObject->centerY, pObject->maxY);
+
+        float screenCenterX = (float)(pScreen->width - 1) / 2;
+        float objectCenterX = pObject->centerX;
+        offsetX = objectCenterX - screenCenterX;
+    }
+
+    if (pObject != NULL)
+        free(pObject);
+    destroyScreen(pScreen);
+    
+    if (pOffsetX != NULL)
+        *pOffsetX = offsetX;
+
+    printLog("[%s] offsetX: %d\n", LOG_FUNCTION_NAME, offsetX);
+    return hasFound;
 }
 
 int measureMineDistance(void) {
@@ -169,12 +237,15 @@ int measureMineDistance(void) {
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
+    int distance = _measureMineDistance(pScreen);
     Object_t* pMineObject = _searchClosestMine(pScreen);
-    _displayDebugScreen(pScreen, NULL, NULL);
-
+    _displayDebugScreen(pScreen, pMineObject, NULL);
+    
+    if (pMineObject != NULL)
+        free (pMineObject);
     destroyScreen(pScreen);
 
-    return 0;
+    return distance;
 }
 
 static int _measureOtherObstacleDistance(void) {
@@ -198,23 +269,64 @@ static int _measureOtherObstacleDistance(void) {
 
 
 bool mineMain(void) {
-    for (int i = 0; i < 100; ++i) {
-        int millimeters = measureMineDistance();
+    // for (int i = 0; i < 100; ++i) {
+    //     int millimeters = measureMineDistance();
 
-        char input;
-        input = getchar();
-        while (input != '\n')
-            input = getchar();
-    }
-    return true;
+    //     char input;
+    //     input = getchar();
+    //     while (input != '\n')
+    //         input = getchar();
+    // }
+    // return true;
 
     return false;
 }
 
 
 static bool _approachMine(void) {
+    static const char* LOG_FUNCTION_NAME = "_approachMine()";
 
-    return false;
+    // 장애물에 다가갈 거리 (밀리미터)
+    static const int APPROACH_DISTANCE = 20;
+    // 거리 허용 오차 (밀리미터)
+    static const int APPROACH_DISTANCE_ERROR = 30;
+    
+    int nTries;
+    for (nTries = 0; nTries < MAX_TRIES; ++nTries) {
+        // 앞뒤 정렬
+        int distance = measureRedBridgeDistance();
+        bool hasFound = (distance != 0);
+        if (!hasFound)
+            continue;
+        
+        if (distance <= APPROACH_DISTANCE) {
+            printLog("[%s] 접근 완료.\n", LOG_FUNCTION_NAME);
+            break;
+        }
+        else if (distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
+            printLog("[%s] 전진보행으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
+            walkForward(distance - APPROACH_DISTANCE);
+            mdelay(500);
+            nTries = 0;
+        }
+        else {
+            printLog("[%s] 종종걸음으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
+            int nSteps = distance / WALK_FORWARD_QUICK_DISTANCE_PER_STEP;
+            runWalk(ROBOT_FORWARD_QUICK, nSteps);
+            mdelay(500);
+            nTries = 0;
+        }
+    }
+    if (nTries >= MAX_TRIES) {
+        printLog("[%s] 시간 초과!\n", LOG_FUNCTION_NAME);
+        return false;
+    }
+
+    // 달라붙어 비비기
+    runWalk(ROBOT_FORWARD_QUICK, 4);
+    runWalk(ROBOT_FORWARD_QUICK_THRESHOLD, 4);
+    
+    return true;
 } 
 
 
