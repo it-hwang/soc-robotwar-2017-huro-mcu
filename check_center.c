@@ -43,22 +43,26 @@ bool checkCenterMain(void) {
 
     if( headDirection < 0 ) {
         printLog("[%s] 라인을 찾을 수 없다.\n", LOG_FUNCTION_NAME);
+        _setStandardStand();
         return false;
     }
 
     if( !_arrangeAngle(headDirection, doHeadSet) ) {
         printLog("[%s] 각도를 정렬에 실패했다.\n", LOG_FUNCTION_NAME);
+        _setStandardStand();
         return false;
     }
 
     if( !_approachLine(headDirection, doHeadSet) ) {
         printLog("[%s] 선에 접근 할 수 없다.\n", LOG_FUNCTION_NAME);
+        _setStandardStand();
         return false;
     }
     
 
     if( !_arrangeAngle(headDirection, doHeadSet) ) {
         printLog("[%s] 각도를 정렬에 실패했다.\n", LOG_FUNCTION_NAME);
+        _setStandardStand();
         return false;
     }
 
