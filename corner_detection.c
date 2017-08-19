@@ -7,7 +7,7 @@
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "check_center.h"
-#include "detection_corner.h"
+#include "corner_detection.h"
 #include "log.h"
 
 #define CAPTURE_ERROR -1
@@ -15,11 +15,22 @@
 #define LEFT_SIDE_CLEAR 1
 #define NO_CLEAR_SIDE 2
 
-Screen_t* _pDefaultScreen;
+static int _lookAround();
+static int _captureBothSide(void);
+static void _setHeadRight(void);
+static void _setHeadLeft(void);
+static void _setHeadForward(void);
+static void _setStandardStand(void);
+static Line_t* _captureRightLine(Screen_t* pScreen);
+static Line_t* _captureLeftLine(Screen_t* pScreen);
+static Line_t* _captureForwardLine(Screen_t* pScreen);
+static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY);
+static bool _moveUntilSeeLine();
+static void _moveToDestination(int turnWhere);
 
 bool cornerDetectionMain(void) {
     for (int i = 0; i < 100; ++i) {
-        int millimeters = _measureFrontLineDistance();
+        int millimeters = measureFrontLineDistance();
 
         char input;
         input = getchar();
@@ -287,10 +298,10 @@ int measureFrontLineDistance(void) {
     static const char* LOG_FUNCTION_NAME = "measureFrontLineDistance()";
 
     // 거리 측정에 사용되는 머리 각도
-    static const int HEAD_HORIZONTAL_DEGREES = 0;
-    static const int HEAD_VERTICAL_DEGREES = -50;
+    //static const int HEAD_HORIZONTAL_DEGREES = 0;
+    //static const int HEAD_VERTICAL_DEGREES = -50;
 
-    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
+    _setHeadForward();
 
     Screen_t* pScreen = createDefaultScreen();
 
@@ -303,7 +314,7 @@ int measureFrontLineDistance(void) {
                  pLine->leftPoint.y, pLine->centerPoint.y, pLine->rightPoint.y);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
-        int distance = pLine->cneterPoint.y;
+        int distance = pLine->centerPoint.y;
 
         
         millimeters = -396.1 * log(distance) + 2063;
@@ -322,7 +333,7 @@ int measureFrontLineDistance(void) {
 
 static void _moveToDestination(int turnWhere) {
     if(turnWhere == RIGHT_SIDE_CLEAR)
-        trunRight(90);
+        turnRight(90);
     else if(turnWhere == LEFT_SIDE_CLEAR)
         turnLeft(90);
 }
