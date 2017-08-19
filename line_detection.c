@@ -59,8 +59,10 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
 
     destroyMatrix16(pLabelMatrix);
 
-    printLog("[%s] 최종 라인 기울기(%f).\n", LOG_FUNCTION_NAME, pResultLine->theta);
-    printLog("[%s] 최종 라인 거리(%f).\n", LOG_FUNCTION_NAME, pResultLine->centerPoint.y);
+    if(pResultLine != NULL) {
+        printLog("[%s] 최종 라인 기울기(%f).\n", LOG_FUNCTION_NAME, pResultLine->theta);
+        printLog("[%s] 최종 라인 거리(%f).\n", LOG_FUNCTION_NAME, pResultLine->centerPoint.y);
+    }
 
     return pResultLine;
 }

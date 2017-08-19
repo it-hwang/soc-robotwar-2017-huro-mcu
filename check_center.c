@@ -13,7 +13,7 @@
 
 #define CENTER 50
 #define RIGHT_ZERO_GRADIENT 4
-#define LEFT_ZERO_GRADIENT -9
+#define LEFT_ZERO_GRADIENT -8
 #define HEAD_DIRECTION_ERROR -1
 #define HEAD_DIRECTION_RIGHT 0
 #define HEAD_DIRECTION_LEFT 1
@@ -157,11 +157,11 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
 
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
                                 pColorTables[COLOR_BLACK]);
-    /*
+    
     applyFastDilationToMatrix8(pColorMatrix, 1);
     applyFastErosionToMatrix8(pColorMatrix, 2);
     applyFastDilationToMatrix8(pColorMatrix, 1);
-    */
+    
     Line_t* returnLine = lineDetection(pColorMatrix);
     
     drawColorMatrix(pSubMatrix, pColorMatrix);
@@ -185,10 +185,9 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
                                 pColorTables[COLOR_BLACK]);
 
-    /*applyFastDilationToMatrix8(pColorMatrix, 1);
+    applyFastDilationToMatrix8(pColorMatrix, 1);
     applyFastErosionToMatrix8(pColorMatrix, 2);
     applyFastDilationToMatrix8(pColorMatrix, 1);
-    */
     
     Line_t* returnLine = lineDetection(pColorMatrix);
     
@@ -393,7 +392,7 @@ static void _moveForSetGradient(int lineGradient) {
 
     if(lineGradient < 0) {
         printLog("[%s] 왼쪽으로 회전. 기울기(%d)\n", LOG_FUNCTION_NAME, lineGradient);
-        turnLeft(lineGradient);
+        turnLeft(lineGradient * -1);
     } else {
         printLog("[%s] 오른쪽으로 회전. 기울기(%d)\n", LOG_FUNCTION_NAME, lineGradient);
         turnRight(lineGradient);
