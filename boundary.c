@@ -108,32 +108,33 @@ static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix
 
     PixelLocation_t curPoint = startPoint;
     int direction = 0;
-    
+    int checkAllDirection = 0;
 
     Matrix8_t* pBoundaryMatrix = createMatrix8(pLabelMatrix->width, pLabelMatrix->height);
     memset(pBoundaryMatrix->elements, 0, (pBoundaryMatrix->height * pBoundaryMatrix->width) * sizeof(uint8_t));
 
-    int checkAllDirection = 0;
-
     while(true) {
         PixelLocation_t nextPoint = _directionToPoint(curPoint, direction);
 
-        if(!_notAllDirection(pBoundaryMatrix, curPoint, nextPoint, &direction, &checkAllDirection)) {
+        int notAllDirection = _notAllDirection(pBoundaryMatrix, curPoint, nextPoint, &direction, &checkAllDirection)
+        if(notAllDirection < 0) {
             break;
+        }else if(notAllDirection > 0) {
+            int index = curPoint.y * pBoundaryMatrix->width + curPoint.x;
+            pBoundaryMatrix->elements[index] = 0xff;
+    
+            curPoint = nextPoint;
+    
+            checkAllDirection = 0;
+            direction = (direction + 6) % 8; // direction = direction - 2;    
         }
-
-        int index = curPoint.y * pBoundaryMatrix->width + curPoint.x;
-        pBoundaryMatrix->elements[index] = 0xff;
-
-        curPoint = nextPoint;
-
-        checkAllDirection = 0;
-        d = (d + 6) % 8; // d = d - 2;
 
         if(curPoint.x == startPoint.x && curPoint.y == startPoint.y && direction == 0) {
             break;
         }
     }
+
+    return pBoundaryMatrix;
 }
 
 static PixelLocation_t _getStartPointForTraceLine(Object_t* pObject, Matrix16_t* pLabelMatrix) {
@@ -192,7 +193,8 @@ static PixelLocation_t _directionToPoint(PixelLocation_t curPoint, int direction
 
     return returnPixel;
 }
-static bool _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoint, PixelLocation_t nextPoint, int* direction, int* checkAllDirection) {
+
+static int _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoint, PixelLocation_t nextPoint, int* direction, int* checkAllDirection) {
  
     int width = pBoundaryMatrix->width;
     int height = pBoundaryMatrix->height;
@@ -207,8 +209,10 @@ static bool _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoin
         if(*checkAllDirection >= 8) {
             index = curPoint.y * width + curPoint.x;
             pBoundaryMatrix->elements[index] = 0xff;
-            return false;
+            return -1;
         }
+
+        return 0;
     } else if(pBoundaryMatrix->elements[index] != 0xff) {
         if(++(*direction) > 7)
             *direction = 0;
@@ -218,9 +222,15 @@ static bool _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoin
         if(*checkAllDirection >= 8) {
             index = curPoint.y * width + curPoint.x;
             pBoundaryMatrix->elements[index] = 0xff;
-            return false;
+            return -1;
         }
-    }
 
-    return true;
+        return 0;
+    }else 
+        return 1;
+}
+
+static void _fillBoundary(Matrix8_t pReturnMatrix) {
+
+    
 }
