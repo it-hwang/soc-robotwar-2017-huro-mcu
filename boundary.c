@@ -128,12 +128,33 @@ static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix
         curPoint = nextPoint;
 
         checkAllDirection = 0;
-        d = (d + 6) % 8;
+        d = (d + 6) % 8; // d = d - 2;
 
         if(curPoint.x == startPoint.x && curPoint.y == startPoint.y && direction == 0) {
             break;
         }
     }
+}
+
+static PixelLocation_t _getStartPointForTraceLine(Object_t* pObject, Matrix16_t* pLabelMatrix) {
+
+    int index = pObject->centerY * pLabelMatrix->width + pObject->centerX;
+    int labelNum = pLabelMatrix->elements[index];
+
+    PixelLocation_t returnLocation;
+    
+    int x = pObject->minX - 1;
+    int y = pObject->minY;
+
+    do {
+        x++;
+        index = y * pLabelMatrix->width + x;
+    }while(pLabelMatrix->elements[index] != labelNum);
+
+    returnLocation.x = x;
+    returnLocation.y = y;
+
+    return returnLocation;
 }
 
 static bool _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoint, PixelLocation_t nextPoint, int* direction, int* checkAllDirection) {
@@ -155,7 +176,7 @@ static bool _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoin
         }
     } else if(pBoundaryMatrix->elements[index] != 0xff) {
         if(++(*direction) > 7)
-            direction = 0;
+            *direction = 0;
 
         *checkAllDirection++;
 
