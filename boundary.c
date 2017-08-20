@@ -4,7 +4,10 @@
 #include "object_detection.h"
 #include "log.h"
 
+#define LABEL_SIZE 1000
+
 static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabelMatrix);
+static int _getObjectLabel(Matrix16_t* pLabelMatrix);
 
 Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix) {
 
@@ -57,6 +60,9 @@ static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabe
     
     int objectLabel = _getObjectLabel(pLabelMatrix);
 
+    if(objectLabel == 0)
+        return NULL;
+        
     Object_t* pObject = NULL;
     for(int i = 0; i < pObjectList->size; ++i) {
         pObject = &pObjectList->list[i];
@@ -67,4 +73,31 @@ static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabe
     }
 
     return pObject;
+}
+
+static int _getObjectLabel(Matrix16_t* pLabelMatrix) {
+
+    int widthToExplore = pLabelMatrix->width;
+    int heightToExplore = 5;
+    int startHeight = pLabelMatrix->width - heightToExplore;
+    int endHeight = startHeight + heightToExplore - 1;
+
+    int labelList[LABEL_SIZE] = {0, };
+    int maxLabel = 0;
+
+    for(int y = startHeight; y < endHeight; ++y) {
+        for(int x = 0; x < widthToExplore; ++x) {
+            int index = y * widthToExplore + x;
+            int listIndex = pLabelMatrix->elements[index];
+            
+            if(labelList[listIndex] != 0){
+                labelList[listIndex]++;
+
+                if(labelList[listIndex] > labelList[maxLabel])
+                    maxLabel = listIndex;
+            }
+        }
+    }
+
+    return maxLabel;
 }
