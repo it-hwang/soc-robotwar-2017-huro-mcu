@@ -230,7 +230,38 @@ static int _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoint
         return 1;
 }
 
-static void _fillBoundary(Matrix8_t pReturnMatrix) {
+static void _fillBoundary(Matrix8_t* pBoundaryMatrix) {
 
+    int height = pBoundaryMatrix->height;
+
+    for(int y = 0; y < height; ++y) {
+        
+        int rightX = _findRightX(pBoundaryMatrix, y);
+        if(rightX == 0)
+            continue;
+        
+        int leftX = _findLeftX(pBoundaryMatrix, y);
+
+        _fillLeftToRight(pBoundaryMatrix, leftX, rightX);
+    }
+}
+
+static int _findRightX(Matrix8_t* pBoundaryMatrix, int y) {
+
+    int width = pBoundaryMatrix->width;
+
+    int resultX = 0;
+
+    for(int x = width-1; x > 0; --x) {
+        int index = y * width + x;
+        if(pBoundaryMatrix->elements[index] == 0xff) {
+            resultX = x;
+            break;
+        }
+    }
     
+    return resultX;
+}
+static void _fillLeftToRight(Matrix8_t* pBoundaryMatrix, int leftX, int rightX) {
+
 }
