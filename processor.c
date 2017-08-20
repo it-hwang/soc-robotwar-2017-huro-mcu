@@ -18,6 +18,7 @@
 #include "check_center.h"
 #include "vertical_barricade.h"
 #include "red_bridge.h"
+#include "corner_detection.h"
 #include "white_balance.h"
 #include "log.h"
 #include "screenio.h"
@@ -388,6 +389,7 @@ static void _runTest(void) {
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
     
-    redBridgeMain();
+    //verticalBarricadeMain();
+    cornerDetectionMain();
 }
 

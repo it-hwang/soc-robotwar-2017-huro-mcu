@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "color.h"
 #include "graphic_interface.h"
@@ -7,7 +8,7 @@
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "check_center.h"
-#include "detection_corner.h"
+#include "corner_detection.h"
 #include "log.h"
 
 #define CAPTURE_ERROR -1
@@ -15,20 +16,21 @@
 #define LEFT_SIDE_CLEAR 1
 #define NO_CLEAR_SIDE 2
 
-Screen_t* _pDefaultScreen;
+static int _lookAround();
+static int _captureBothSide(void);
+static void _setHeadRight(void);
+static void _setHeadLeft(void);
+static void _setHeadForward(void);
+static void _setStandardStand(void);
+static Line_t* _captureRightLine(Screen_t* pScreen);
+static Line_t* _captureLeftLine(Screen_t* pScreen);
+static Line_t* _captureForwardLine(Screen_t* pScreen);
+static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY);
+static bool _moveUntilSeeLine();
+static void _moveToDestination(int turnWhere);
 
 bool cornerDetectionMain(void) {
-    for (int i = 0; i < 100; ++i) {
-        int millimeters = _measureFrontLineDistance();
-
-        char input;
-        input = getchar();
-        while (input != '\n')
-            input = getchar();
-    }
-    return true;
-
-    /* static const char* LOG_FUNCTION_NAME = "cornerDetection()";
+    static const char* LOG_FUNCTION_NAME = "cornerDetection()";
 
     int turnWhere = _lookAround();
 
@@ -53,7 +55,7 @@ bool cornerDetectionMain(void) {
 
     _moveToDestination(turnWhere);
 
-    return true; */
+    return true;
 }
 
 static int _lookAround() {
@@ -79,12 +81,12 @@ static int _captureBothSide(void) {
     static const char* LOG_FUNCTION_NAME = "_captureBothSide()";
 
     Screen_t* pScreen = createDefaultScreen();
+    
+    _setHeadRight();
+    Line_t* rightLine = _captureRightLine(pScreen);
 
     _setHeadLeft();
     Line_t* leftLine = _captureLeftLine(pScreen);
-
-    _setHeadRight();
-    Line_t* rightLine = _captureRightLine(pScreen);
 
     destroyScreen(pScreen);
 
@@ -200,7 +202,7 @@ static Line_t* _captureForwardLine(Screen_t* pScreen) {
     
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
-    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 45, 0, 64, 110);
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 75, 0, 104, 119);
 
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
                                 pColorTables[COLOR_BLACK]);
@@ -212,9 +214,9 @@ static Line_t* _captureForwardLine(Screen_t* pScreen) {
     Line_t* returnLine = lineDetection(pColorMatrix);
 
     drawColorMatrix(pSubMatrix, pColorMatrix);
-    overlapMatrix16(pSubMatrix, pScreen, 45, 0);
+    overlapMatrix16(pSubMatrix, pScreen, 75, 0);
 
-    _drawLine(pScreen, returnLine, 45, 0);
+    _drawLine(pScreen, returnLine, 75, 0);
     displayScreen(pScreen);
 
     destroyMatrix8(pColorMatrix);
@@ -287,10 +289,10 @@ int measureFrontLineDistance(void) {
     static const char* LOG_FUNCTION_NAME = "measureFrontLineDistance()";
 
     // 거리 측정에 사용되는 머리 각도
-    static const int HEAD_HORIZONTAL_DEGREES = 0;
-    static const int HEAD_VERTICAL_DEGREES = -50;
+    //static const int HEAD_HORIZONTAL_DEGREES = 0;
+    //static const int HEAD_VERTICAL_DEGREES = -50;
 
-    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
+    _setHeadForward();
 
     Screen_t* pScreen = createDefaultScreen();
 
@@ -299,14 +301,13 @@ int measureFrontLineDistance(void) {
     Line_t* pLine = _captureForwardLine(pScreen);
 
     if (pLine != NULL) {
-        printLog("[%s] leftPointY: %d, centerPointY: %f, rigthPointY: %d\n", LOG_FUNCTION_NAME,
+        printLog("[%s] leftPointY: %d, centerPointY: %d, rigthPointY: %d\n", LOG_FUNCTION_NAME,
                  pLine->leftPoint.y, pLine->centerPoint.y, pLine->rightPoint.y);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
-        int distance = pLine->cneterPoint.y;
-
+        int distance = pLine->centerPoint.y;
         
-        millimeters = -396.1 * log(distance) + 2063;
+        millimeters = 655.21 * exp(-0.016 * distance);
         // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
         if (millimeters <= 0)
             millimeters = 1;
@@ -322,7 +323,7 @@ int measureFrontLineDistance(void) {
 
 static void _moveToDestination(int turnWhere) {
     if(turnWhere == RIGHT_SIDE_CLEAR)
-        trunRight(90);
+        turnRight(90);
     else if(turnWhere == LEFT_SIDE_CLEAR)
         turnLeft(90);
 }
