@@ -262,6 +262,23 @@ static int _findRightX(Matrix8_t* pBoundaryMatrix, int y) {
     
     return resultX;
 }
+
+static int _findLeftX(Matrix8_t* pBoundaryMatrix, int y) {
+    
+    int width = pBoundaryMatrix->width;
+
+    int resultX = 0;
+
+    for(int x = 0; x < width; ++x) {
+        int idex = y * width + x;
+        if(pBoundaryMatrix->elements[index] == 0xff) {
+            resultX = x;
+            break;
+        }
+    }
+
+    return resultX;
+}
 static void _fillLeftToRight(Matrix8_t* pBoundaryMatrix, int leftX, int rightX) {
 
 }
