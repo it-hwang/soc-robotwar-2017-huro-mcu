@@ -62,7 +62,7 @@ static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabe
 
     if(objectLabel == 0)
         return NULL;
-        
+
     Object_t* pObject = NULL;
     for(int i = 0; i < pObjectList->size; ++i) {
         pObject = &pObjectList->list[i];
@@ -100,4 +100,58 @@ static int _getObjectLabel(Matrix16_t* pLabelMatrix) {
     }
 
     return maxLabel;
+}
+
+static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix) {
+    
+    PixelLocation_t startPoint = _getStartPointForTraceLine(pObject, pLabelMatrix);
+
+    PixelLocation_t curPoint = startPoint;
+    int direction = 0;
+    
+
+    Matrix8_t* pBoundaryMatrix = createMatrix8(pLabelMatrix->width, pLabelMatrix->height);
+    memset(pBoundaryMatrix->elements, 0, (pBoundaryMatrix->height * pBoundaryMatrix->width) * sizeof(uint8_t));
+
+    int checkAllDirection = 0;
+
+    while(true) {
+        PixelLocation_t nextPoint = _directionToPoint(pLabelMatrix, curPoint, direction);
+
+        if(!_notAllDirection(pBoundaryMatrix, curPoint, nextPoint, &direction, &checkAllDirection))
+
+    }
+}
+
+static bool _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoint, PixelLocation_t nextPoint, int* direction, int* checkAllDirection) {
+ 
+    int width = pBoundaryMatrix->width;
+    int height = pBoundaryMatrix->height;
+
+    int index = nextPoint.y * width + nextPoint.x;
+    if(nextPoint.x < 0 || nextPoint.x >= width || nextPoint.y < 0 || nextPoint.y >= height) {
+        if(++(*direction) > 7)
+            *direction = 0;
+
+        *checkAllDirection++;
+
+        if(*checkAllDirection >= 8) {
+            index = curPoint.y * width + curPoint.x;
+            pBoundaryMatrix->elements[index] = 0xff;
+            return false;
+        }
+    } else if(pBoundaryMatrix->elements[index] != 0xff) {
+        if(++(*direction) > 7)
+            direction = 0;
+
+        *checkAllDirection++;
+
+        if(*checkAllDirection >= 8) {
+            index = curPoint.y * width + curPoint.x;
+            pBoundaryMatrix->elements[index] = 0xff;
+            return false;
+        }
+    }
+
+    return true;
 }
