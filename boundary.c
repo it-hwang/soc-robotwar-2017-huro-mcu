@@ -116,7 +116,7 @@ static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix
     int checkAllDirection = 0;
 
     while(true) {
-        PixelLocation_t nextPoint = _directionToPoint(pLabelMatrix, curPoint, direction);
+        PixelLocation_t nextPoint = _directionToPoint(curPoint, direction);
 
         if(!_notAllDirection(pBoundaryMatrix, curPoint, nextPoint, &direction, &checkAllDirection)) {
             break;
@@ -157,6 +157,41 @@ static PixelLocation_t _getStartPointForTraceLine(Object_t* pObject, Matrix16_t*
     return returnLocation;
 }
 
+static PixelLocation_t _directionToPoint(PixelLocation_t curPoint, int direction) {
+
+    PixelLocation_t returnPixel;
+
+    if(direction == 0) {
+        returnPixel.x = curPoint.x + 1;
+        returnPixel.y = curPoint.y;
+    } else if(direction == 1) {
+        returnPixel.x = curPoint.x + 1;
+        returnPixel.y = curPoint.y + 1;
+    } else if(direction == 2) {
+        returnPixel.x = curPoint.x;
+        returnPixel.y = curPoint.y + 1;
+    } else if(direction == 3) {
+        returnPixel.x = curPoint.x - 1;
+        returnPixel.y = curPoint.y + 1;
+    } else if(direction == 4) {
+        returnPixel.x = curPoint.x - 1;
+        returnPixel.y = curPoint.y;
+    } else if(direction == 5) {
+        returnPixel.x = curPoint.x - 1;
+        returnPixel.y = curPoint.y - 1;
+    } else if(direction == 6) {
+        returnPixel.x = curPoint.x;
+        returnPixel.y = curPoint.y - 1;
+    } else if(direction == 7) {
+        returnPixel.x = curPoint.x + 1;
+        returnPixel.y = curPoint.y - 1;
+    } else {
+        returnPixel.x = curPoint.x;
+        returnPixel.y = curPoint.y;
+    }
+
+    return returnPixel;
+}
 static bool _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoint, PixelLocation_t nextPoint, int* direction, int* checkAllDirection) {
  
     int width = pBoundaryMatrix->width;
