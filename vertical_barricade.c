@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+
 #include "vertical_barricade.h"
 #include "color.h"
 #include "color_model.h"
@@ -56,83 +57,6 @@ static void _drawColorScreen(Screen_t* pScreen) {
     destroyMatrix8(pYellowMatrix);
 }
 
-static void _drawObjectEdge(Screen_t* pScreen, Object_t* pObject) {
-    if (pObject == NULL)
-        return;
-
-    int width = pScreen->width;
-    int minX = pObject->minX;
-    int minY = pObject->minY;
-    int maxX = pObject->maxX;
-    int maxY = pObject->maxY;
-
-    for (int i = minX; i < maxX; ++i) {
-        int topIndex = minY * width + i;
-        int bottomIndex = maxY * width + i;
-        Rgab5515_t* pTopPixel = (Rgab5515_t*)&(pScreen->elements[topIndex]);
-        Rgab5515_t* pBottomPixel = (Rgab5515_t*)&(pScreen->elements[bottomIndex]);
-        pTopPixel->r = 0x1f;
-        pTopPixel->g = 0x00;
-        pTopPixel->b = 0x00;
-        pBottomPixel->r = 0x1f;
-        pBottomPixel->g = 0x00;
-        pBottomPixel->b = 0x00;
-    }
-
-    for (int i = minY; i < maxY; ++i) {
-        int leftIndex = i * width + minX;
-        int rightIndex = i * width + maxX;
-        Rgab5515_t* pLeftPixel = (Rgab5515_t*)&(pScreen->elements[leftIndex]);
-        Rgab5515_t* pRightPixel = (Rgab5515_t*)&(pScreen->elements[rightIndex]);
-        pLeftPixel->r = 0x1f;
-        pLeftPixel->g = 0x00;
-        pLeftPixel->b = 0x00;
-        pRightPixel->r = 0x1f;
-        pRightPixel->g = 0x00;
-        pRightPixel->b = 0x00;
-    }
-}
-
-
-static void _removeObjectFromList(ObjectList_t* pObjectList, Object_t* pObject) {
-    if (pObjectList == NULL)
-        return;
-    if (pObject == NULL)
-        return;
-
-    int lastIndex = pObjectList->size - 1;
-    Object_t* pLastObject = &(pObjectList->list[lastIndex]);
-    Object_t tempObject = *pLastObject;
-
-    memcpy(pLastObject, pObject, sizeof(Object_t));
-    memcpy(pObject, &tempObject, sizeof(Object_t));
-
-    pObjectList->size--;
-}
-
-static void _destroyObjectList(ObjectList_t* pObjectList) {
-    if (pObjectList == NULL)
-        return;
-
-    free(pObjectList->list);
-    free(pObjectList);
-}
-
-// pObjectList에서 minCnt보다 작은 값을 가진 객체들을 제거한다.
-static void _filterObjectsByCnt(ObjectList_t* pObjectList, int minCnt) {
-    if (pObjectList == NULL)
-        return;
-
-    // 도중에 remove하여 리스트의 크기가 변해도 문제가 생기지 않도록
-    // 역순으로 리스트를 순회한다.
-    int lastIndex = pObjectList->size - 1;
-    for (int i = lastIndex; i >= 0; --i) {
-        Object_t* pObject = &(pObjectList->list[i]);
-        if (pObject->cnt < minCnt)
-            _removeObjectFromList(pObjectList, pObject);
-    }
-}
-
 
 // 가장 직각 사각형에 가까운 객체를 찾는다.
 // 만일, 유사도가 같다면, 더 큰 물체를 선택한다.
@@ -158,27 +82,6 @@ static Object_t* _findMostRectangleObject(Matrix8_t* pMatrix, ObjectList_t* pObj
     }
 
     return pMostRectangleObject;
-}
-
-// 가장 큰 객체를 찾는다.
-static Object_t* _findLargestObject(ObjectList_t* pObjectList) {
-    if (pObjectList == NULL)
-        return NULL;
-
-    int maxArea = 0;
-    Object_t* pLargestObject = NULL;
-
-    for (int i = 0; i < pObjectList->size; ++i) {
-        Object_t* pObject = &(pObjectList->list[i]);
-        int area = pObject->cnt;
-
-        if (area > maxArea) {
-            pLargestObject = pObject;
-            maxArea = area;
-        }
-    }
-
-    return pLargestObject;
 }
 
 // pObjectList에서 pObject와 인접한 왼쪽 객체를 찾는다.
@@ -242,6 +145,7 @@ static void _mergeObject(Object_t* pSrcObject, Object_t* pDstObject) {
     pDstObject->cnt = pDstObject->cnt + pSrcObject->cnt;
 }
 
+// BUG: 간혹 잡음을 바리케이드로 인식하는 경우가 있다.
 static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
     static const char* LOG_FUNCTION_NAME = "_searchVerticalBarricade()";
     // 하단 판정 Y값
@@ -264,11 +168,11 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
     ObjectList_t* pYellowObjectList = detectObjectsLocation(pYellowMatrix);
     ObjectList_t* pBlackObjectList = detectObjectsLocation(pBlackMatrix);
     if (pYellowObjectList != NULL && pYellowObjectList->size > 0) {
-        Object_t* pLargestObject = _findLargestObject(pYellowObjectList);
-        int minCnt = pLargestObject->cnt * LARGEST_OBJECT_RELATIVE_RATIO;
-        _filterObjectsByCnt(pYellowObjectList, minCnt);
-        _filterObjectsByCnt(pBlackObjectList, minCnt);
-        printLog("[%s] minCnt: %d\n", LOG_FUNCTION_NAME, minCnt);
+        Object_t* pLargestObject = findLargestObject(pYellowObjectList);
+        int minimumCnt = pLargestObject->cnt * LARGEST_OBJECT_RELATIVE_RATIO;
+        removeSmallObjects(pYellowObjectList, minimumCnt);
+        removeSmallObjects(pBlackObjectList, minimumCnt);
+        printLog("[%s] minimumCnt: %d\n", LOG_FUNCTION_NAME, minimumCnt);
 
         while (pYellowObjectList->size > 0) {
             Object_t* pMostRectangleObject = _findMostRectangleObject(pYellowMatrix, pYellowObjectList);
@@ -278,13 +182,13 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
 
             // 바리케이드가 평소에는 직사각형으로 보인다.
             if (!onBottom && correlation < MIN_RECTANGLE_CORRELATION) {
-                _removeObjectFromList(pYellowObjectList, pMostRectangleObject);
+                removeObjectFromList(pYellowObjectList, pMostRectangleObject);
                 continue;
             }
             // 바리케이드가 하단에 걸치면 왜곡이 심해져서 직사각형으로 보이지 않는다.
             // 하단에 걸친경우 유사도를 후하게 쳐준다.
             if (onBottom && correlation < MIN_RECTANGLE_CORRELATION2) {
-                _removeObjectFromList(pYellowObjectList, pMostRectangleObject);
+                removeObjectFromList(pYellowObjectList, pMostRectangleObject);
                 continue;
             }
 
@@ -292,7 +196,7 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
             bool tooFar = (pMostRectangleObject->minY == 0);
             // 너무 가까우면서 너무 큰 경우는 없다. (바리케이드가 아닌 다른 물체이다.)
             if (tooClose && tooFar) {
-                _removeObjectFromList(pYellowObjectList, pMostRectangleObject);
+                removeObjectFromList(pYellowObjectList, pMostRectangleObject);
                 continue;
             }
 
@@ -302,7 +206,7 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
             // 가깝지 않다면 이웃을 식별할 수 있다.
             // 가깝지 않은데도 이웃이 없다면 바리케이드가 아니다.
             if (!tooClose && !hasNeighbor) {
-                _removeObjectFromList(pYellowObjectList, pMostRectangleObject);
+                removeObjectFromList(pYellowObjectList, pMostRectangleObject);
                 continue;
             }
 
@@ -324,8 +228,8 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
     else
         printLog("[%s] 객체를 찾을 수 없습니다.\n", LOG_FUNCTION_NAME);
 
-    _destroyObjectList(pYellowObjectList);
-    _destroyObjectList(pBlackObjectList);
+    destroyObjectList(pYellowObjectList);
+    destroyObjectList(pBlackObjectList);
     destroyMatrix8(pBlackMatrix);
     destroyMatrix8(pYellowMatrix);
 
@@ -346,10 +250,11 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
         return;
 
     setServoSpeed(30);
-    runMotion(MOTION_HEAD_FRONT);
+    // runMotion(MOTION_HEAD_FRONT);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
-    mdelay(500);
+    // mdelay(500);
+    mdelay(800);
 }
 
 int measureVerticalBarricadeDistance(void) {
@@ -392,12 +297,14 @@ int measureVerticalBarricadeDistance(void) {
     }
 
     _drawColorScreen(pScreen);
-    _drawObjectEdge(pScreen, pObject);
+    drawObjectEdge(pScreen, pObject, NULL);
     displayScreen(pScreen);
 
-    free(pObject);
+    if (pObject != NULL)
+        free(pObject);
     destroyScreen(pScreen);
 
+    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
     return millimeters;
 }
 
