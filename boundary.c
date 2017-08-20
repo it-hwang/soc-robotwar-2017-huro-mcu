@@ -1,6 +1,8 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "matrix.h"
-#include "graphic_interface.h"
 #include "object_detection.h"
 #include "log.h"
 
@@ -8,6 +10,14 @@
 
 static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabelMatrix);
 static int _getObjectLabel(Matrix16_t* pLabelMatrix);
+static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix);
+static PixelLocation_t _getStartPointForTraceLine(Object_t* pObject, Matrix16_t* pLabelMatrix);
+static PixelLocation_t _directionToPoint(PixelLocation_t curPoint, int direction);
+static int _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoint, PixelLocation_t nextPoint, int* direction, int* checkAllDirection);
+static void _fillBoundary(Matrix8_t* pBoundaryMatrix);
+static int _findRightX(Matrix8_t* pBoundaryMatrix, int y);
+static int _findLeftX(Matrix8_t* pBoundaryMatrix, int y);
+static void _fillLeftToRight(Matrix8_t* pBoundaryMatrix, int leftX, int rightX, int y);
 
 Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix) {
 
@@ -79,7 +89,7 @@ static int _getObjectLabel(Matrix16_t* pLabelMatrix) {
 
     int widthToExplore = pLabelMatrix->width;
     int heightToExplore = 5;
-    int startHeight = pLabelMatrix->width - heightToExplore;
+    int startHeight = pLabelMatrix->height - heightToExplore;
     int endHeight = startHeight + heightToExplore - 1;
 
     int labelList[LABEL_SIZE] = {0, };
@@ -242,7 +252,7 @@ static void _fillBoundary(Matrix8_t* pBoundaryMatrix) {
         
         int leftX = _findLeftX(pBoundaryMatrix, y);
 
-        _fillLeftToRight(pBoundaryMatrix, leftX, rightX);
+        _fillLeftToRight(pBoundaryMatrix, leftX, rightX, y);
     }
 }
 
@@ -279,6 +289,10 @@ static int _findLeftX(Matrix8_t* pBoundaryMatrix, int y) {
 
     return resultX;
 }
-static void _fillLeftToRight(Matrix8_t* pBoundaryMatrix, int leftX, int rightX) {
+static void _fillLeftToRight(Matrix8_t* pBoundaryMatrix, int leftX, int rightX, int y) {
 
+    for(int x = leftX; x < rightX; ++x) {
+        int index = y * pBoundaryMatrix->width + x;
+        pBoundaryMatrix->elements[index] = 0xff;
+    }
 }
