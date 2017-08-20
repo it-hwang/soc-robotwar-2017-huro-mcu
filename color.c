@@ -438,3 +438,25 @@ void drawColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
         pColorPixel++;
     }
 }
+
+Matrix8_t* overlapColorMatrix(Matrix8_t* pSourceColorMatrix, Matrix8_t* pTargetColorMatrix) {
+    if(pSourceColorMatrix->width != pTargetColorMatrix->width)
+        return NULL;
+
+    if(pSourceColorMatrix->height != pTargetColorMatrix->height)
+        return NULL;
+
+    int width = pSourceColorMatrix->width;
+    int height = pSourceColorMatrix->height;
+    int length = width * heigth;
+
+    Matrix8_t* returnMatrix = createMatrix8(width, height);
+    memset(returnMatrix->elements, 0, (returnMatrix->height * returnMatrix->width) * sizeof(uint8_t));
+
+    for(int i = 0; i < length; ++i) {
+        returnMatrix->elements[i] = pTargetColorMatrix->elements[i];
+        returnMatrix->elements[i] = pSourceColorMatrix->elements[i];
+    }
+
+    return returnMatrix;
+}
