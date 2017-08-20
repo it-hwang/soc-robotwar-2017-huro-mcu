@@ -45,3 +45,4 @@ void applyBoundary(Screen_t* pScreen, Matrix8_t* pBoundaryMatrix) {
             pScreen->elements[i] = 0x7bcf; //NONE_COLOR
     }
 }
+
