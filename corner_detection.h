@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
-bool detectionCornerMain(void);
+bool cornerDetectionMain(void);
+int measureFrontLineDistance(void);
 
 #endif // __DETECTION_CORNER_H__

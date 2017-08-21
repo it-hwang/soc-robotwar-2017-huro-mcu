@@ -18,6 +18,7 @@
 #include "check_center.h"
 #include "vertical_barricade.h"
 #include "red_bridge.h"
+#include "corner_detection.h"
 #include "white_balance.h"
 #include "mine.h"
 #include "log.h"
