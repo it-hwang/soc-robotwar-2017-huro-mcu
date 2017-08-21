@@ -1,20 +1,134 @@
-#include <math.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
 #include "mine.h"
-#include "white_balance.h"
 #include "log.h"
 #include "graphic_interface.h"
 #include "robot_protocol.h"
-#include "color.h"
+#include "white_balance.h"
 #include "image_filter.h"
 #include "object_detection.h"
+#include "color.h"
+
+// TODO: 알고리즘을 개선해야한다.
+//       현재 지뢰 알고리즘은 예선전처럼 굉장히 친절하게 배치되어 있을 때에만
+//       작동한다.
+//       어떠한 형태로 지뢰가 배치되어도 완벽하게 수행할 수 있도록 알고리즘을
+//       개선해야한다.
+
+// 확인할 화면 크기 (단위: pixels)
+#define _DETECTION_CENTER_X     96
+#define _DETECTION_WIDTH        100
+#define _DETECTION_HEIGHT       106
+#define _DETECTION_MIN_X        (_DETECTION_CENTER_X - _DETECTION_WIDTH * 0.5)
+#define _DETECTION_MAX_X        (_DETECTION_MIN_X + _DETECTION_WIDTH - 1)
+#define _DETECTION_MIN_Y        0
+#define _DETECTION_MAX_Y        (_DETECTION_MIN_Y + _DETECTION_HEIGHT - 1)
 
 
-// 지뢰를 확인할 화면 크기
-static const int _SUB_MATRIX_WIDTH  = 100;
-static const int _SUB_MATRIX_HEIGHT = 106;
+static void _captureScreen(Screen_t* pScreen);
+static void _setHead(int horizontalDegrees, int verticalDegrees);
+static int _calculateObjectDistance(Object_t* pObject);
+static Object_t* _searchClosestMine(Screen_t* pScreen);
+static Object_t* _searchOtherObstacle(Screen_t* pScreen);
+static bool _actForMine(Object_t* pMine);
+static void _displayDebugScreen(Screen_t* pScreen, Object_t* pMine, Object_t* pObstacle);
+static Matrix8_t* _createBlackMatrix(Screen_t* pScreen);
+static Matrix8_t* _createMineMatrix(Screen_t* pScreen);
+static Matrix8_t* _createObstacleMatrix(Screen_t* pScreen);
+static Matrix8_t* _createWhiteMatrix(Screen_t* pScreen);
+static ObjectList_t* _detectMinesLocation(Matrix8_t* pMatrix);
+static float _getMineCorrelation(Object_t* pObject);
+static bool _isObjectInDetectionArea(Object_t* pObject);
+static void _notMatrix8(Matrix8_t* pMatrix);
+static void _overlapColorMatrix(Matrix8_t* pSourceMatrix, Matrix8_t* pTargetMatrix);
 
+
+bool mineMain(void) {
+    solveMine();
+    return true;
+}
+
+
+int measureMineDistance(void) {
+    return 0;
+}
+
+// 다른 장애물이 나올 때 까지 지뢰를 검사하며 앞으로 나아간다.
+// 지뢰가 보이면, 지뢰를 해결한다.
+// 지뢰가 보이지 않으면, 앞으로 조금 나아가 다시 검사한다.
+bool solveMine(void) {
+    Screen_t* pScreen = createDefaultScreen();
+
+    bool endOfMine = false;
+    while (!endOfMine) {
+        _captureScreen(pScreen);
+
+        Object_t* pMine = _searchClosestMine(pScreen);
+        Object_t* pObstacle = _searchOtherObstacle(pScreen);
+
+        int mineDistance = _calculateObjectDistance(pMine);
+        int obstacleDistance = _calculateObjectDistance(pObstacle);
+
+        // For debug
+        if (pMine) {
+            printLog("[%s] <지뢰>", __func__);
+            printLog(" minX: %d", pMine->minX);
+            printLog(" centerX: %f", pMine->centerX);
+            printLog(" maxX: %d", pMine->maxX);
+            printLog(" minY: %d", pMine->minY);
+            printLog(" centerY: %f", pMine->centerY);
+            printLog(" maxY: %d", pMine->maxY);
+            printLog(" distance: %d", mineDistance);
+            printLog("\n");
+        }
+        if (pObstacle) {
+            printLog("[%s] <장애물>", __func__);
+            printLog(" minX: %d", pObstacle->minX);
+            printLog(" centerX: %f", pObstacle->centerX);
+            printLog(" maxX: %d", pObstacle->maxX);
+            printLog(" minY: %d", pObstacle->minY);
+            printLog(" centerY: %f", pObstacle->centerY);
+            printLog(" maxY: %d", pObstacle->maxY);
+            printLog(" distance: %d", obstacleDistance);
+            printLog("\n");
+        }
+        _displayDebugScreen(pScreen, pMine, pObstacle);
+
+        if (pObstacle && (!pMine || obstacleDistance < mineDistance)) {
+            printLog("[%s] 지뢰밭을 탈출했어.\n", __func__);
+            endOfMine = true;
+        }
+        else if (pMine) {
+            printLog("[%s] 앞에 있는 지뢰를 해결하자.\n", __func__);
+            _actForMine(pMine);
+        }
+        else {
+            printLog("[%s] 아무 것도 안보여. 직진해보자.\n", __func__);
+            walkForward(100);
+        }
+
+        if (pMine) free(pMine);
+        if (pObstacle) free(pObstacle);
+    }
+
+    destroyScreen(pScreen);
+
+    return true;
+}
+
+
+static void _captureScreen(Screen_t* pScreen) {
+    static const int HEAD_HORIZONTAL_DEGREES = 0;
+    static const int HEAD_VERTICAL_DEGREES = -70;
+
+    if (pScreen == NULL)
+        return;
+
+    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+}
 
 static void _setHead(int horizontalDegrees, int verticalDegrees) {
     static const int ERROR_RANGE = 3;
@@ -34,33 +148,323 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     mdelay(800);
 }
 
-static Screen_t* _createMineScreen(Screen_t* pScreen) {
-    static const char* LOG_FUNCTION_NAME = "_createMineScreen()";
-    
-    int centerX = pScreen->width * 0.5;
-    int minX = centerX - _SUB_MATRIX_WIDTH * 0.5;
-    int maxX = centerX + _SUB_MATRIX_WIDTH * 0.5 - 1;
-    int minY = 0;
-    int maxY = _SUB_MATRIX_HEIGHT;
-    Screen_t* pSubScreen = createSubMatrix16(pScreen, minX, minY, maxX, maxY);
-    
-    printLog("[%s] minX: %d, minY: %d, maxX: %d, maxY: %d, width: %d, height: %d\n",
-             LOG_FUNCTION_NAME, minX, minY, maxX, maxY, pSubScreen->width, pSubScreen->height);
 
-    return pSubScreen;
+static int _calculateObjectDistance(Object_t* pObject) {
+    if (pObject == NULL)
+        return -1;
+
+    int maxY = pObject->maxY;
+    int millimeters = -2.6954 * maxY + 292.29;
+    if (millimeters < 0)
+        millimeters = 0;
+
+    return millimeters;
 }
 
-static void _drawMineScreen(Screen_t* pScreen, Screen_t* pSubScreen) {
-    int centerX = pScreen->width * 0.5;
-    int minX = centerX - _SUB_MATRIX_WIDTH * 0.5;
-    int minY = 0;
 
-    overlapMatrix16(pSubScreen, pScreen, minX, minY);
+static Object_t* _searchClosestMine(Screen_t* pScreen) {
+    Matrix8_t* pMineMatrix = _createMineMatrix(pScreen);
+    ObjectList_t* pMineList = _detectMinesLocation(pMineMatrix);
+    if (pMineList == NULL) {
+        destroyMatrix8(pMineMatrix);
+        return NULL;
+    }
+
+    Object_t* pClosestObject = NULL;
+    int minDistance = 0;
+    for (int i = 0; i < pMineList->size; ++i) {
+        Object_t* pObject = &(pMineList->list[i]);
+
+        int distance = _calculateObjectDistance(pObject);
+        if (pClosestObject == NULL || distance < minDistance) {
+            pClosestObject = pObject;
+            minDistance = distance;
+        }
+    }
+
+    Object_t* pClonedObject = (Object_t*)malloc(sizeof(Object_t));
+    memcpy(pClonedObject, pClosestObject, sizeof(Object_t));
+
+    destroyMatrix8(pMineMatrix);
+    destroyObjectList(pMineList);
+
+    return pClonedObject;
 }
+
+
+static ObjectList_t* _detectMinesLocation(Matrix8_t* pMatrix) {
+    static const float MIN_CORRELATION = 0.3;
+
+    ObjectList_t* pMineList = detectObjectsLocation(pMatrix);
+    if (pMineList == NULL)
+        return NULL;
+
+    // 지뢰가 아닌 객체를 모두 제거한다.
+    // 역순으로 순회하여 리스트 꼬임을 방지한다.
+    for (int i = pMineList->size - 1; i >= 0; --i) {
+        Object_t* pObject = &(pMineList->list[i]);
+        if (!_isObjectInDetectionArea(pObject)) {
+            removeObjectFromList(pMineList, pObject);
+            continue;
+        }
+
+        bool isMine = (_getMineCorrelation(pObject) > MIN_CORRELATION);
+        if (!isMine) {
+            removeObjectFromList(pMineList, pObject);
+            continue;
+        }
+    }
+
+    printLog("[%s] size: %d\n", __func__, pMineList->size);
+    if (pMineList->size == 0) {
+        destroyObjectList(pMineList);
+        return NULL;
+    }
+
+    return pMineList;
+}
+
+
+static bool _isObjectInDetectionArea(Object_t* pObject) {
+    if (pObject == NULL)
+        return false;
+    
+    if (pObject->minX > _DETECTION_MAX_X) return false;
+    if (pObject->maxX < _DETECTION_MIN_X) return false;
+    if (pObject->minY > _DETECTION_MAX_Y) return false;
+    if (pObject->maxY < _DETECTION_MIN_Y) return false;
+    return true;
+}
+
+// 지뢰와의 유사한 정도를 반환한다. (범위: 0.0 ~ 1.0)
+//  # 일정 크기보다 작아야한다.
+//  # 가로 세로 길이가 비슷할 수록 유사도가 높다.
+//  # 무게중심이 중앙에 위치할 수록 유사도가 높다.
+static float _getMineCorrelation(Object_t* pObject) {
+    static const float RATIO_CORRELATION_RATIO  = 0.50;
+    static const float CENTER_CORRELATION_RATIO = 0.50;
+
+    static const float CENTER_X_RATIO = 0.50;
+    static const float CENTER_Y_RATIO = 0.50;
+
+    static const int MAX_WIDTH  = 30;
+    static const int MAX_HEIGHT = 30;
+
+    if (pObject == NULL)
+        return 0.;
+    
+    int objectWidth = pObject->maxX - pObject->minX + 1;
+    int objectHeight = pObject->maxY - pObject->minY + 1;
+    if (objectWidth > MAX_WIDTH)
+        return 0.;
+    if (objectHeight > MAX_HEIGHT)
+        return 0.;
+
+    float ratioCorrelation;
+    if (objectWidth < objectHeight)
+        ratioCorrelation = objectWidth / objectHeight;
+    else
+        ratioCorrelation = objectHeight / objectWidth;
+
+    float centerXCorrelation;
+    float objectCenterX = pObject->centerX;
+    float idealCenterX = ((float)pObject->maxX * CENTER_X_RATIO) + ((float)pObject->minX * (1. - CENTER_X_RATIO));
+    centerXCorrelation = 1.0 - (fabs(objectCenterX - idealCenterX) / objectWidth);
+    
+    float centerYCorrelation;
+    float objectCenterY = pObject->centerY;
+    float idealCenterY = ((float)pObject->maxY * CENTER_Y_RATIO) + ((float)pObject->minY * (1. - CENTER_Y_RATIO));
+    centerYCorrelation = 1.0 - (fabs(objectCenterY - idealCenterY) / objectHeight);
+    
+    float centerCorrelation = (centerXCorrelation * 0.5) + (centerYCorrelation * 0.5);
+
+    float correlation = 0.;
+    correlation += ratioCorrelation * RATIO_CORRELATION_RATIO;
+    correlation += centerCorrelation * CENTER_CORRELATION_RATIO;
+    return correlation;
+}
+
+
+static Object_t* _searchOtherObstacle(Screen_t* pScreen) {
+    Matrix8_t* pObstacleMatrix = _createObstacleMatrix(pScreen);
+    ObjectList_t* pObstacleList = detectObjectsLocation(pObstacleMatrix);
+    if (pObstacleList == NULL) {
+        destroyMatrix8(pObstacleMatrix);
+        return NULL;
+    }
+
+    printLog("%d\n", pObstacleList->size);
+    Object_t* closestObstacle = NULL;
+    int minDistance = 0;
+    for (int i = 0; i < pObstacleList->size; ++i) {
+        Object_t* pObject = &(pObstacleList->list[i]);
+
+        bool isObstacle = ((pObject->minX <= _DETECTION_MIN_X) && (pObject->maxX >= _DETECTION_MAX_X));
+        if (!isObstacle)
+            continue;
+
+        int distance = _calculateObjectDistance(pObject);
+        if (closestObstacle == NULL || distance < minDistance) {
+            closestObstacle = pObject;
+            minDistance = distance;
+        }
+    }
+
+    if (closestObstacle == NULL) {
+        destroyMatrix8(pObstacleMatrix);
+        destroyObjectList(pObstacleList);
+        return NULL;
+    }
+
+    Object_t* pClonedObject = (Object_t*)malloc(sizeof(Object_t));
+    memcpy(pClonedObject, closestObstacle, sizeof(Object_t));
+
+    destroyMatrix8(pObstacleMatrix);
+    destroyObjectList(pObstacleList);
+
+    return pClonedObject;
+}
+
+
+// pMine의 위치에 따라 행해야 할 행동이다.
+static bool _actForMine(Object_t* pMine) {
+    // 최대 전진보행 거리
+    static const int MAX_WALK_FORWARD_DISTANCE = 100;
+    // 장애물에 다가갈 거리 (밀리미터)
+    static const int APPROACH_DISTANCE = 30;
+    // 거리 허용 오차 (밀리미터)
+    static const int APPROACH_DISTANCE_ERROR = 30;
+    
+    static const int ALIGN_STANDARD_LEFT_X  = 78;
+    static const int ALIGN_STANDARD_RIGHT_X = 114;
+
+    static const int ALIGN_ROBOT_CENTER_X   = 96;
+    static const int ALIGN_ROBOT_LEFT_X     = 56;
+    static const int ALIGN_ROBOT_RIGHT_X    = 134;
+    static const int ALIGN_ROBOT_ERROR      = 3;
+
+    static const float _MILLIMETERS_PER_PIXEL = 2.;
+
+    int distanceY = _calculateObjectDistance(pMine);
+    if (distanceY > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
+        int walkDistance = distanceY - APPROACH_DISTANCE;
+        if (walkDistance > MAX_WALK_FORWARD_DISTANCE)
+            walkDistance = MAX_WALK_FORWARD_DISTANCE;
+        printLog("[%s] 지뢰가 멀리 있다. 접근하자. (distanceY: %d, walkDistance: %d)\n", __func__, distanceY, walkDistance);
+        walkForward(walkDistance);
+        return true;
+    }
+
+    int centerX = pMine->centerX;
+    int minX = pMine->minX;
+    int maxX = pMine->maxX;
+
+    bool isCenterAligned = (abs(centerX - ALIGN_ROBOT_CENTER_X) <= ALIGN_ROBOT_ERROR);
+    if (isCenterAligned) {
+        printLog("[%s] 지뢰 중앙 정렬 완료. 달린다. (centerX: %d)\n", __func__, centerX);
+        runMotion(MOTION_MINE_WALK);
+        return true;
+    }
+    bool isLeftAligned = (maxX <= ALIGN_ROBOT_LEFT_X + ALIGN_ROBOT_ERROR);
+    if (isLeftAligned) {
+        printLog("[%s] 지뢰 왼쪽 정렬 완료. 달린다. (maxX: %d)\n", __func__, maxX);
+        walkForward(50);
+        return true;
+    }
+    bool isRightAligned = (minX >= ALIGN_ROBOT_RIGHT_X - ALIGN_ROBOT_ERROR);
+    if (isRightAligned) {
+        printLog("[%s] 지뢰 오른쪽 정렬 완료. 달린다. (minX: %d)\n", __func__, minX);
+        walkForward(50);
+        return true;
+    }
+
+    if (centerX < ALIGN_STANDARD_LEFT_X) {
+        int walkDistance = fabs(maxX - ALIGN_ROBOT_LEFT_X) * _MILLIMETERS_PER_PIXEL;
+        printLog("[%s] 지뢰가 왼쪽에 있다. 오른쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
+        walkRight(walkDistance);
+        return true;
+    }
+    else if (centerX > ALIGN_STANDARD_RIGHT_X) {
+        int walkDistance = fabs(minX - ALIGN_ROBOT_RIGHT_X) * _MILLIMETERS_PER_PIXEL;
+        printLog("[%s] 지뢰가 오른쪽에 있다. 왼쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
+        walkLeft(walkDistance);
+        return true;
+    }
+    else {
+        int walkDistance = (float)(centerX - ALIGN_ROBOT_CENTER_X) * _MILLIMETERS_PER_PIXEL;
+        printLog("[%s] 지뢰가 가운데에 있다. 중앙으로 정렬하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
+        if (walkDistance < 0)
+            walkLeft(walkDistance * -1);
+        else
+            walkRight(walkDistance);
+        return true;
+    }
+}
+
+
+static void _displayDebugScreen(Screen_t* pScreen, Object_t* pMine, Object_t* pObstacle) {
+    if (pScreen == NULL)
+        return;
+    
+    Screen_t* pDebugScreen = cloneMatrix16(pScreen);
+    Matrix8_t* pBlackMatrix = _createBlackMatrix(pScreen);
+    Matrix8_t* pWhiteMatrix = _createWhiteMatrix(pScreen);
+
+    Screen_t* pColorScreen = cloneMatrix16(pScreen);
+    _overlapColorMatrix(pBlackMatrix, pWhiteMatrix);
+    drawColorMatrix(pColorScreen, pWhiteMatrix);
+    Screen_t* pSubColorScreen = createSubMatrix16(pColorScreen, _DETECTION_MIN_X, _DETECTION_MIN_Y, _DETECTION_MAX_X, _DETECTION_MAX_Y);
+    overlapMatrix16(pSubColorScreen, pDebugScreen, _DETECTION_MIN_X, _DETECTION_MIN_Y);
+
+    Rgab5515_t redColor = {{{0, }}}; redColor.r = 0x1f;
+    Rgab5515_t blueColor = {{{0, }}}; blueColor.b = 0x1f;
+    drawObjectEdge(pDebugScreen, pMine, &redColor);
+    drawObjectEdge(pDebugScreen, pObstacle, &blueColor);
+
+    displayScreen(pDebugScreen);
+
+    destroyScreen(pDebugScreen);
+    destroyMatrix8(pBlackMatrix);
+    destroyMatrix8(pWhiteMatrix);
+    destroyScreen(pColorScreen);
+    destroyScreen(pSubColorScreen);
+}
+
+
+/******************************************************************************
+ *  Matrix functions
+ *****************************************************************************/
+static Matrix8_t* _createMineMatrix(Screen_t* pScreen) {
+    Matrix8_t* pMineMatrix = _createBlackMatrix(pScreen);
+
+    Matrix8_t* pSubMatrix = createSubMatrix8(pMineMatrix, _DETECTION_MIN_X, _DETECTION_MIN_Y, _DETECTION_MAX_X, _DETECTION_MAX_Y);
+    size_t length = pMineMatrix->width * pMineMatrix->height * sizeof(*(pMineMatrix->elements));
+    memset(pMineMatrix->elements, 0, length);
+    overlapMatrix8(pSubMatrix, pMineMatrix, _DETECTION_MIN_X, _DETECTION_MIN_Y);
+    
+    destroyMatrix8(pSubMatrix);
+
+    return pMineMatrix;
+}
+
+static Matrix8_t* _createObstacleMatrix(Screen_t* pScreen) {
+    Matrix8_t* pObstacleMatrix = _createWhiteMatrix(pScreen);
+    _notMatrix8(pObstacleMatrix);
+
+    Matrix8_t* pSubMatrix = createSubMatrix8(pObstacleMatrix, _DETECTION_MIN_X, _DETECTION_MIN_Y, _DETECTION_MAX_X, _DETECTION_MAX_Y);
+    size_t length = pObstacleMatrix->width * pObstacleMatrix->height * sizeof(uint8_t);
+    memset(pObstacleMatrix->elements, 0, length);
+    overlapMatrix8(pSubMatrix, pObstacleMatrix, _DETECTION_MIN_X, _DETECTION_MIN_Y);
+
+    destroyMatrix8(pSubMatrix);
+    
+    return pObstacleMatrix;
+}
+
 
 static Matrix8_t* _createBlackMatrix(Screen_t* pScreen) {
     Matrix8_t* pBlackMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLACK]);
-
+    
     // 잡음을 제거한다.
     applyFastErosionToMatrix8(pBlackMatrix, 1);
     applyFastDilationToMatrix8(pBlackMatrix, 2);
@@ -81,246 +485,27 @@ static Matrix8_t* _createWhiteMatrix(Screen_t* pScreen) {
     return pWhiteMatrix;
 }
 
-static void _addColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
-    int width = pScreen->width;
-    int height = pScreen->height;
+static void _notMatrix8(Matrix8_t* pMatrix) {
+    int length = (pMatrix->width) * (pMatrix->height);
+
+    uint8_t* pElement = pMatrix->elements;
+    for (int i = 0; i < length; ++i) {
+        *pElement = !(*pElement);
+        pElement++;
+    }
+}
+
+static void _overlapColorMatrix(Matrix8_t* pSourceMatrix, Matrix8_t* pTargetMatrix) {
+    int width = pTargetMatrix->width;
+    int height = pTargetMatrix->height;
     int length = width * height;
-    PixelData_t* pScreenPixel = pScreen->elements;
-    Color_t* pColorPixel = pColorMatrix->elements;
+    uint8_t* pSourceElement = pSourceMatrix->elements;
+    uint8_t* pTargetElement = pTargetMatrix->elements;
 
     for (int i = 0; i < length; ++i) {
-        if (*pColorPixel != COLOR_NONE)
-            *pScreenPixel = colorToRgab5515Data(*pColorPixel);
-        pScreenPixel++;
-        pColorPixel++;
+        if (*pSourceElement != COLOR_NONE)
+            *pTargetElement = *pSourceElement;
+        pSourceElement++;
+        pTargetElement++;
     }
-}
-
-static void _displayDebugScreen(Screen_t* pScreen, Object_t* pMine, Object_t* pOtherObstacle) {
-    Screen_t* pDebugScreen = cloneMatrix16(pScreen);
-    Screen_t* pSubScreen = _createMineScreen(pDebugScreen);
-    
-    Matrix8_t* pWhiteMatrix = _createWhiteMatrix(pSubScreen);
-    Matrix8_t* pBlackMatrix = _createBlackMatrix(pSubScreen);
-    
-    drawColorMatrix(pSubScreen, pWhiteMatrix);
-    _addColorMatrix(pSubScreen, pBlackMatrix);
-    _drawMineScreen(pDebugScreen, pSubScreen);
-    displayScreen(pDebugScreen);
-
-    destroyMatrix8(pWhiteMatrix);
-    destroyMatrix8(pBlackMatrix);
-    destroyScreen(pSubScreen);
-    destroyScreen(pDebugScreen);
-}
-
-static bool _isMine(Screen_t* pScreen, Object_t* pObject) {
-    bool tooFar = (pObject->minY < 3);
-    bool tooClose = (pObject->minY >= pScreen->height - 3);
-
-    int objectWidth = pObject->maxX - pObject->minX + 1;
-    bool tooWide = (objectWidth >= pScreen->width);
-
-    return (!tooFar && !tooClose && !tooWide);
-}
-
-static Object_t* _searchClosestMine(Screen_t* pScreen) {
-    static const char* LOG_FUNCTION_NAME = "_searchClosestMine()";
-
-    Matrix16_t* pSubScreen = _createMineScreen(pScreen);
-    Matrix8_t* pBlackMatrix = _createBlackMatrix(pSubScreen);
-    ObjectList_t* pObjectList = detectObjectsLocation(pBlackMatrix);
-
-    // 지뢰 오브젝트 중에 가장 가까이 있는 오브젝트를 찾는다.
-    Object_t* pClosestObject = NULL;
-    int closestMaxY = 0;
-    if (pObjectList != NULL) {
-        for (int i = 0; i < pObjectList->size; ++i) {
-            Object_t* pObject = &(pObjectList->list[i]);
-
-            if (!_isMine(pSubScreen, pObject))
-                continue;
-            
-            if (pObject->maxY > closestMaxY) {
-                pClosestObject = pObject;
-                closestMaxY = pObject->maxY;
-            }
-        }
-    }
-
-    Object_t* pClosestMine = NULL;
-    if (pClosestObject != NULL) {
-        pClosestMine = (Object_t*)malloc(sizeof(Object_t));
-        memcpy(pClosestMine, pClosestObject, sizeof(Object_t));
-    }
-
-    destroyObjectList(pObjectList);
-    destroyMatrix8(pBlackMatrix);
-    destroyMatrix16(pSubScreen);
-
-    return pClosestMine;
-}
-
-static int _measureMineDistance(Screen_t* pScreen) {
-    static const char* LOG_FUNCTION_NAME = "_measureMineDistance()";
-
-    Object_t* pObject = _searchClosestMine(pScreen);
-    
-    int millimeters = 0;
-    if (pObject != NULL) {
-        printLog("[%s] minX: %d, centerX: %f, maxX: %d\n", LOG_FUNCTION_NAME,
-                 pObject->minX, pObject->centerX, pObject->maxX);
-        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
-                pObject->minY, pObject->centerY, pObject->maxY);
-
-        int maxY = pObject->maxY;
-        millimeters = -2.6954 * maxY + 292.29;
-        
-        if (millimeters <= 0)
-            millimeters = 1;
-    }
-
-    if (pObject != NULL)
-        free(pObject);
-
-    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
-    return millimeters;
-}
-
-static bool _measureMineOffsetX(Screen_t* pScreen, int* pOffsetX) {
-    static const char* LOG_FUNCTION_NAME = "_measureMineOffsetX()";
-
-    // 거리 측정에 사용되는 머리 각도
-    static const int HEAD_HORIZONTAL_DEGREES = 0;
-    static const int HEAD_VERTICAL_DEGREES = -35;
-
-    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
-
-    Object_t* pObject = _searchClosestMine(pScreen);
-    bool hasFound = (pObject != NULL);
-
-    int offsetX = 0;
-    if (pObject != NULL) {
-        printLog("[%s] minX: %d, centerX: %f, maxX: %d\n", LOG_FUNCTION_NAME,
-                 pObject->minX, pObject->centerX, pObject->maxX);
-        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
-                 pObject->minY, pObject->centerY, pObject->maxY);
-
-        float screenCenterX = (float)(pScreen->width - 1) / 2;
-        float objectCenterX = pObject->centerX;
-        offsetX = objectCenterX - screenCenterX;
-    }
-
-    if (pObject != NULL)
-        free(pObject);
-    
-    if (pOffsetX != NULL)
-        *pOffsetX = offsetX;
-
-    printLog("[%s] offsetX: %d\n", LOG_FUNCTION_NAME, offsetX);
-    return hasFound;
-}
-
-int measureMineDistance(void) {
-    static const char* LOG_FUNCTION_NAME = "measureMineDistance()";
-
-    // 거리 측정에 사용되는 머리 각도
-    static const int HEAD_HORIZONTAL_DEGREES = 0;
-    static const int HEAD_VERTICAL_DEGREES = -70;
-
-    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
-
-    Screen_t* pScreen = createDefaultScreen();
-    readFpgaVideoDataWithWhiteBalance(pScreen);
-
-    int distance = _measureMineDistance(pScreen);
-    Object_t* pMineObject = _searchClosestMine(pScreen);
-    _displayDebugScreen(pScreen, pMineObject, NULL);
-    
-    if (pMineObject != NULL)
-        free (pMineObject);
-    destroyScreen(pScreen);
-
-    return distance;
-}
-
-static int _measureOtherObstacleDistance(void) {
-    static const char* LOG_FUNCTION_NAME = "measureOtherObstacleDistance()";
-
-    // 거리 측정에 사용되는 머리 각도
-    static const int HEAD_HORIZONTAL_DEGREES = 0;
-    static const int HEAD_VERTICAL_DEGREES = -70;
-
-    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
-
-    Screen_t* pScreen = createDefaultScreen();
-    readFpgaVideoDataWithWhiteBalance(pScreen);
-
-    Object_t* pMineObject = _searchClosestMine(pScreen);
-
-    destroyScreen(pScreen);
-    
-    return 0;
-}
-
-
-bool mineMain(void) {
-    // for (int i = 0; i < 100; ++i) {
-    //     int millimeters = measureMineDistance();
-
-    //     char input;
-    //     input = getchar();
-    //     while (input != '\n')
-    //         input = getchar();
-    // }
-    // return true;
-    solveMine();
-
-    return false;
-}
-
-
-static bool _approachMine(void) {
-    static const char* LOG_FUNCTION_NAME = "_approachMine()";
-
-    // 빨간 다리를 발견하지 못할 경우 다시 찍는 횟수
-    static const int MAX_TRIES = 10;
-
-    // 장애물에 다가갈 거리 (밀리미터)
-    static const int APPROACH_DISTANCE = 20;
-    // 거리 허용 오차 (밀리미터)
-    static const int APPROACH_DISTANCE_ERROR = 30;
-    
-    int nTries;
-    for (nTries = 0; nTries < MAX_TRIES; ++nTries) {
-        // 앞뒤 정렬
-        int distance = measureMineDistance();
-        bool hasFound = (distance != 0);
-        if (!hasFound)
-            continue;
-        
-        if (distance <= APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
-            printLog("[%s] 접근 완료.\n", LOG_FUNCTION_NAME);
-            break;
-        }
-        else {
-            printLog("[%s] 전진보행으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
-            walkForward(distance - APPROACH_DISTANCE);
-            mdelay(500);
-            nTries = 0;
-        }
-    }
-    if (nTries >= MAX_TRIES) {
-        printLog("[%s] 시간 초과!\n", LOG_FUNCTION_NAME);
-        return false;
-    }
-    
-    return true;
-}
-
-
-bool solveMine(void) {
-    _approachMine();
-
-    return false;
 }
