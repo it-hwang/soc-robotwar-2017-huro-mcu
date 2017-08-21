@@ -9,6 +9,7 @@
 #include "image_filter.h"
 #include "check_center.h"
 #include "corner_detection.h"
+#include "white_balance.h"
 #include "log.h"
 
 #define CAPTURE_ERROR -1
@@ -16,7 +17,7 @@
 #define LEFT_SIDE_CLEAR 1
 #define NO_CLEAR_SIDE 2
 
-static int _lookAround();
+static int _lookAround(void);
 static int _captureBothSide(void);
 static void _setHeadRight(void);
 static void _setHeadLeft(void);
@@ -26,7 +27,7 @@ static Line_t* _captureRightLine(Screen_t* pScreen);
 static Line_t* _captureLeftLine(Screen_t* pScreen);
 static Line_t* _captureForwardLine(Screen_t* pScreen);
 static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY);
-static bool _moveUntilSeeLine();
+static bool _moveUntilSeeLine(void);
 static void _moveToDestination(int turnWhere);
 
 bool cornerDetectionMain(void) {
@@ -58,7 +59,7 @@ bool cornerDetectionMain(void) {
     return true;
 }
 
-static int _lookAround() {
+static int _lookAround(void) {
     static const int INIT_STATE = -1;
     static const int LIMIT_TRY_COUNT = 2;
 
@@ -247,7 +248,7 @@ static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
     }
 }
 
-static bool _moveUntilSeeLine() {
+static bool _moveUntilSeeLine(void) {
     static const char* LOG_FUNCTION_NAME = "_moveUntilSeeLine()";
     
     // 빨간 다리를 발견하지 못할 경우 다시 찍는 횟수
