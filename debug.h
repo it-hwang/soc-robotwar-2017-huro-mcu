@@ -20,7 +20,7 @@
     do { printLog("%s:%d:%s(): " fmt, __FILE__, \
                   __LINE__, __func__, ##__VA_ARGS__); } while (0)
 #else
-    #define debug_print(fmt, ...) 
+    #define printDebug(fmt, ...) 
 #endif
 
 #undef DEBUG
