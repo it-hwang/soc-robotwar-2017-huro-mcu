@@ -1,3 +1,5 @@
+// #define DEBUG
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +7,7 @@
 
 #include "line_detection.h"
 #include "log.h"
+#include "debug.h"
 
 #define PI 3.141592
 #define DIFFERENCE_OF_ANGLE 10
@@ -19,8 +22,6 @@ static bool _isFitRatio(double leftToCenterAngle, double centerToRightAngle, dou
 
 
 Line_t* lineDetection(Matrix8_t* pColorMatrix) {
-    static const char* LOG_FUNCTION_NAME = "lineDetection()";
-
     Matrix16_t* pLabelMatrix = createMatrix16(pColorMatrix->width, pColorMatrix->height);
     memset(pLabelMatrix->elements, 0, (pLabelMatrix->height * pLabelMatrix->width) * sizeof(uint16_t));
 
@@ -60,8 +61,8 @@ Line_t* lineDetection(Matrix8_t* pColorMatrix) {
     destroyMatrix16(pLabelMatrix);
 
     if(pResultLine != NULL) {
-        printLog("[%s] 최종 라인 기울기(%f).\n", LOG_FUNCTION_NAME, pResultLine->theta);
-        printLog("[%s] 최종 라인 거리(%f).\n", LOG_FUNCTION_NAME, pResultLine->centerPoint.y);
+        printDebug("최종 라인 기울기(%f).\n", pResultLine->theta);
+        printDebug("최종 라인 거리(%f).\n", pResultLine->centerPoint.y);
     }
 
     return pResultLine;
@@ -79,8 +80,6 @@ static bool _isClosestLine(Line_t* currentLine, Line_t* prevLine) {
 }
 
 static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
-    static const char* LOG_FUNCTION_NAME = "_labelToLine()";
-
     int objectWidth = pObject->maxX - pObject->minX + 1;
     
     if(objectWidth < pLabelMatrix->width)
@@ -106,10 +105,10 @@ static Line_t* _labelToLine(Matrix16_t* pLabelMatrix, Object_t* pObject) {
     bool isLine = _isFitRatio(leftToCenterAngle, centerToRightAngle, leftToRightAngle);
 
     if(isLine) {
-        printLog("[%s] 왼쪽 기울기(%f).\n", LOG_FUNCTION_NAME, leftToCenterAngle);
-        printLog("[%s] 오른쪽 기울기(%f).\n", LOG_FUNCTION_NAME, centerToRightAngle);
-        printLog("[%s] 전체 기울기(%f).\n", LOG_FUNCTION_NAME, leftToRightAngle);
-        printLog("[%s] 중앙 거리(%d).\n", LOG_FUNCTION_NAME, centerPoint.y);
+        printDebug("왼쪽 기울기(%f).\n", leftToCenterAngle);
+        printDebug("오른쪽 기울기(%f).\n", centerToRightAngle);
+        printDebug("전체 기울기(%f).\n", leftToRightAngle);
+        printDebug("중앙 거리(%d).\n", centerPoint.y);
 
         returnLine = (Line_t*)malloc(sizeof(Line_t));
 

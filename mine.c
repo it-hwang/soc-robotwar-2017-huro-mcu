@@ -1,3 +1,5 @@
+// #define DEBUG
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -10,6 +12,7 @@
 #include "image_filter.h"
 #include "object_detection.h"
 #include "color.h"
+#include "debug.h"
 
 // TODO: 알고리즘을 개선해야한다.
 //       현재 지뢰 알고리즘은 예선전처럼 굉장히 친절하게 배치되어 있을 때에만
@@ -73,39 +76,39 @@ bool solveMine(void) {
 
         // For debug
         if (pMine) {
-            printLog("[%s] <지뢰>", __func__);
-            printLog(" minX: %d", pMine->minX);
-            printLog(" centerX: %f", pMine->centerX);
-            printLog(" maxX: %d", pMine->maxX);
-            printLog(" minY: %d", pMine->minY);
-            printLog(" centerY: %f", pMine->centerY);
-            printLog(" maxY: %d", pMine->maxY);
-            printLog(" distance: %d", mineDistance);
-            printLog("\n");
+            printDebug("<지뢰>", __func__);
+            printDebug(" minX: %d", pMine->minX);
+            printDebug(" centerX: %f", pMine->centerX);
+            printDebug(" maxX: %d", pMine->maxX);
+            printDebug(" minY: %d", pMine->minY);
+            printDebug(" centerY: %f", pMine->centerY);
+            printDebug(" maxY: %d", pMine->maxY);
+            printDebug(" distance: %d", mineDistance);
+            printDebug("\n");
         }
         if (pObstacle) {
-            printLog("[%s] <장애물>", __func__);
-            printLog(" minX: %d", pObstacle->minX);
-            printLog(" centerX: %f", pObstacle->centerX);
-            printLog(" maxX: %d", pObstacle->maxX);
-            printLog(" minY: %d", pObstacle->minY);
-            printLog(" centerY: %f", pObstacle->centerY);
-            printLog(" maxY: %d", pObstacle->maxY);
-            printLog(" distance: %d", obstacleDistance);
-            printLog("\n");
+            printDebug("<장애물>", __func__);
+            printDebug(" minX: %d", pObstacle->minX);
+            printDebug(" centerX: %f", pObstacle->centerX);
+            printDebug(" maxX: %d", pObstacle->maxX);
+            printDebug(" minY: %d", pObstacle->minY);
+            printDebug(" centerY: %f", pObstacle->centerY);
+            printDebug(" maxY: %d", pObstacle->maxY);
+            printDebug(" distance: %d", obstacleDistance);
+            printDebug("\n");
         }
         _displayDebugScreen(pScreen, pMine, pObstacle);
 
         if (pObstacle && (!pMine || obstacleDistance < mineDistance)) {
-            printLog("[%s] 지뢰밭을 탈출했어.\n", __func__);
+            printDebug("지뢰밭을 탈출했어.\n", __func__);
             endOfMine = true;
         }
         else if (pMine) {
-            printLog("[%s] 앞에 있는 지뢰를 해결하자.\n", __func__);
+            printDebug("앞에 있는 지뢰를 해결하자.\n", __func__);
             _actForMine(pMine);
         }
         else {
-            printLog("[%s] 아무 것도 안보여. 직진해보자.\n", __func__);
+            printDebug("아무 것도 안보여. 직진해보자.\n", __func__);
             walkForward(100);
         }
 
@@ -215,7 +218,7 @@ static ObjectList_t* _detectMinesLocation(Matrix8_t* pMatrix) {
         }
     }
 
-    printLog("[%s] size: %d\n", __func__, pMineList->size);
+    printDebug("size: %d\n", __func__, pMineList->size);
     if (pMineList->size == 0) {
         destroyObjectList(pMineList);
         return NULL;
@@ -350,7 +353,7 @@ static bool _actForMine(Object_t* pMine) {
         int walkDistance = distanceY - APPROACH_DISTANCE;
         if (walkDistance > MAX_WALK_FORWARD_DISTANCE)
             walkDistance = MAX_WALK_FORWARD_DISTANCE;
-        printLog("[%s] 지뢰가 멀리 있다. 접근하자. (distanceY: %d, walkDistance: %d)\n", __func__, distanceY, walkDistance);
+        printDebug("지뢰가 멀리 있다. 접근하자. (distanceY: %d, walkDistance: %d)\n", __func__, distanceY, walkDistance);
         walkForward(walkDistance);
         return true;
     }
@@ -361,38 +364,38 @@ static bool _actForMine(Object_t* pMine) {
 
     bool isCenterAligned = (abs(centerX - ALIGN_ROBOT_CENTER_X) <= ALIGN_ROBOT_ERROR);
     if (isCenterAligned) {
-        printLog("[%s] 지뢰 중앙 정렬 완료. 달린다. (centerX: %d)\n", __func__, centerX);
+        printDebug("지뢰 중앙 정렬 완료. 달린다. (centerX: %d)\n", __func__, centerX);
         runMotion(MOTION_MINE_WALK);
         return true;
     }
     bool isLeftAligned = (maxX <= ALIGN_ROBOT_LEFT_X + ALIGN_ROBOT_ERROR);
     if (isLeftAligned) {
-        printLog("[%s] 지뢰 왼쪽 정렬 완료. 달린다. (maxX: %d)\n", __func__, maxX);
+        printDebug("지뢰 왼쪽 정렬 완료. 달린다. (maxX: %d)\n", __func__, maxX);
         walkForward(50);
         return true;
     }
     bool isRightAligned = (minX >= ALIGN_ROBOT_RIGHT_X - ALIGN_ROBOT_ERROR);
     if (isRightAligned) {
-        printLog("[%s] 지뢰 오른쪽 정렬 완료. 달린다. (minX: %d)\n", __func__, minX);
+        printDebug("지뢰 오른쪽 정렬 완료. 달린다. (minX: %d)\n", __func__, minX);
         walkForward(50);
         return true;
     }
 
     if (centerX < ALIGN_STANDARD_LEFT_X) {
         int walkDistance = fabs(maxX - ALIGN_ROBOT_LEFT_X) * _MILLIMETERS_PER_PIXEL;
-        printLog("[%s] 지뢰가 왼쪽에 있다. 오른쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
+        printDebug("지뢰가 왼쪽에 있다. 오른쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
         walkRight(walkDistance);
         return true;
     }
     else if (centerX > ALIGN_STANDARD_RIGHT_X) {
         int walkDistance = fabs(minX - ALIGN_ROBOT_RIGHT_X) * _MILLIMETERS_PER_PIXEL;
-        printLog("[%s] 지뢰가 오른쪽에 있다. 왼쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
+        printDebug("지뢰가 오른쪽에 있다. 왼쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
         walkLeft(walkDistance);
         return true;
     }
     else {
         int walkDistance = (float)(centerX - ALIGN_ROBOT_CENTER_X) * _MILLIMETERS_PER_PIXEL;
-        printLog("[%s] 지뢰가 가운데에 있다. 중앙으로 정렬하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
+        printDebug("지뢰가 가운데에 있다. 중앙으로 정렬하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
         if (walkDistance < 0)
             walkLeft(walkDistance * -1);
         else

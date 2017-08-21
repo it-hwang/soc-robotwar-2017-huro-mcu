@@ -1,3 +1,5 @@
+// #define DEBUG
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +25,7 @@
 #include "mine.h"
 #include "log.h"
 #include "screenio.h"
+#include "debug.h"
 
 static const char* _WHITE_BALANCE_TABLE_PATH = "./data/white_balance.lut";
 // static ObstacleId_t* _obstacleSequence;
@@ -133,20 +136,18 @@ static bool _getYN(void) {
 }
 
 static void _adjustWhiteBalance(Rgba_t* pInputColor, Rgba_t* pRealColor) {
-    static const char* LOG_FUNCTION_NAME = "_adjustWhiteBalance()";
-
-    printLog("[%s] inputColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+    printDebug("inputColor: {r: %d, g: %d, b: %d}\n",
              pInputColor->r, pInputColor->g, pInputColor->b);
-    printLog("[%s] realColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+    printDebug("realColor: {r: %d, g: %d, b: %d}\n",
              pRealColor->r, pRealColor->g, pRealColor->b);
 
     LookUpTable16_t* pWhiteBalanceTable = createWhiteBalanceTable(pInputColor, pRealColor, _WHITE_BALANCE_TABLE_PATH, true);
     if (pWhiteBalanceTable != NULL) {
-        printLog("[%s] Adjustment success.\n", LOG_FUNCTION_NAME);
+        printDebug("Adjustment success.\n");
         setDefaultWhiteBalanceTable(pWhiteBalanceTable);
     }
     else {
-        printLog("[%s] Adjustment failed.\n", LOG_FUNCTION_NAME);
+        printDebug("Adjustment failed.\n");
     }
 }
 
