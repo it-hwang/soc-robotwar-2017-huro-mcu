@@ -19,9 +19,11 @@
 #include "vertical_barricade.h"
 #include "red_bridge.h"
 #include "corner_detection.h"
+#include "boundary.h"
 #include "white_balance.h"
 #include "log.h"
 #include "screenio.h"
+
 
 static const char* _WHITE_BALANCE_TABLE_PATH = "./data/white_balance.lut";
 // static ObstacleId_t* _obstacleSequence;
@@ -34,6 +36,8 @@ static void _runTest(void);
 
 static void _adjustWhiteBalance(Rgba_t* pInputColor, Rgba_t* pRealColor);
 static void _adjustWhiteBalanceAuto(void);
+
+static void _testBoundary(void);
 
 static void _defineObstacle(void) {
 	// registerObstacle(OBSTACLE_ONE, helloWorld);
@@ -373,7 +377,6 @@ static void _runCaptureScreen(void) {
     disableDirectCameraDisplay();
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Test
 ///////////////////////////////////////////////////////////////////////////////
@@ -381,14 +384,38 @@ static void _runTest(void) {
     printLog("Test\n");
 
     // 작동 알림
-    setHead(0, -90);
-    sdelay(1);
-    setHead(0, 0);
-    sdelay(1);
+    //setHead(0, -90);
+    //sdelay(1);
+    //setHead(0, 0);
+    //sdelay(1);
 
     // 바로 움직이면 위험하므로 잠시 대기한다.
-    sdelay(3);
+    //sdelay(3);
     
-    redBridgeMain();
+    //redBridgeMain();
+    for(int i = 0; i < 30; ++i) {
+        _testBoundary();
+    }
 }
 
+static void _testBoundary(void) {
+    Screen_t* pScreen = createDefaultScreen();
+
+    readFpgaVideoData(pScreen);
+
+    Matrix8_t* pWhiteColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
+    Matrix8_t* pBlueColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
+
+    Matrix8_t* pMergedColorMatrix = 
+             overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
+
+    Matrix8_t* pBoundaryMatrix = establishBoundary(pScreen, pMergedColorMatrix);
+
+    //drawColorMatrix(pScreen, pMergedColorMatrix);
+    //displayScreen(pScreen);
+    destroyMatrix8(pWhiteColorMatrix);
+    destroyMatrix8(pBlueColorMatrix);
+    destroyMatrix8(pMergedColorMatrix);
+    destroyMatrix8(pBoundaryMatrix);
+    destroyScreen(pScreen);
+}

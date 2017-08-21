@@ -192,16 +192,25 @@ void overlapMatrix32(Matrix32_t* pSourceMatrix32, Matrix32_t* pTargetMatrix32, u
 }
 
 void destroyMatrix8(Matrix8_t* pMatrix8) {
+    if(pMatrix8 == NULL)
+        return;
+
     free(pMatrix8->elements);
     free(pMatrix8);
 }
 
 void destroyMatrix16(Matrix16_t* pMatrix16) {
+    if(pMatrix16 == NULL)
+        return;
+    
     free(pMatrix16->elements);
     free(pMatrix16);
 }
 
 void destroyMatrix32(Matrix32_t* pMatrix32) {
+    if(pMatrix32 == NULL)
+        return;
+    
     free(pMatrix32->elements);
     free(pMatrix32);
 }

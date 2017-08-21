@@ -37,17 +37,17 @@ bool cornerDetectionMain(void) {
     _setHeadForward();
 
     if(turnWhere < 0) {
-        printLog("[%s] 라인을 찾을 수 없습니다.\n", LOG_FUNCTION_NAME);
+        //printLog("[%s] 라인을 찾을 수 없습니다.\n", LOG_FUNCTION_NAME);
         return false;
     }
 
     if(turnWhere == NO_CLEAR_SIDE) {
-        printLog("[%s] 이건 코너가 아닙니다.\n", LOG_FUNCTION_NAME);
+        //printLog("[%s] 이건 코너가 아닙니다.\n", LOG_FUNCTION_NAME);
         return false;
     }
 
     if( !_moveUntilSeeLine() ) {
-        printLog("[%s] 선에 접근할 수 없습니다.\n", LOG_FUNCTION_NAME);
+        //printLog("[%s] 선에 접근할 수 없습니다.\n", LOG_FUNCTION_NAME);
         return false;
     } 
     
@@ -92,20 +92,20 @@ static int _captureBothSide(void) {
 
     if(leftLine == NULL && rightLine != NULL) {
         free(rightLine);
-        printLog("[%s] 오른쪽에서 선을 찾았습니다.\n", LOG_FUNCTION_NAME);
+        //printLog("[%s] 오른쪽에서 선을 찾았습니다.\n", LOG_FUNCTION_NAME);
         return LEFT_SIDE_CLEAR;
     }
 
     if(leftLine != NULL && rightLine == NULL) {
         free(leftLine);
-        printLog("[%s] 왼쪽에서 선을 찾았습니다.\n", LOG_FUNCTION_NAME);
+        //printLog("[%s] 왼쪽에서 선을 찾았습니다.\n", LOG_FUNCTION_NAME);
         return RIGHT_SIDE_CLEAR;
     }
 
     if(leftLine != NULL && rightLine != NULL) {
         free(leftLine);
         free(rightLine);
-        printLog("[%s] 양쪽에서 선을 찾았습니다.\n", LOG_FUNCTION_NAME);
+        //printLog("[%s] 양쪽에서 선을 찾았습니다.\n", LOG_FUNCTION_NAME);
         return NO_CLEAR_SIDE;
     }
 
@@ -266,11 +266,11 @@ static bool _moveUntilSeeLine() {
             continue;
         
         if (distance <= APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
-            printLog("[%s] 접근 완료.\n", LOG_FUNCTION_NAME);
+            //printLog("[%s] 접근 완료.\n", LOG_FUNCTION_NAME);
             break;
         }
         else {
-            printLog("[%s] 전진보행으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
+            //printLog("[%s] 전진보행으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
             walkForward(distance - APPROACH_DISTANCE);
             mdelay(500);
             nTries = 0;
@@ -278,7 +278,7 @@ static bool _moveUntilSeeLine() {
     }
 
     if (nTries >= MAX_TRIES) {
-        printLog("[%s] 시간 초과!\n", LOG_FUNCTION_NAME);
+        //printLog("[%s] 시간 초과!\n", LOG_FUNCTION_NAME);
         return false;
     }
     
@@ -301,8 +301,8 @@ int measureFrontLineDistance(void) {
     Line_t* pLine = _captureForwardLine(pScreen);
 
     if (pLine != NULL) {
-        printLog("[%s] leftPointY: %d, centerPointY: %d, rigthPointY: %d\n", LOG_FUNCTION_NAME,
-                 pLine->leftPoint.y, pLine->centerPoint.y, pLine->rightPoint.y);
+        //printLog("[%s] leftPointY: %d, centerPointY: %d, rigthPointY: %d\n", LOG_FUNCTION_NAME,
+                 //pLine->leftPoint.y, pLine->centerPoint.y, pLine->rightPoint.y);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
         int distance = pLine->centerPoint.y;
@@ -317,7 +317,7 @@ int measureFrontLineDistance(void) {
         free(pLine);
     destroyScreen(pScreen);
 
-    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
+    //printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
     return millimeters;
 }
 

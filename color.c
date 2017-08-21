@@ -1,6 +1,8 @@
 #include <math.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "color.h"
 #include "color_model.h"
@@ -448,14 +450,15 @@ Matrix8_t* overlapColorMatrix(Matrix8_t* pSourceColorMatrix, Matrix8_t* pTargetC
 
     int width = pSourceColorMatrix->width;
     int height = pSourceColorMatrix->height;
-    int length = width * heigth;
+    int length = width * height;
 
     Matrix8_t* returnMatrix = createMatrix8(width, height);
     memset(returnMatrix->elements, 0, (returnMatrix->height * returnMatrix->width) * sizeof(uint8_t));
 
-    for(int i = 0; i < length; ++i) {
-        returnMatrix->elements[i] = pTargetColorMatrix->elements[i];
+    for(int i = 0; i < length; ++i) { 
         returnMatrix->elements[i] = pSourceColorMatrix->elements[i];
+        if(returnMatrix->elements[i] == 0)
+            returnMatrix->elements[i] = pTargetColorMatrix->elements[i];
     }
 
     return returnMatrix;

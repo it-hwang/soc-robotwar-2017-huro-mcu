@@ -2,11 +2,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "boundary.h"
 #include "matrix.h"
 #include "object_detection.h"
 #include "log.h"
 
-#define LABEL_SIZE 1000
+#define LABEL_SIZE 1001
 
 static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabelMatrix);
 static int _getObjectLabel(Matrix16_t* pLabelMatrix);
@@ -19,22 +20,57 @@ static int _findRightX(Matrix8_t* pBoundaryMatrix, int y);
 static int _findLeftX(Matrix8_t* pBoundaryMatrix, int y);
 static void _fillLeftToRight(Matrix8_t* pBoundaryMatrix, int leftX, int rightX, int y);
 
-Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix) {
+Matrix8_t* establishBoundary(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
 
     Matrix16_t* pLabelMatrix = createMatrix16(pColorMatrix->width, pColorMatrix->height);
     memset(pLabelMatrix->elements, 0, (pLabelMatrix->height * pLabelMatrix->width) * sizeof(uint16_t));
-
+    
     ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pColorMatrix, pLabelMatrix);
 
-    if(pObjectList == NULL || pObjectList->size == 0)
+    if(pObjectList == NULL || pObjectList->size == 0){
+        destroyMatrix16(pLabelMatrix);
+        destroyObjectList(pObjectList);
         return NULL;
+    }
 
     Object_t* pObject = _getBoundaryObject(pObjectList, pLabelMatrix);
 
-    if(pObject == NULL)
+    /*if(pObject != NULL)
+    for(int y = pObject->minY; y <= pObject->maxY; ++y) {
+        for(int x = pObject->minX; x <= pObject->maxX; ++x) {
+            int index = y * pScreen->width + x;
+            if(y == pObject->minY || y == pObject->maxY) {
+                pScreen->elements[index] = 0xf800;
+            } else if(x == pObject->minX || x == pObject->maxX) {
+                pScreen->elements[index] = 0xf800;
+            }
+        }
+    }*/
+    
+    if(pObject == NULL){
+        destroyMatrix16(pLabelMatrix);
+        destroyObjectList(pObjectList);
         return NULL;
-        
+    }
+
     Matrix8_t* pReturnMatrix = _traceBoundaryLine(pObject, pLabelMatrix);
+
+    int width = pReturnMatrix->width;
+    int height = pReturnMatrix->height;
+    int length = height * width;
+
+    for(int i = 0; i < length; ++i) {
+        if(pReturnMatrix->elements[i] == 0xff)
+            pScreen->elements[i] = 0xf800;    
+    }
+
+    displayScreen(pScreen);
+    
+    destroyObjectList(pObjectList);
+
+    destroyMatrix16(pLabelMatrix);
+
+    return NULL;
 
     _fillBoundary(pReturnMatrix);
 
@@ -61,7 +97,7 @@ void applyBoundary(Screen_t* pScreen, Matrix8_t* pBoundaryMatrix) {
     int length = width * height;
 
     for(int i = 0; i < length; ++i) {
-        if(pBoundaryMatrix->elements[i] != 0xFF)
+        if(pBoundaryMatrix->elements[i] != 0xff)
             pScreen->elements[i] = 0x7bcf; //NONE_COLOR
     }
 }
@@ -70,14 +106,15 @@ static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabe
     
     int objectLabel = _getObjectLabel(pLabelMatrix);
 
-    if(objectLabel == 0)
+    if(objectLabel == 0){
         return NULL;
-
+    }
+    
     Object_t* pObject = NULL;
     for(int i = 0; i < pObjectList->size; ++i) {
-        pObject = &pObjectList->list[i];
+        pObject = &(pObjectList->list[i]);
         
-        int index = pObject.centerY * pLabelMatrix->width + pObject.centerX;
+        int index = pObject->centerY * pLabelMatrix->width + pObject->centerX;
         if(pLabelMatrix->elements[index] == objectLabel)
             break;
     }
@@ -90,9 +127,11 @@ static int _getObjectLabel(Matrix16_t* pLabelMatrix) {
     int widthToExplore = pLabelMatrix->width;
     int heightToExplore = 5;
     int startHeight = pLabelMatrix->height - heightToExplore;
-    int endHeight = startHeight + heightToExplore - 1;
+    int endHeight = pLabelMatrix->height;
 
-    int labelList[LABEL_SIZE] = {0, };
+    int* labelList = malloc(LABEL_SIZE * sizeof(int));
+    memset(labelList, 0, LABEL_SIZE * sizeof(int));
+
     int maxLabel = 0;
 
     for(int y = startHeight; y < endHeight; ++y) {
@@ -100,7 +139,7 @@ static int _getObjectLabel(Matrix16_t* pLabelMatrix) {
             int index = y * widthToExplore + x;
             int listIndex = pLabelMatrix->elements[index];
             
-            if(labelList[listIndex] != 0){
+            if(listIndex != 0){
                 labelList[listIndex]++;
 
                 if(labelList[listIndex] > labelList[maxLabel])
@@ -108,6 +147,8 @@ static int _getObjectLabel(Matrix16_t* pLabelMatrix) {
             }
         }
     }
+
+    free(labelList);
 
     return maxLabel;
 }
@@ -117,6 +158,7 @@ static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix
     PixelLocation_t startPoint = _getStartPointForTraceLine(pObject, pLabelMatrix);
 
     PixelLocation_t curPoint = startPoint;
+    //printf("curpont x %d curpoint y %d\n", curPoint.x, curPoint.y);
     int direction = 0;
     int checkAllDirection = 0;
 
@@ -125,8 +167,9 @@ static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix
 
     while(true) {
         PixelLocation_t nextPoint = _directionToPoint(curPoint, direction);
-
-        int notAllDirection = _notAllDirection(pBoundaryMatrix, curPoint, nextPoint, &direction, &checkAllDirection)
+        //printf("nextpoint x %d, nextpoint y %d\n", nextPoint.x, nextPoint.y);
+        int notAllDirection = _notAllDirection(pBoundaryMatrix, curPoint, nextPoint, &direction, &checkAllDirection);
+        //printf("notallDirection %d\n", notAllDirection);
         if(notAllDirection < 0) {
             break;
         }else if(notAllDirection > 0) {
@@ -210,11 +253,11 @@ static int _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoint
     int height = pBoundaryMatrix->height;
 
     int index = nextPoint.y * width + nextPoint.x;
-    if(nextPoint.x < 0 || nextPoint.x >= width || nextPoint.y < 0 || nextPoint.y >= height) {
+    if(nextPoint.x >= width || nextPoint.y >= height) {
         if(++(*direction) > 7)
             *direction = 0;
 
-        *checkAllDirection++;
+        (*checkAllDirection)++;
 
         if(*checkAllDirection >= 8) {
             index = curPoint.y * width + curPoint.x;
@@ -227,7 +270,7 @@ static int _notAllDirection(Matrix8_t* pBoundaryMatrix, PixelLocation_t curPoint
         if(++(*direction) > 7)
             *direction = 0;
 
-        *checkAllDirection++;
+        (*checkAllDirection)++;
 
         if(*checkAllDirection >= 8) {
             index = curPoint.y * width + curPoint.x;
@@ -280,7 +323,7 @@ static int _findLeftX(Matrix8_t* pBoundaryMatrix, int y) {
     int resultX = 0;
 
     for(int x = 0; x < width; ++x) {
-        int idex = y * width + x;
+        int index = y * width + x;
         if(pBoundaryMatrix->elements[index] == 0xff) {
             resultX = x;
             break;
