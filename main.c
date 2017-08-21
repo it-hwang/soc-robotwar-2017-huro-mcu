@@ -56,13 +56,7 @@ int main(void)
 
 
 static void _displayLogo(void) {
-    printf("                                                              \n");
-    printf("                                                              \n");
-    printf("           *****************************************          \n");
-    printf("                             Grobot                           \n");
-    printf("            Welcome to Amazon Robot Platform Board            \n");
-    printf("           *****************************************          \n");
-    printf("                                                              \n");
+    printf("*** Welcome to Amazon Robot Platform Board ***\n");
 }
 
 static int _chooseMenu(unsigned int milliseconds) {
