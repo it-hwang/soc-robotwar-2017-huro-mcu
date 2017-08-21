@@ -1,3 +1,5 @@
+// #define DEBUG
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,6 +14,7 @@
 #include "image_filter.h"
 #include "white_balance.h"
 #include "log.h"
+#include "debug.h"
 
 #define _MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define _MAX(X,Y) ((X) > (Y) ? (X) : (Y))
@@ -147,7 +150,6 @@ static void _mergeObject(Object_t* pSrcObject, Object_t* pDstObject) {
 
 // BUG: 간혹 잡음을 바리케이드로 인식하는 경우가 있다.
 static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
-    static const char* LOG_FUNCTION_NAME = "_searchVerticalBarricade()";
     // 하단 판정 Y값
     static const int BOTTOM_Y = 60;
     // 직사각형의 형태와 유사해야한다.
@@ -172,13 +174,13 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
         int minimumCnt = pLargestObject->cnt * LARGEST_OBJECT_RELATIVE_RATIO;
         removeSmallObjects(pYellowObjectList, minimumCnt);
         removeSmallObjects(pBlackObjectList, minimumCnt);
-        printLog("[%s] minimumCnt: %d\n", LOG_FUNCTION_NAME, minimumCnt);
+        printDebug("minimumCnt: %d\n", minimumCnt);
 
         while (pYellowObjectList->size > 0) {
             Object_t* pMostRectangleObject = _findMostRectangleObject(pYellowMatrix, pYellowObjectList);
             float correlation = getRectangleCorrelation(pYellowMatrix, pMostRectangleObject);
             bool onBottom = (pMostRectangleObject->minY >= BOTTOM_Y);
-            printLog("[%s] correlation: %f\n", LOG_FUNCTION_NAME, correlation);
+            printDebug("correlation: %f\n", correlation);
 
             // 바리케이드가 평소에는 직사각형으로 보인다.
             if (!onBottom && correlation < MIN_RECTANGLE_CORRELATION) {
@@ -224,9 +226,9 @@ static Object_t* _searchVerticalBarricade(Screen_t* pScreen) {
     }
 
     if (pVerticalBarricadeObject != NULL)
-        printLog("[%s] 객체를 찾았습니다.\n", LOG_FUNCTION_NAME);
+        printDebug("객체를 찾았습니다.\n");
     else
-        printLog("[%s] 객체를 찾을 수 없습니다.\n", LOG_FUNCTION_NAME);
+        printDebug("객체를 찾을 수 없습니다.\n");
 
     destroyObjectList(pYellowObjectList);
     destroyObjectList(pBlackObjectList);
@@ -258,8 +260,6 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
 }
 
 int measureVerticalBarricadeDistance(void) {
-    static const char* LOG_FUNCTION_NAME = "measureVerticalBarricadeDistance()";
-
     // 최대 거리
     static const int MAX_DISTANCE = 500;
 
@@ -275,7 +275,7 @@ int measureVerticalBarricadeDistance(void) {
     int millimeters = 0;
     Object_t* pObject = _searchVerticalBarricade(pScreen);
     if (pObject != NULL) {
-        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
+        printDebug("minY: %d, centerY: %f, maxY: %d\n",
                  pObject->minY, pObject->centerY, pObject->maxY);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
@@ -304,7 +304,7 @@ int measureVerticalBarricadeDistance(void) {
         free(pObject);
     destroyScreen(pScreen);
 
-    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
+    printDebug("millimeters: %d\n", millimeters);
     return millimeters;
 }
 
@@ -318,8 +318,6 @@ bool verticalBarricadeMain(void) {
 
 
 static bool _waitVerticalBarricadeUp(void) {
-    static const char* LOG_FUNCTION_NAME = "_waitVerticalBarricadeUp()";
-
     // 제한 시간 (밀리초)
     static const int STAND_BY_TIMEOUT = 15000;
     // 반복문을 한번 도는데 걸리는 시간 (밀리초)
@@ -346,8 +344,6 @@ static bool _waitVerticalBarricadeUp(void) {
 }
 
 static bool _approachVerticalBarricade(void) {
-    static const char* LOG_FUNCTION_NAME = "_approachVerticalBarricade()";
-
     // 제한 시간 (밀리초)
     static const int STAND_BY_TIMEOUT = 15000;
     // 반복문을 한번 도는데 걸리는 시간 (밀리초)
@@ -393,21 +389,19 @@ static bool _approachVerticalBarricade(void) {
 }
 
 bool solveVerticalBarricade(void) {
-    static const char* LOG_FUNCTION_NAME = "solveVerticalBarricade()";
-
-    printLog("[%s] 수직 바리케이드에 접근한다.\n", LOG_FUNCTION_NAME);
+    printDebug("수직 바리케이드에 접근한다.\n");
     if (!_approachVerticalBarricade()) {
-        printLog("[%s] 접근 실패: 시간 초과\n", LOG_FUNCTION_NAME);
+        printDebug("접근 실패: 시간 초과\n");
         return false;
     }
 
-    printLog("[%s] 수직 바리케이드가 사라질 때까지 대기한다.\n", LOG_FUNCTION_NAME);
+    printDebug("수직 바리케이드가 사라질 때까지 대기한다.\n");
     if (!_waitVerticalBarricadeUp()) {
-        printLog("[%s] 대기 실패: 시간 초과\n", LOG_FUNCTION_NAME);
+        printDebug("대기 실패: 시간 초과\n");
         return false;
     }
 
-    printLog("[%s] 달린다.\n", LOG_FUNCTION_NAME);
+    printDebug("달린다.\n");
     runWalk(ROBOT_WALK_FORWARD_FAST, 8);
 
     return true;
