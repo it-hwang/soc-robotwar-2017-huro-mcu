@@ -161,20 +161,42 @@ bool walkBackward(int millimeters) {
 }
 
 bool walkLeft(int millimeters) {
-	while (millimeters > 0) {
-		if (!runMotion(MOTION_MOVE_LEFT_MIDDLE))
-			return false;
-		millimeters -= 20;
+	if (millimeters < 20) {
+		return runMotion(MOTION_MOVE_LEFT_LIGHT);
+	}
+	else {
+		while (millimeters >= 30) {
+			if (!runMotion(MOTION_MOVE_LEFT_MIDDLE))
+				return false;
+			millimeters -= 30;
+		}
+		
+		while (millimeters >= 20) {
+			if (!runMotion(MOTION_MOVE_LEFT_LIGHT))
+				return false;
+			millimeters -= 20;
+		}
 	}
 	
 	return true;
 }
 
 bool walkRight(int millimeters) {
-	while (millimeters > 0) {
-		if (!runMotion(MOTION_MOVE_RIGHT_MIDDLE))
-			return false;
-		millimeters -= 20;
+	if (millimeters < 20) {
+		return runMotion(MOTION_MOVE_RIGHT_LIGHT);
+	}
+	else {
+		while (millimeters >= 30) {
+			if (!runMotion(MOTION_MOVE_RIGHT_MIDDLE))
+				return false;
+			millimeters -= 30;
+		}
+		
+		while (millimeters >= 20) {
+			if (!runMotion(MOTION_MOVE_RIGHT_LIGHT))
+				return false;
+			millimeters -= 20;
+		}
 	}
 	
 	return true;
