@@ -14,7 +14,7 @@ static int _getObjectLabel(Matrix16_t* pLabelMatrix);
 static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix);
 static PixelLocation_t _getStartPointForTraceLine(Object_t* pObject, Matrix16_t* pLabelMatrix);
 static PixelLocation_t _directionToPoint(PixelLocation_t curPoint, int direction);
-static int _notAllDirection(Matrix8_t* pLabelMatrix, Object_t* pObject, PixelLocation_t nextPoint, int* direction, int* checkAllDirection);
+static int _notAllDirection(Matrix16_t* pLabelMatrix, Object_t* pObject, PixelLocation_t nextPoint, int* direction, int* checkAllDirection);
 static void _fillBoundary(Matrix8_t* pBoundaryMatrix);
 static int _findRightX(Matrix8_t* pBoundaryMatrix, int y);
 static int _findLeftX(Matrix8_t* pBoundaryMatrix, int y);
@@ -42,12 +42,6 @@ Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix) {
     }
 
     Matrix8_t* pReturnMatrix = _traceBoundaryLine(pObject, pLabelMatrix);
-
-    destroyObjectList(pObjectList);
-
-    destroyMatrix16(pLabelMatrix);
-
-    return pReturnMatrix;
 
     _fillBoundary(pReturnMatrix);
 
@@ -88,8 +82,7 @@ static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabe
     for(int i = 0; i < pObjectList->size; ++i) {
         pObject = &(pObjectList->list[i]);
         
-        int index = pObject->centerY * pLabelMatrix->width + pObject->centerX;
-        if(pLabelMatrix->elements[index] == objectLabel)
+        if(pObject->id == objectLabel)
             break;
     }
 
@@ -141,10 +134,6 @@ static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix
 
     while(true) {
         PixelLocation_t nextPoint = _directionToPoint(curPoint, direction);
-        //printLog("cur %d %d \n", curPoint.x, curPoint.y);
-        //printLog("next %d %d\n", nextPoint.x, nextPoint.y);
-        //printLog("checkAll %d direction %d\n", checkAllDirection, direction);
-
         int notAllDirection = _notAllDirection(pLabelMatrix, pObject, nextPoint, &direction, &checkAllDirection);
         
         if(notAllDirection < 0) {
@@ -152,9 +141,6 @@ static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix
             pBoundaryMatrix->elements[index] = 0xff;
             break;
         }else if(notAllDirection > 0) {
-            printLog("cur %d %d \n", curPoint.x, curPoint.y);
-            printLog("next %d %d\n", nextPoint.x, nextPoint.y);
-            printf("ok\n");
             int index = curPoint.y * pBoundaryMatrix->width + curPoint.x;
             pBoundaryMatrix->elements[index] = 0xff;
     
@@ -174,13 +160,13 @@ static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix
 
 static PixelLocation_t _getStartPointForTraceLine(Object_t* pObject, Matrix16_t* pLabelMatrix) {
 
-    int index = pObject->centerY * pLabelMatrix->width + pObject->centerX;
-    int labelNum = pLabelMatrix->elements[index];
+    int labelNum = pObject->id;
 
     PixelLocation_t returnLocation;
     
     int x = pObject->minX - 1;
     int y = pObject->minY;
+    int index = 0;
 
     do {
         x++;
@@ -229,15 +215,14 @@ static PixelLocation_t _directionToPoint(PixelLocation_t curPoint, int direction
     return returnPixel;
 }
 
-static int _notAllDirection(Matrix8_t* pLabelMatrix, Object_t* pObject, PixelLocation_t nextPoint, int* direction, int* checkAllDirection) {
+static int _notAllDirection(Matrix16_t* pLabelMatrix, Object_t* pObject, PixelLocation_t nextPoint, int* direction, int* checkAllDirection) {
     int width = pLabelMatrix->width;
     int height = pLabelMatrix->height;
 
-    int index = pObject->centerY * width + pObject->centerX;
-    int labelNum = pLabelMatrix->elements[index];
-
-    index = nextPoint.y * width + nextPoint.x;
-    if(nextPoint.x >= width || nextPoint.y >= height) {
+    int labelNum = pObject->id;
+    
+    int index = nextPoint.y * width + nextPoint.x;
+    if(nextPoint.x < 0 || nextPoint.x >= width || nextPoint.y < 0 || nextPoint.y >= height) {
         if(++(*direction) > 7)
             *direction = 0;
 

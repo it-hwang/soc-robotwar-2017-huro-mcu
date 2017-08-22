@@ -393,10 +393,9 @@ static void _runTest(void) {
     sdelay(3);
     
     //redBridgeMain();
-    //for(int i = 0; i < 100; ++i) {
+    for(int i = 0; i < 10000; ++i) {
         _testBoundary();
-        printf("aa\n");
-    //}
+    }
 }
 
 static void _testBoundary(void) {
@@ -412,14 +411,7 @@ static void _testBoundary(void) {
 
     Matrix8_t* pBoundaryMatrix = establishBoundary(pMergedColorMatrix);
 
-    int width = pBoundaryMatrix->width;
-    int height = pBoundaryMatrix->height;
-    int length = height * width;
-
-    for(int i = 0; i < length; ++i) {
-        if(pBoundaryMatrix->elements[i] == 0xff)
-            pScreen->elements[i] = 0xf800;
-    }
+    applyBoundary(pScreen, pBoundaryMatrix);
 
     //drawColorMatrix(pScreen, pMergedColorMatrix);
     displayScreen(pScreen);
