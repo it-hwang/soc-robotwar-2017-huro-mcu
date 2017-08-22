@@ -384,24 +384,25 @@ static void _runTest(void) {
     printLog("Test\n");
 
     // 작동 알림
-    //setHead(0, -90);
-    //sdelay(1);
-    //setHead(0, 0);
-    //sdelay(1);
+    setHead(0, -90);
+    sdelay(1);
+    setHead(0, 0);
+    sdelay(1);
 
     // 바로 움직이면 위험하므로 잠시 대기한다.
-    //sdelay(3);
+    sdelay(3);
     
     //redBridgeMain();
-    for(int i = 0; i < 30; ++i) {
+    //for(int i = 0; i < 100; ++i) {
         _testBoundary();
-    }
+        printf("aa\n");
+    //}
 }
 
 static void _testBoundary(void) {
     Screen_t* pScreen = createDefaultScreen();
 
-    readFpgaVideoData(pScreen);
+    readFpgaVideoDataWithWhiteBalance(pScreen);
 
     Matrix8_t* pWhiteColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
     Matrix8_t* pBlueColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
@@ -409,10 +410,19 @@ static void _testBoundary(void) {
     Matrix8_t* pMergedColorMatrix = 
              overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
 
-    Matrix8_t* pBoundaryMatrix = establishBoundary(pScreen, pMergedColorMatrix);
+    Matrix8_t* pBoundaryMatrix = establishBoundary(pMergedColorMatrix);
+
+    int width = pBoundaryMatrix->width;
+    int height = pBoundaryMatrix->height;
+    int length = height * width;
+
+    for(int i = 0; i < length; ++i) {
+        if(pBoundaryMatrix->elements[i] == 0xff)
+            pScreen->elements[i] = 0xf800;
+    }
 
     //drawColorMatrix(pScreen, pMergedColorMatrix);
-    //displayScreen(pScreen);
+    displayScreen(pScreen);
     destroyMatrix8(pWhiteColorMatrix);
     destroyMatrix8(pBlueColorMatrix);
     destroyMatrix8(pMergedColorMatrix);
