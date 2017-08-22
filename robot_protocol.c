@@ -10,124 +10,124 @@
 
 
 int openRobotPort(void) {
-	int status;
+    int status;
 
-	status = uart_open();
-	if (status < 0)
-		return status;
-	
-	uart_config(UART1, _UART_BAUD_RATE, _UART_BITS, UART_PARNONE, _UART_STOPS);
+    status = uart_open();
+    if (status < 0)
+        return status;
+    
+    uart_config(UART1, _UART_BAUD_RATE, _UART_BITS, UART_PARNONE, _UART_STOPS);
 
-	return 0;
+    return 0;
 }
 
 void closeRobotPort(void) {
-	uart_close();
+    uart_close();
 }
 
 void sendDataToRobot(uint8_t data) {
-	unsigned char buffer[1];
-	buffer[0] = data;
+    unsigned char buffer[1];
+    buffer[0] = data;
 
-	uart1_buffer_write(buffer, 1);
+    uart1_buffer_write(buffer, 1);
 }
 
 uint8_t receiveDataFromRobot(void) {
-	unsigned char buffer[1] = {0};
-	uart1_buffer_read(buffer, 1);
+    unsigned char buffer[1] = {0};
+    uart1_buffer_read(buffer, 1);
 
-	return buffer[0];
+    return buffer[0];
 }
 
 
 bool runMotion(uint8_t motionId) {
-	sendDataToRobot(motionId);
-	return waitMotion();
+    sendDataToRobot(motionId);
+    return waitMotion();
 }
 
 bool waitMotion(void) {
-	uint8_t receivedData = receiveDataFromRobot();
-	bool isSuccess = (receivedData == 0);
-	return isSuccess;
+    uint8_t receivedData = receiveDataFromRobot();
+    bool isSuccess = (receivedData == 0);
+    return isSuccess;
 }
 
 void setServoSpeed(uint8_t speed) {
-	sendDataToRobot(ROBOT_SET_SERVO_SPEED);
+    sendDataToRobot(ROBOT_SET_SERVO_SPEED);
 
-	receiveDataFromRobot();
-	sendDataToRobot(speed);
+    receiveDataFromRobot();
+    sendDataToRobot(speed);
 
-	waitMotion();
+    waitMotion();
 }
 
 void resetServoSpeed(void) {
-	setServoSpeed(0);
+    setServoSpeed(0);
 }
 
 void setServoOffset(uint8_t servoId, uint8_t offset) {
-	sendDataToRobot(ROBOT_SET_SERVO_OFFSET);
+    sendDataToRobot(ROBOT_SET_SERVO_OFFSET);
 
-	receiveDataFromRobot();
-	sendDataToRobot(servoId);
+    receiveDataFromRobot();
+    sendDataToRobot(servoId);
 
-	receiveDataFromRobot();
-	sendDataToRobot(offset);
+    receiveDataFromRobot();
+    sendDataToRobot(offset);
 
-	waitMotion();
+    waitMotion();
 }
 
 uint8_t getServoOffset(uint8_t servoId) {
-	sendDataToRobot(ROBOT_GET_SERVO_OFFSET);
+    sendDataToRobot(ROBOT_GET_SERVO_OFFSET);
 
-	receiveDataFromRobot();
-	sendDataToRobot(servoId);
+    receiveDataFromRobot();
+    sendDataToRobot(servoId);
 
-	uint8_t offset = receiveDataFromRobot();
-	return offset;
+    uint8_t offset = receiveDataFromRobot();
+    return offset;
 }
 
 
 int getHeadHorizontal(void) {
-	int offset = getServoOffset(SERVO_HEAD_HORIZONTAL);
-	int degrees = offset - 100;
-	return degrees;
+    int offset = getServoOffset(SERVO_HEAD_HORIZONTAL);
+    int degrees = offset - 100;
+    return degrees;
 }
 
 int getHeadVertical(void) {
-	int offset = getServoOffset(SERVO_HEAD_VERTICAL);
-	int degrees = offset - 100;
-	return degrees;
+    int offset = getServoOffset(SERVO_HEAD_VERTICAL);
+    int degrees = offset - 100;
+    return degrees;
 }
 
 void setHeadVertical(int degrees) {
-	if (degrees < -90 || degrees > 90)
-		return;
+    if (degrees < -90 || degrees > 90)
+        return;
 
-	int offset = degrees + 100;
-	setServoOffset(SERVO_HEAD_VERTICAL, offset);
+    int offset = degrees + 100;
+    setServoOffset(SERVO_HEAD_VERTICAL, offset);
 }
 
 void setHeadHorizontal(int degrees) {
-	if (degrees < -90 || degrees > 90)
-		return;
+    if (degrees < -90 || degrees > 90)
+        return;
 
-	int offset = degrees + 100;
-	setServoOffset(SERVO_HEAD_HORIZONTAL, offset);
+    int offset = degrees + 100;
+    setServoOffset(SERVO_HEAD_HORIZONTAL, offset);
 }
 
 void setHead(int horizontalDegrees, int verticalDegrees) {
-	setHeadHorizontal(horizontalDegrees);
-	setHeadVertical(verticalDegrees);
+    setHeadHorizontal(horizontalDegrees);
+    setHeadVertical(verticalDegrees);
 }
 
 
 bool runWalk(uint8_t walkId, uint8_t steps) {
-	sendDataToRobot(walkId);
+    sendDataToRobot(walkId);
 
-	receiveDataFromRobot();
-	sendDataToRobot(steps);
+    receiveDataFromRobot();
+    sendDataToRobot(steps);
 
-	return waitMotion();
+    return waitMotion();
 }
 
 
@@ -143,123 +143,137 @@ bool runWalk(uint8_t walkId, uint8_t steps) {
 //  - 전진보행_빠른_바리케이드: 빠른전진보행으로 길게 전진 (40cm)
 //  - 전진보행_빠른_바리케이드_멀리: 빠른전진보행으로 길게 전진 (56cm)
 bool walkForward(int millimeters) {
-	if (millimeters > 35)
-		runWalk(ROBOT_WALK_FORWARD, millimeters / 35);
-	else if (millimeters > 0)
-		runWalk(ROBOT_WALK_FORWARD, 1);
+    if (millimeters < 6) {
+        millimeters = 6;
+    }
 
-	return true;
+    float remainingDistance = millimeters;
+
+    int nSteps;	
+    nSteps = remainingDistance / 32.;
+    if (nSteps >= 2) {
+        runWalk(ROBOT_WALK_RUN_FORWARD_32MM, nSteps);
+        remainingDistance -= (float)nSteps * 32.;
+    }
+
+    nSteps = remainingDistance / 3.;
+    if (nSteps >= 2) {
+        runWalk(ROBOT_WALK_RUN_FORWARD_3MM, nSteps);
+        remainingDistance -= (float)nSteps * 3.;
+    }
+
+    return true;
 }
 
 bool walkBackward(int millimeters) {
-	if (millimeters > 35)
-		runWalk(ROBOT_WALK_BACKWARD, millimeters / 35);
-	else if (millimeters > 0)
-		runWalk(ROBOT_WALK_BACKWARD, 1);
-	
-	return true;
+    if (millimeters > 35)
+        runWalk(ROBOT_WALK_BACKWARD, millimeters / 35);
+    else if (millimeters > 0)
+        runWalk(ROBOT_WALK_BACKWARD, 1);
+    
+    return true;
 }
 
 bool walkLeft(int millimeters) {
-	if (millimeters < 20) {
-		return runMotion(MOTION_MOVE_LEFT_LIGHT);
-	}
-	else {
-		while (millimeters >= 30) {
-			if (!runMotion(MOTION_MOVE_LEFT_MIDDLE))
-				return false;
-			millimeters -= 30;
-		}
-		
-		while (millimeters >= 20) {
-			if (!runMotion(MOTION_MOVE_LEFT_LIGHT))
-				return false;
-			millimeters -= 20;
-		}
-	}
-	
-	return true;
+    if (millimeters < 20) {
+        return runMotion(MOTION_MOVE_LEFT_LIGHT);
+    }
+    else {
+        while (millimeters >= 30) {
+            if (!runMotion(MOTION_MOVE_LEFT_MIDDLE))
+                return false;
+            millimeters -= 30;
+        }
+        
+        while (millimeters >= 20) {
+            if (!runMotion(MOTION_MOVE_LEFT_LIGHT))
+                return false;
+            millimeters -= 20;
+        }
+    }
+    
+    return true;
 }
 
 bool walkRight(int millimeters) {
-	if (millimeters < 20) {
-		return runMotion(MOTION_MOVE_RIGHT_LIGHT);
-	}
-	else {
-		while (millimeters >= 30) {
-			if (!runMotion(MOTION_MOVE_RIGHT_MIDDLE))
-				return false;
-			millimeters -= 30;
-		}
-		
-		while (millimeters >= 20) {
-			if (!runMotion(MOTION_MOVE_RIGHT_LIGHT))
-				return false;
-			millimeters -= 20;
-		}
-	}
-	
-	return true;
+    if (millimeters < 20) {
+        return runMotion(MOTION_MOVE_RIGHT_LIGHT);
+    }
+    else {
+        while (millimeters >= 30) {
+            if (!runMotion(MOTION_MOVE_RIGHT_MIDDLE))
+                return false;
+            millimeters -= 30;
+        }
+        
+        while (millimeters >= 20) {
+            if (!runMotion(MOTION_MOVE_RIGHT_LIGHT))
+                return false;
+            millimeters -= 20;
+        }
+    }
+    
+    return true;
 }
 
 bool turnLeft(int degrees) {
-	while (degrees > 0) {
-		if (!runMotion(MOTION_TURN_LEFT_MIDDLE))
-			return false;
-		degrees -= 20;
-	}
-	
-	return true;
+    while (degrees > 0) {
+        if (!runMotion(MOTION_TURN_LEFT_MIDDLE))
+            return false;
+        degrees -= 20;
+    }
+    
+    return true;
 }
 
 bool turnRight(int degrees) {
-	while (degrees > 0) {
-		if (!runMotion(MOTION_TURN_RIGHT_MIDDLE))
-			return false;
-		degrees -= 20;
-	}
-	
-	return true;
+    while (degrees > 0) {
+        if (!runMotion(MOTION_TURN_RIGHT_MIDDLE))
+            return false;
+        degrees -= 20;
+    }
+    
+    return true;
 }
 
 
 void udelay(uint64_t microseconds) {
-	uint64_t counter = 18.4162 * microseconds;
-	while (counter) {
-		counter--;
-	}
+    uint64_t counter = 18.4162 * microseconds;
+    while (counter) {
+        counter--;
+    }
 }
 
 void mdelay(uint64_t milliseconds) {
-	// udelay의 인수가 너무 커지는것을 방지하기위해 나누어 처리한다.
-	while (milliseconds > 1000) {
-		udelay(1000000);
-		milliseconds -= 1000;
-	}
-	udelay(milliseconds * 1000);
+    // udelay의 인수가 너무 커지는것을 방지하기위해 나누어 처리한다.
+    while (milliseconds > 1000) {
+        udelay(1000000);
+        milliseconds -= 1000;
+    }
+    udelay(milliseconds * 1000);
 }
 
 void sdelay(uint32_t seconds) {
-	// mdelay의 인수가 너무 커지는것을 방지하기위해 나누어 처리한다.
-	while (seconds > 1000) {
-		mdelay(1000000);
-		seconds -= 1000;
-	}
-	mdelay(seconds * 1000);
+    // mdelay의 인수가 너무 커지는것을 방지하기위해 나누어 처리한다.
+    while (seconds > 1000) {
+        mdelay(1000000);
+        seconds -= 1000;
+    }
+    mdelay(seconds * 1000);
 }
 
 
 void DelayLoop(int delay_time)
 {
-	while(delay_time)
-		delay_time--;
+    while(delay_time)
+        delay_time--;
 }
 
 void Send_Command(unsigned char Ldata)
 {
-	unsigned char Command_Buffer[1] = {0,};
-	
-	Command_Buffer[0] = Ldata;
+    unsigned char Command_Buffer[1] = {0,};
+    
+    Command_Buffer[0] = Ldata;
 
-	uart1_buffer_write(Command_Buffer, 1);
+    uart1_buffer_write(Command_Buffer, 1);
 }
