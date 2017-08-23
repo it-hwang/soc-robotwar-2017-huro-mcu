@@ -215,7 +215,7 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
             for(x=0; x<width; ++x) {
                 int labelId = pLabelMatrix->elements[y*width+x];
                 
-                if(cmpArray[labelId] == 0) {
+                if(labelId != 0 && cmpArray[labelId] == 0) {
                     int rootLabelId = labelId;
                     while(equalLabelList[rootLabelId] != 0) 
                         rootLabelId = equalLabelList[rootLabelId];

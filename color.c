@@ -1,6 +1,8 @@
 #include <math.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "color.h"
 #include "color_model.h"
@@ -440,4 +442,27 @@ void drawColorMatrix(Screen_t* pScreen, Matrix8_t* pColorMatrix) {
         pScreenPixel++;
         pColorPixel++;
     }
+}
+
+Matrix8_t* overlapColorMatrix(Matrix8_t* pSourceColorMatrix, Matrix8_t* pTargetColorMatrix) {
+    if(pSourceColorMatrix->width != pTargetColorMatrix->width)
+        return NULL;
+
+    if(pSourceColorMatrix->height != pTargetColorMatrix->height)
+        return NULL;
+
+    int width = pSourceColorMatrix->width;
+    int height = pSourceColorMatrix->height;
+    int length = width * height;
+
+    Matrix8_t* returnMatrix = createMatrix8(width, height);
+    memset(returnMatrix->elements, 0, (returnMatrix->height * returnMatrix->width) * sizeof(uint8_t));
+
+    for(int i = 0; i < length; ++i) { 
+        returnMatrix->elements[i] = pSourceColorMatrix->elements[i];
+        if(returnMatrix->elements[i] == 0)
+            returnMatrix->elements[i] = pTargetColorMatrix->elements[i];
+    }
+
+    return returnMatrix;
 }

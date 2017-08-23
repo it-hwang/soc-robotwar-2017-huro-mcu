@@ -6,7 +6,7 @@
 
 typedef uint16_t PixelData_t;
 
-typedef uint8_t PixelCoordinate_t;
+typedef int16_t PixelCoordinate_t;
 typedef struct {
     PixelCoordinate_t x;
     PixelCoordinate_t y;
