@@ -26,7 +26,8 @@ static void _setStandardStand(void);
 
 bool blueGateMain(void) {
     for (int i = 0; i < 100; ++i) {
-        int millimeters = measureRightBlueGateDistance();
+        //int millimeters = measureRightBlueGateDistance();
+        int millimeters = measureLeftBlueGateDistance();
 
         char input;
         input = getchar();
@@ -90,15 +91,13 @@ int measureRightBlueGateDistance(void) {
     displayScreen(pScreen);
 
     if (pObject != NULL) {
-        printDebug("minX: %d, centerX: %f, maxX: %d\n",
-                 pObject->minX, pObject->centerX, pObject->maxX);
-        printDebug("minY: %d, centerY: %f, maxY: %d\n",
-                 pObject->minY, pObject->centerY, pObject->maxY);
+        printDebug("minX: %d, centerX: %f, maxX: %d minY: %d, centerY: %f, maxY: %d\n",
+        pObject->minX, pObject->centerX, pObject->maxX, pObject->minY, pObject->centerY, pObject->maxY);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
-        int distance = pObject->minY;
+        int distance = pObject->maxY;
         
-        millimeters = 655.21 * exp(-0.016 * distance);
+        millimeters = 0.0357*distance*distance - 11.558*distance + 849.66;
         // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
         if (millimeters <= 0)
             millimeters = 1;
@@ -130,15 +129,13 @@ int measureLeftBlueGateDistance(void) {
     displayScreen(pScreen);
 
     if (pObject != NULL) {
-        printDebug("minX: %d, centerX: %f, maxX: %d\n",
-                 pObject->minX, pObject->centerX, pObject->maxX);
-        printDebug("minY: %d, centerY: %f, maxY: %d\n",
-                 pObject->minY, pObject->centerY, pObject->maxY);
+        printDebug("minX: %d, centerX: %f, maxX: %d minY: %d, centerY: %f, maxY: %d\n",
+                 pObject->minX, pObject->centerX, pObject->maxX, pObject->minY, pObject->centerY, pObject->maxY);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
-        int distance = pObject->minY;
+        int distance = pObject->maxY;
         
-        millimeters = 655.21 * exp(-0.016 * distance);
+        millimeters = 0.0502*distance*distance - 12.867*distance + 842.13;
         // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
         if (millimeters <= 0)
             millimeters = 1;
