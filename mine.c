@@ -344,9 +344,9 @@ static bool _actForMine(Object_t* pMine) {
     static const int ALIGN_ROBOT_LEFT_X     = 54;
     static const int ALIGN_ROBOT_RIGHT_X    = 136;
     static const int ALIGN_ROBOT_ERROR      = 3;
-
+    
     static const float _MILLIMETERS_PER_PIXEL = 2.;
-
+    
     int distanceY = _calculateObjectDistance(pMine);
     int centerX = pMine->centerX;
     int minX = pMine->minX;
