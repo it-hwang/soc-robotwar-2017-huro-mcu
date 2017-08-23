@@ -409,8 +409,8 @@ static void _testBoundary(void) {
     Matrix8_t* pMergedColorMatrix = 
              overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
 
-    applyFastErosionToMatrix8(pMergedColorMatrix, 1);
-    applyFastDilationToMatrix8(pMergedColorMatrix, 1);
+    // applyFastErosionToMatrix8(pMergedColorMatrix, 1);
+    // applyFastDilationToMatrix8(pMergedColorMatrix, 1);
 
     Matrix8_t* pBoundaryMatrix = establishBoundary(pMergedColorMatrix);
 

@@ -9,6 +9,10 @@
 
 #define LABEL_SIZE 1001
 
+#define BOUNDARY_LINE   0x01
+#define BOUNDARY_LEFT   0x02
+#define BOUNDARY_RIGHT  0x04
+
 static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabelMatrix);
 static int _getObjectLabel(Matrix16_t* pLabelMatrix);
 static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix);
@@ -138,11 +142,25 @@ static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix
         
         if(notAllDirection < 0) {
             int index = curPoint.y * pBoundaryMatrix->width + curPoint.x;
-            pBoundaryMatrix->elements[index] = 0xff;
+            pBoundaryMatrix->elements[index] |= BOUNDARY_LINE;
             break;
         }else if(notAllDirection > 0) {
             int index = curPoint.y * pBoundaryMatrix->width + curPoint.x;
-            pBoundaryMatrix->elements[index] = 0xff;
+            pBoundaryMatrix->elements[index] |= BOUNDARY_LINE;
+
+            // 선에 방향 성분을 추가한다.
+            if (direction >= 5 && direction <= 7) {
+                index = nextPoint.y * pBoundaryMatrix->width + nextPoint.x;
+                pBoundaryMatrix->elements[index] |= BOUNDARY_LEFT;
+            }
+            else if (direction >= 1 && direction <= 3) {
+                pBoundaryMatrix->elements[index] |= BOUNDARY_RIGHT;
+            }
+
+            // 두 방향을 모두 가진 선은 방향 성분을 제거한다.
+            // 왼쪽 성분을 두번 가지면 문제가 생기기 때문이다.
+            if ((pBoundaryMatrix->elements[index] & BOUNDARY_LEFT) && (pBoundaryMatrix->elements[index] & BOUNDARY_RIGHT))
+                pBoundaryMatrix->elements[index] = BOUNDARY_LINE;
     
             curPoint = nextPoint;
     
@@ -264,25 +282,20 @@ static void _fillBoundary(Matrix8_t* pBoundaryMatrix) {
         // _fillLeftToRight(pBoundaryMatrix, leftX, rightX, y);
         
         // 외곽선 안쪽만 채우기
-        // 열림 연산으로 잡음을 제거하고 사용해야 정상작동한다.
         uint8_t* elements = pBoundaryMatrix->elements + (y * pBoundaryMatrix->width);
         int status = 0;
-        for (int x = 0; x < rightX; ++x) {
-            if (status == 0) {  // find border
-                if (elements[x]) status = 1;
+        for (int x = 0; x <= rightX; ++x) {
+            int element = elements[x];
+            
+            if (element & BOUNDARY_LINE)
+                elements[x] = 0xff;
+
+            if (status == 0) {  // Find border
+                if (element & BOUNDARY_LEFT) status = 1;
             }
-            else if (status == 1) { // ready to fill
-                if (!elements[x]) {
-                    status = 2;
-                    elements[x] = 0xff;
-                }
-            }
-            else if (status == 2) { // start fill
-                if (elements[x]) status = 3;
+            else if (status == 1) { // Start filling
+                if (element & BOUNDARY_RIGHT) status = 0;
                 else elements[x] = 0xff;
-            }
-            else if (status == 3) { // ready to find
-                if (!elements[x]) status = 0;
             }
         }
     }
@@ -296,7 +309,7 @@ static int _findRightX(Matrix8_t* pBoundaryMatrix, int y) {
 
     for(int x = width-1; x > 0; --x) {
         int index = y * width + x;
-        if(pBoundaryMatrix->elements[index] == 0xff) {
+        if(pBoundaryMatrix->elements[index]) {
             resultX = x;
             break;
         }
@@ -313,7 +326,7 @@ static int _findLeftX(Matrix8_t* pBoundaryMatrix, int y) {
 
     for(int x = 0; x < width; ++x) {
         int index = y * width + x;
-        if(pBoundaryMatrix->elements[index] == 0xff) {
+        if(pBoundaryMatrix->elements[index]) {
             resultX = x;
             break;
         }
