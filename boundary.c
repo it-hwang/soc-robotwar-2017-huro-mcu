@@ -276,11 +276,6 @@ static void _fillBoundary(Matrix8_t* pBoundaryMatrix) {
         if(rightX == 0)
             continue;
         
-        // 단순하게 채우기
-        // 외곽선의 바깥 부분도 채워버린다.
-        // int leftX = _findLeftX(pBoundaryMatrix, y);
-        // _fillLeftToRight(pBoundaryMatrix, leftX, rightX, y);
-        
         // 외곽선 안쪽만 채우기
         uint8_t* elements = pBoundaryMatrix->elements + (y * pBoundaryMatrix->width);
         int status = 0;
@@ -316,28 +311,4 @@ static int _findRightX(Matrix8_t* pBoundaryMatrix, int y) {
     }
     
     return resultX;
-}
-
-static int _findLeftX(Matrix8_t* pBoundaryMatrix, int y) {
-    
-    int width = pBoundaryMatrix->width;
-
-    int resultX = 0;
-
-    for(int x = 0; x < width; ++x) {
-        int index = y * width + x;
-        if(pBoundaryMatrix->elements[index]) {
-            resultX = x;
-            break;
-        }
-    }
-
-    return resultX;
-}
-static void _fillLeftToRight(Matrix8_t* pBoundaryMatrix, int leftX, int rightX, int y) {
-
-    for(int x = leftX; x < rightX; ++x) {
-        int index = y * pBoundaryMatrix->width + x;
-        pBoundaryMatrix->elements[index] = 0xff;
-    }
 }
