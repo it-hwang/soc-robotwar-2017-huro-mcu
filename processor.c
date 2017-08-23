@@ -396,6 +396,7 @@ static void _runTest(void) {
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
     
+    blueGateMain();
     //redBridgeMain();
     /*for(int i = 0; i < 10000; ++i) {
         _testBoundary();
