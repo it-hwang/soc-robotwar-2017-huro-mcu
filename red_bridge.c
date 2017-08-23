@@ -1,3 +1,5 @@
+// #define DEBUG
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -14,6 +16,7 @@
 #include "white_balance.h"
 #include "check_bridge_center.h"
 #include "log.h"
+#include "debug.h"
 
 
 // 빨간 다리의 최소 면적
@@ -140,8 +143,6 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
 
 // 다리가 가까이 있는 경우에 사용하는 측정 함수
 static int _measureRedBridgeDistance2(void) {
-    static const char* LOG_FUNCTION_NAME = "_measureRedBridgeDistance2()";
-
     // 거리 측정에 사용되는 머리 각도
     static const int HEAD_HORIZONTAL_DEGREES = 0;
     static const int HEAD_VERTICAL_DEGREES = -70;
@@ -156,9 +157,9 @@ static int _measureRedBridgeDistance2(void) {
     Object_t* pObject = _searchRedBridge(pScreen);
     _displayDebugScreen(pScreen, pObject);
     if (pObject != NULL) {
-        printLog("[%s] minX: %d, centerX: %f, maxX: %d\n", LOG_FUNCTION_NAME,
+        printDebug("minX: %d, centerX: %f, maxX: %d\n",
                  pObject->minX, pObject->centerX, pObject->maxX);
-        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
+        printDebug("minY: %d, centerY: %f, maxY: %d\n",
                  pObject->minY, pObject->centerY, pObject->maxY);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
@@ -183,13 +184,11 @@ static int _measureRedBridgeDistance2(void) {
         free(pObject);
     destroyScreen(pScreen);
 
-    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
+    printDebug("millimeters: %d\n", millimeters);
     return millimeters;
 }
 
 int measureRedBridgeDistance(void) {
-    static const char* LOG_FUNCTION_NAME = "measureRedBridgeDistance()";
-
     // 거리 측정에 사용되는 머리 각도
     static const int HEAD_HORIZONTAL_DEGREES = 0;
     static const int HEAD_VERTICAL_DEGREES = -35;
@@ -204,9 +203,9 @@ int measureRedBridgeDistance(void) {
     Object_t* pObject = _searchRedBridge(pScreen);
     _displayDebugScreen(pScreen, pObject);
     if (pObject != NULL) {
-        printLog("[%s] minX: %d, centerX: %f, maxX: %d\n", LOG_FUNCTION_NAME,
+        printDebug("minX: %d, centerX: %f, maxX: %d\n",
                  pObject->minX, pObject->centerX, pObject->maxX);
-        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
+        printDebug("minY: %d, centerY: %f, maxY: %d\n",
                  pObject->minY, pObject->centerY, pObject->maxY);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
@@ -227,13 +226,11 @@ int measureRedBridgeDistance(void) {
         free(pObject);
     destroyScreen(pScreen);
 
-    printLog("[%s] millimeters: %d\n", LOG_FUNCTION_NAME, millimeters);
+    printDebug("millimeters: %d\n", millimeters);
     return millimeters;
 }
 
-static bool _measureRedBridgeOffsetX(int* pOffsetX) {
-    static const char* LOG_FUNCTION_NAME = "_measureRedBridgeOffsetX()";
-
+static bool _measureRedBridgeCenterOffsetX(int* pOffsetX) {
     // 거리 측정에 사용되는 머리 각도
     static const int HEAD_HORIZONTAL_DEGREES = 0;
     static const int HEAD_VERTICAL_DEGREES = -35;
@@ -249,9 +246,9 @@ static bool _measureRedBridgeOffsetX(int* pOffsetX) {
 
     int offsetX = 0;
     if (pObject != NULL) {
-        printLog("[%s] minX: %d, centerX: %f, maxX: %d\n", LOG_FUNCTION_NAME,
+        printDebug("minX: %d, centerX: %f, maxX: %d\n",
                  pObject->minX, pObject->centerX, pObject->maxX);
-        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
+        printDebug("minY: %d, centerY: %f, maxY: %d\n",
                  pObject->minY, pObject->centerY, pObject->maxY);
 
         float screenCenterX = (float)(pScreen->width - 1) / 2;
@@ -266,7 +263,7 @@ static bool _measureRedBridgeOffsetX(int* pOffsetX) {
     if (pOffsetX != NULL)
         *pOffsetX = offsetX;
 
-    printLog("[%s] offsetX: %d\n", LOG_FUNCTION_NAME, *pOffsetX);
+    printDebug("offsetX: %d\n", offsetX);
     return hasFound;
 }
 
@@ -307,8 +304,6 @@ static Object_t* _searchRedBridge2(Screen_t* pScreen) {
 
 // 빨간 다리 위에서 빨간 다리가 끝나는 지점의 거리를 구한다.
 static int _measureRedBridgeEndDistance(void) {
-    static const char* LOG_FUNCTION_NAME = "_measureRedBridgeEndDistance()";
-    
     // 거리 측정에 사용되는 머리 각도
     static const int HEAD_HORIZONTAL_DEGREES = 0;
     static const int HEAD_VERTICAL_DEGREES = -70;
@@ -323,9 +318,9 @@ static int _measureRedBridgeEndDistance(void) {
 
     int millimeters = 0;
     if (pObject != NULL) {
-        printLog("[%s] minX: %d, centerX: %f, maxX: %d\n", LOG_FUNCTION_NAME,
+        printDebug("minX: %d, centerX: %f, maxX: %d\n",
                  pObject->minX, pObject->centerX, pObject->maxX);
-        printLog("[%s] minY: %d, centerY: %f, maxY: %d\n", LOG_FUNCTION_NAME,
+        printDebug("minY: %d, centerY: %f, maxY: %d\n",
                  pObject->minY, pObject->centerY, pObject->maxY);
 
         int minY = pObject->minY;
@@ -360,8 +355,6 @@ bool redBridgeMain(void) {
 
 
 static bool _approachRedBridge(void) {
-    static const char* LOG_FUNCTION_NAME = "_approachRedBridge()";
-
     // 빨간 다리를 발견하지 못할 경우 다시 찍는 횟수
     static const int MAX_TRIES = 10;
 
@@ -384,13 +377,13 @@ static bool _approachRedBridge(void) {
         
         // 좌우 정렬
         int offsetX = 0;
-        hasFound = _measureRedBridgeOffsetX(&offsetX);
+        hasFound = _measureRedBridgeCenterOffsetX(&offsetX);
         if (!hasFound)
             continue;
         
         if (offsetX < MOVE_LEFT_DISTANCE_PER_STEP * -1) {
             int nSteps = abs(offsetX) / MOVE_LEFT_DISTANCE_PER_STEP;
-            printLog("[%s] 왼쪽으로 %d 걸음 가자.\n", LOG_FUNCTION_NAME, nSteps);
+            printDebug("왼쪽으로 %d 걸음 가자.\n", nSteps);
             for (int i = 0; i < nSteps; ++i)
                 runMotion(MOTION_MOVE_LEFT_MIDDLE);
             mdelay(500);
@@ -399,7 +392,7 @@ static bool _approachRedBridge(void) {
         }
         else if (offsetX > MOVE_RIGHT_DISTANCE_PER_STEP) {
             int nSteps = abs(offsetX) / MOVE_RIGHT_DISTANCE_PER_STEP;
-            printLog("[%s] 오른쪽으로 %d 걸음 가자.\n", LOG_FUNCTION_NAME, nSteps);
+            printDebug("오른쪽으로 %d 걸음 가자.\n", nSteps);
             for (int i = 0; i < nSteps; ++i)
                 runMotion(MOTION_MOVE_RIGHT_MIDDLE);
             mdelay(500);
@@ -414,17 +407,17 @@ static bool _approachRedBridge(void) {
             continue;
         
         if (distance <= APPROACH_DISTANCE) {
-            printLog("[%s] 접근 완료.\n", LOG_FUNCTION_NAME);
+            printDebug("접근 완료.\n");
             break;
         }
         else if (distance > APPROACH_WALK_DISTANCE + APPROACH_WALK_DISTANCE_ERROR) {
-            printLog("[%s] 전진보행으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
+            printDebug("전진보행으로 이동하자. (거리: %d)\n", distance);
             walkForward(distance - APPROACH_DISTANCE);
             mdelay(500);
             nTries = 0;
         }
         else {
-            printLog("[%s] 종종걸음으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
+            printDebug("종종걸음으로 이동하자. (거리: %d)\n", distance);
             int nSteps = distance / WALK_FORWARD_QUICK_DISTANCE_PER_STEP;
             runWalk(ROBOT_WALK_FORWARD_QUICK, nSteps);
             mdelay(500);
@@ -432,7 +425,7 @@ static bool _approachRedBridge(void) {
         }
     }
     if (nTries >= MAX_TRIES) {
-        printLog("[%s] 시간 초과!\n", LOG_FUNCTION_NAME);
+        printDebug("시간 초과!\n");
         return false;
     }
 
@@ -455,8 +448,6 @@ static bool _alignToCenter(void) {
 }
 
 static bool _climbDown(void) {
-    static const char* LOG_FUNCTION_NAME = "_climbDown()";
-
     // 다가간 장애물과의 최소 거리 (밀리미터)
     static const int MIN_APPROACH_DISTANCE = 10;
     // 다가간 장애물과의 최대 거리 (밀리미터)
@@ -467,7 +458,7 @@ static bool _climbDown(void) {
         if (distance <= MAX_APPROACH_DISTANCE)
             break;
         
-        printLog("[%s] 전진보행으로 이동하자. (거리: %d)\n", LOG_FUNCTION_NAME, distance);
+        printDebug("전진보행으로 이동하자. (거리: %d)\n", distance);
         walkForward(distance - MIN_APPROACH_DISTANCE);
     }
 

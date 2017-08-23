@@ -1,3 +1,5 @@
+// #define DEBUG
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,8 +23,10 @@
 #include "corner_detection.h"
 #include "boundary.h"
 #include "white_balance.h"
+#include "mine.h"
 #include "log.h"
 #include "screenio.h"
+#include "debug.h"
 
 
 static const char* _WHITE_BALANCE_TABLE_PATH = "./data/white_balance.lut";
@@ -136,20 +140,18 @@ static bool _getYN(void) {
 }
 
 static void _adjustWhiteBalance(Rgba_t* pInputColor, Rgba_t* pRealColor) {
-    static const char* LOG_FUNCTION_NAME = "_adjustWhiteBalance()";
-
-    printLog("[%s] inputColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+    printDebug("inputColor: {r: %d, g: %d, b: %d}\n",
              pInputColor->r, pInputColor->g, pInputColor->b);
-    printLog("[%s] realColor: {r: %d, g: %d, b: %d}\n", LOG_FUNCTION_NAME,
+    printDebug("realColor: {r: %d, g: %d, b: %d}\n",
              pRealColor->r, pRealColor->g, pRealColor->b);
 
     LookUpTable16_t* pWhiteBalanceTable = createWhiteBalanceTable(pInputColor, pRealColor, _WHITE_BALANCE_TABLE_PATH, true);
     if (pWhiteBalanceTable != NULL) {
-        printLog("[%s] Adjustment success.\n", LOG_FUNCTION_NAME);
+        printDebug("Adjustment success.\n");
         setDefaultWhiteBalanceTable(pWhiteBalanceTable);
     }
     else {
-        printLog("[%s] Adjustment failed.\n", LOG_FUNCTION_NAME);
+        printDebug("Adjustment failed.\n");
     }
 }
 
@@ -380,6 +382,8 @@ static void _runCaptureScreen(void) {
 ///////////////////////////////////////////////////////////////////////////////
 // Test
 ///////////////////////////////////////////////////////////////////////////////
+static void _hurdleGaeYangArch(void);
+
 static void _runTest(void) {
     printLog("Test\n");
 
@@ -393,9 +397,18 @@ static void _runTest(void) {
     sdelay(3);
     
     //redBridgeMain();
-    for(int i = 0; i < 10000; ++i) {
+    /*for(int i = 0; i < 10000; ++i) {
         _testBoundary();
-    }
+    }*/
+
+    // solveVerticalBarricade();
+    // checkCenterMain();
+    // redBridgeMain();
+    // checkCenterMain();
+    // mineMain();
+    // checkCenterMain();
+    // _hurdleGaeYangArch();
+    // cornerDetectionMain();
 }
 
 static void _testBoundary(void) {
@@ -423,4 +436,11 @@ static void _testBoundary(void) {
     destroyMatrix8(pMergedColorMatrix);
     destroyMatrix8(pBoundaryMatrix);
     destroyScreen(pScreen);
+}
+
+static void _hurdleGaeYangArch(void) {
+    runWalk(ROBOT_WALK_FORWARD_QUICK, 30);
+    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+    mdelay(500);
+    runMotion(MOTION_HURDLE);
 }

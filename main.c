@@ -1,3 +1,5 @@
+// #define DEBUG
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -6,6 +8,7 @@
 #include "terminal.h"
 #include "log.h"
 #include "robot_protocol.h"
+#include "debug.h"
 
 #define _MENU_TIMEOUT_MILLISECONDS		3000
 
@@ -28,7 +31,6 @@ int main(void)
         printLog("Program is interrupted.\n");
         return 0;
     }
-    printLog("Start program.\n");
 
     int errorCode;
     errorCode = openProcessor();
@@ -41,13 +43,12 @@ int main(void)
         return 1;
     }
 
-    printLog("Start processor.\n");
+    printDebug("command: %d\n", command);
     runProcessor(command);
-    printLog("End processor.\n");
+    printDebug("end\n");
     
     closeProcessor();
 
-    printLog("End program.\n");
     closeLogFile();
 
     return 0;
@@ -55,13 +56,7 @@ int main(void)
 
 
 static void _displayLogo(void) {
-    printf("                                                              \n");
-    printf("                                                              \n");
-    printf("           *****************************************          \n");
-    printf("                             Grobot                           \n");
-    printf("            Welcome to Amazon Robot Platform Board            \n");
-    printf("           *****************************************          \n");
-    printf("                                                              \n");
+    printf("*** Welcome to Amazon Robot Platform Board ***\n");
 }
 
 static int _chooseMenu(unsigned int milliseconds) {

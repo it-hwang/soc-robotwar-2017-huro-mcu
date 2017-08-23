@@ -136,9 +136,12 @@ Color_t _convertBlackColorV1(PixelData_t pixelData) {
     _calculateHSV(pixelData, &h, &s, &v);
 
     // i > ((a / (s - b)) + c)
-    float a = 0.04;
-    float b = 0.18;
-    float c = 0.14;
+    //float a = 0.04;
+    //float b = 0.18;
+    //float c = 0.14;
+    float a = 0.02;
+    float b = 0.28;
+    float c = 0.18;
 
     bool isGray = false;
     if (s <= b)
@@ -146,7 +149,7 @@ Color_t _convertBlackColorV1(PixelData_t pixelData) {
     else if (v <= (a / (s - b)) + c)
         isGray = true;
     
-    if (isGray && v < 0.50)
+    if (isGray && v < 0.40)
         return COLOR_BLACK;
     
     return COLOR_NONE;
@@ -160,9 +163,9 @@ Color_t _convertWhiteColorV1(PixelData_t pixelData) {
     _calculateHSV(pixelData, &h, &s, &v);
 
     // i > ((a / (s - b)) + c)
-    float a = 0.02;
+    float a = 0.04;
     float b = 0.28;
-    float c = -0.02;
+    float c = 0.14;
 
     bool isGray = false;
     if (s <= b)
@@ -170,7 +173,7 @@ Color_t _convertWhiteColorV1(PixelData_t pixelData) {
     else if (v <= (a / (s - b)) + c)
         isGray = true;
     
-    if (isGray && v > 0.40)
+    if (isGray && v >= 0.50)
         return COLOR_WHITE;
     
     return COLOR_NONE;
