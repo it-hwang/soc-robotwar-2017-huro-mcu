@@ -230,7 +230,7 @@ int measureRedBridgeDistance(void) {
     return millimeters;
 }
 
-static bool _measureRedBridgeOffsetX(int* pOffsetX) {
+static bool _measureRedBridgeCenterOffsetX(int* pOffsetX) {
     // 거리 측정에 사용되는 머리 각도
     static const int HEAD_HORIZONTAL_DEGREES = 0;
     static const int HEAD_VERTICAL_DEGREES = -35;
@@ -263,7 +263,7 @@ static bool _measureRedBridgeOffsetX(int* pOffsetX) {
     if (pOffsetX != NULL)
         *pOffsetX = offsetX;
 
-    printDebug("offsetX: %d\n", *pOffsetX);
+    printDebug("offsetX: %d\n", offsetX);
     return hasFound;
 }
 
@@ -377,7 +377,7 @@ static bool _approachRedBridge(void) {
         
         // 좌우 정렬
         int offsetX = 0;
-        hasFound = _measureRedBridgeOffsetX(&offsetX);
+        hasFound = _measureRedBridgeCenterOffsetX(&offsetX);
         if (!hasFound)
             continue;
         

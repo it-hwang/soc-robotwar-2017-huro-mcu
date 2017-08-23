@@ -22,6 +22,7 @@
 #include "red_bridge.h"
 #include "corner_detection.h"
 #include "white_balance.h"
+#include "mine.h"
 #include "log.h"
 #include "screenio.h"
 #include "debug.h"
@@ -378,6 +379,8 @@ static void _runCaptureScreen(void) {
 ///////////////////////////////////////////////////////////////////////////////
 // Test
 ///////////////////////////////////////////////////////////////////////////////
+static void _hurdleGaeYangArch(void);
+
 static void _runTest(void) {
     printLog("Test\n");
 
@@ -390,6 +393,19 @@ static void _runTest(void) {
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
     
+    solveVerticalBarricade();
+    checkCenterMain();
     redBridgeMain();
+    checkCenterMain();
+    mineMain();
+    checkCenterMain();
+    _hurdleGaeYangArch();
+    cornerDetectionMain();
 }
 
+static void _hurdleGaeYangArch(void) {
+    runWalk(ROBOT_WALK_FORWARD_QUICK, 30);
+    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+    mdelay(500);
+    runMotion(MOTION_HURDLE);
+}

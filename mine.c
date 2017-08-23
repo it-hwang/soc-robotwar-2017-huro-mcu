@@ -22,7 +22,7 @@
 
 // 확인할 화면 크기 (단위: pixels)
 #define _DETECTION_CENTER_X     96
-#define _DETECTION_WIDTH        100
+#define _DETECTION_WIDTH        82
 #define _DETECTION_HEIGHT       106
 #define _DETECTION_MIN_X        (_DETECTION_CENTER_X - _DETECTION_WIDTH * 0.5)
 #define _DETECTION_MAX_X        (_DETECTION_MIN_X + _DETECTION_WIDTH - 1)
@@ -109,7 +109,7 @@ bool solveMine(void) {
         }
         else {
             printDebug("아무 것도 안보여. 직진해보자.\n", __func__);
-            walkForward(100);
+            walkForward(128);
         }
 
         if (pMine) free(pMine);
@@ -296,7 +296,6 @@ static Object_t* _searchOtherObstacle(Screen_t* pScreen) {
         return NULL;
     }
 
-    printLog("%d\n", pObstacleList->size);
     Object_t* closestObstacle = NULL;
     int minDistance = 0;
     for (int i = 0; i < pObstacleList->size; ++i) {
@@ -332,7 +331,7 @@ static Object_t* _searchOtherObstacle(Screen_t* pScreen) {
 // pMine의 위치에 따라 행해야 할 행동이다.
 static bool _actForMine(Object_t* pMine) {
     // 최대 전진보행 거리
-    static const int MAX_WALK_FORWARD_DISTANCE = 100;
+    static const int MAX_WALK_FORWARD_DISTANCE = 128;
     // 장애물에 다가갈 거리 (밀리미터)
     static const int APPROACH_DISTANCE = 30;
     // 거리 허용 오차 (밀리미터)
@@ -342,14 +341,19 @@ static bool _actForMine(Object_t* pMine) {
     static const int ALIGN_STANDARD_RIGHT_X = 114;
 
     static const int ALIGN_ROBOT_CENTER_X   = 96;
-    static const int ALIGN_ROBOT_LEFT_X     = 56;
-    static const int ALIGN_ROBOT_RIGHT_X    = 134;
+    static const int ALIGN_ROBOT_LEFT_X     = 54;
+    static const int ALIGN_ROBOT_RIGHT_X    = 136;
     static const int ALIGN_ROBOT_ERROR      = 3;
-
+    
     static const float _MILLIMETERS_PER_PIXEL = 2.;
-
+    
     int distanceY = _calculateObjectDistance(pMine);
-    if (distanceY > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
+    int centerX = pMine->centerX;
+    int minX = pMine->minX;
+    int maxX = pMine->maxX;
+
+    bool isFar = (distanceY > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR);
+    if (isFar) {
         int walkDistance = distanceY - APPROACH_DISTANCE;
         if (walkDistance > MAX_WALK_FORWARD_DISTANCE)
             walkDistance = MAX_WALK_FORWARD_DISTANCE;
@@ -358,9 +362,6 @@ static bool _actForMine(Object_t* pMine) {
         return true;
     }
 
-    int centerX = pMine->centerX;
-    int minX = pMine->minX;
-    int maxX = pMine->maxX;
 
     bool isCenterAligned = (abs(centerX - ALIGN_ROBOT_CENTER_X) <= ALIGN_ROBOT_ERROR);
     if (isCenterAligned) {
@@ -371,13 +372,13 @@ static bool _actForMine(Object_t* pMine) {
     bool isLeftAligned = (maxX <= ALIGN_ROBOT_LEFT_X + ALIGN_ROBOT_ERROR);
     if (isLeftAligned) {
         printDebug("지뢰 왼쪽 정렬 완료. 달린다. (maxX: %d)\n", __func__, maxX);
-        walkForward(50);
+        walkForward(64);
         return true;
     }
     bool isRightAligned = (minX >= ALIGN_ROBOT_RIGHT_X - ALIGN_ROBOT_ERROR);
     if (isRightAligned) {
         printDebug("지뢰 오른쪽 정렬 완료. 달린다. (minX: %d)\n", __func__, minX);
-        walkForward(50);
+        walkForward(64);
         return true;
     }
 

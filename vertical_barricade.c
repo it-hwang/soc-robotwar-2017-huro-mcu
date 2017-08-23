@@ -402,7 +402,7 @@ bool solveVerticalBarricade(void) {
     }
 
     printDebug("달린다.\n");
-    runWalk(ROBOT_WALK_FORWARD_FAST, 8);
+    walkForward(256);
 
     return true;
 }
