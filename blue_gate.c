@@ -16,7 +16,7 @@
 #include "log.h"
 #include "debug.h"
 
-#define LIMIT_TRY_COUNT 3
+#define LIMIT_TRY_COUNT 2
 
 static Object_t* _searchBlueGate(Screen_t* pScreen);
 static Matrix8_t* _createBlueMatrix(Screen_t* pScreen);
@@ -369,4 +369,11 @@ static Object_t* _captureBlueGate(void) {
     destroyScreen(pScreen);
 
     return pObject;
+}
+
+static void _passThroughBlueGate(void) {
+    
+    _setStandardStand();
+
+    walkForward(100);
 }
