@@ -16,6 +16,7 @@
 #include "log.h"
 #include "debug.h"
 
+#define LIMIT_TRY_COUNT 3
 
 static Object_t* _searchBlueGate(Screen_t* pScreen);
 static Matrix8_t* _createBlueMatrix(Screen_t* pScreen);
@@ -93,6 +94,8 @@ int measureRightBlueGateDistance(void) {
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
+    _establishBoundary(pScreen);
+
     int millimeters = 0;
 
     Object_t* pObject = _searchBlueGate(pScreen);
@@ -131,6 +134,8 @@ int measureLeftBlueGateDistance(void) {
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoDataWithWhiteBalance(pScreen);
     
+    _establishBoundary(pScreen);
+
     int millimeters = 0;
 
     Object_t* pObject = _searchBlueGate(pScreen);
@@ -157,6 +162,27 @@ int measureLeftBlueGateDistance(void) {
 
     //printDebug("millimeters: %d\n", millimeters);
     return millimeters;
+}
+
+static void _establishBoundary(Screen_t* pScreen) {
+    
+    Matrix8_t* pBlueMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
+    Matrix8_t* pWhiteMatix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
+
+    Matrix8_t* pMergedColorMatrix = 
+    overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
+
+    applyFastErosionToMatrix8(pMergedColorMatrix, 1);
+    applyFastDilationToMatrix8(pMergedColorMatrix, 1);
+
+    Matrix8_t* pBoundaryMatrix = establishBoundary(pMergedColorMatrix);
+
+    applyBoundary(pScreen, pBoundaryMatrix);
+
+    destroyMatrix8(pWhiteColorMatrix);
+    destroyMatrix8(pBlueColorMatrix);
+    destroyMatrix8(pMergedColorMatrix);
+    destroyMatrix8(pBoundaryMatrix);
 }
 
 static Object_t* _searchBlueGate(Screen_t* pScreen) {
@@ -239,5 +265,108 @@ static void _setStandardStand(void) {
 
 
 static bool _solveBluegate(void) {
+
+    if( _balanceToSolveBlueGate() ) {
+        _passThroughBlueGate();
+    }
+
+    return true;
+}
+
+static bool _balanceToSolveBlueGate(void) {
+
+    if( !_arrangeAngleBalance() ) {
+        return false;
+    }
+
+    if( !_arrangeDistanceBalance() ) {
+        return false;
+    }
+
+    _setStandardStand();
+
+    return true;
+}
+
+static bool _arrangeAngleBalance(void) {
     
+    int tryCount = 0;
+
+    while( tryCount < LIMIT_TRY_COUNT ) {
+
+        _setHeadRight();
+        Object_t* rightBlueGate = _captureBlueGate();
+
+        _setHeadLeft();
+        Object_t* leftBlueGate = _captureBlueGate();
+
+        if(rightBlueGate == NULL || leftBlueGate == NULL) {
+            tryCount++;
+            continue;
+        }
+
+        tryCount = 0;
+
+        int differnceY = rightBlueGate->maxY - leftBlueGate->maxY;
+
+        if( abs(differnceY) < 5 )
+            break;
+
+        if(differnceY < 0)
+            turnLeft(20);
+        else
+            turnRight(20);
+    }
+}
+
+static bool _arrangeDistanceBalance(void) {
+    
+    int tryCount = 0;
+
+    while( tryCount < LIMIT_TRY_COUNT ) {
+
+        _setHeadRight();
+        Object_t* rightBlueGate = _captureBlueGate();
+
+        _setHeadLeft();
+        Object_t* leftBlueGate = _captureBlueGate();
+
+        if(rightBlueGate == NULL || leftBlueGate == NULL) {
+            tryCount++;
+            continue;
+        }
+
+        tryCount = 0;
+
+        int rightDistance = rightBlueGate->minX;
+        int leftDistance = 179 - leftBlueGate->maxX;
+        int differnceDistance = rightDistance - leftDistance;
+
+        if( abs(differnceDistance) < 5 )
+            break;
+
+        if(differnceDistance < 0)
+            walkLeft(5);
+        else
+            walkRight(5);
+    }
+}
+
+static Object_t* _captureBlueGate(void) {
+
+    Screen_t* pScreen = createDefaultScreen();
+
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+
+    _establishBoundary(pScreen);
+
+    Object_t* pObject = _searchBlueGate(pScreen);
+
+    drawObjectEdge(pScreen, pObject, NULL);
+    drawObjectCenter(pScreen, pObject, NULL);
+    displayScreen(pScreen);
+
+    destroyScreen(pScreen);
+
+    return pObject;
 }
