@@ -18,12 +18,20 @@
 
 #define LIMIT_TRY_COUNT 2
 
+static bool _approchBlueGate(void);
+static void _establishBoundary(Screen_t* pScreen);
 static Object_t* _searchBlueGate(Screen_t* pScreen);
 static Matrix8_t* _createBlueMatrix(Screen_t* pScreen);
 static void _setHeadRight(void);
 static void _setHeadLeft(void);
 static void _setHeadForward(void);
 static void _setStandardStand(void);
+static bool _solveBluegate(void);
+static bool _balanceToSolveBlueGate(void);
+static bool _arrangeAngleBalance(void);
+static bool _arrangeDistanceBalance(void);
+static Object_t* _captureBlueGate(void);
+static void _passThroughBlueGate(void);
 
 bool blueGateMain(void) {
    /*  for (int i = 0; i < 100; ++i) {
