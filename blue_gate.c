@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "blue_gate.h"
 #include "matrix.h"
 #include "color.h"
 #include "color_model.h"
@@ -13,6 +14,7 @@
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "white_balance.h"
+#include "boundary.h"
 #include "log.h"
 #include "debug.h"
 
@@ -174,8 +176,8 @@ int measureLeftBlueGateDistance(void) {
 
 static void _establishBoundary(Screen_t* pScreen) {
     
-    Matrix8_t* pBlueMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
-    Matrix8_t* pWhiteMatix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
+    Matrix8_t* pBlueColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
+    Matrix8_t* pWhiteColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
 
     Matrix8_t* pMergedColorMatrix = 
     overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
@@ -325,6 +327,11 @@ static bool _arrangeAngleBalance(void) {
         else
             turnRight(20);
     }
+
+    if(tryCount < LIMIT_TRY_COUNT)
+        return false;
+    else
+        return true;
 }
 
 static bool _arrangeDistanceBalance(void) {
@@ -358,6 +365,11 @@ static bool _arrangeDistanceBalance(void) {
         else
             walkRight(5);
     }
+
+    if(tryCount < LIMIT_TRY_COUNT)
+        return false;
+    else
+        return true;
 }
 
 static Object_t* _captureBlueGate(void) {
