@@ -25,7 +25,7 @@ static void _setHeadForward(void);
 static void _setStandardStand(void);
 
 bool blueGateMain(void) {
-    for (int i = 0; i < 100; ++i) {
+   /*  for (int i = 0; i < 100; ++i) {
         //int millimeters = measureRightBlueGateDistance();
         int millimeters = measureLeftBlueGateDistance();
 
@@ -34,21 +34,31 @@ bool blueGateMain(void) {
         while (input != '\n')
             input = getchar();
     }
-    return true;
+    return true; */
+
+    if( !_approchBlueGate() ) {
+        return false;
+    }
+
+    return _solveBluegate();
 }
 
 static bool _approchBlueGate(void) {
     // 빨간 다리를 발견하지 못할 경우 다시 찍는 횟수
     static const int MAX_TRIES = 10;
     // 장애물에 다가갈 거리 (밀리미터)
-    static const int APPROACH_DISTANCE = 150;
+    static const int APPROACH_DISTANCE = 100;
     // 거리 허용 오차 (밀리미터)
     static const int APPROACH_DISTANCE_ERROR = 50;
     
     int nTries;
     for (nTries = 0; nTries < MAX_TRIES; ++nTries) {    
         // 앞뒤 정렬
-        int distance = measureRightBlueGateDistance();
+        int rightDistance = measureRightBlueGateDistance();
+        int leftDistance = measureLeftBlueGateDistance();
+
+        int distance = (rightDistance + leftDistance) / 2;
+
         bool hasFound = (distance != 0);
         if (!hasFound)
             continue;
@@ -225,4 +235,9 @@ static void _setStandardStand(void) {
     setHead(0, 0);
     mdelay(1000);
     resetServoSpeed();
+}
+
+
+static bool _solveBluegate(void) {
+    
 }
