@@ -11,6 +11,7 @@
 #include "color_model.h"
 #include "graphic_interface.h"
 #include "object_detection.h"
+#include "line_detection.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "white_balance.h"
@@ -18,7 +19,7 @@
 #include "log.h"
 #include "debug.h"
 
-#define LIMIT_TRY_COUNT 4
+#define LIMIT_TRY_COUNT 2
 #define RIGHT_ZERO_GRADIENT 4
 #define LEFT_ZERO_GRADIENT -8
 #define HEAD_DIRECTION_ERROR -1
@@ -36,12 +37,14 @@ static void _setStandardStand(void);
 static void _setHeadRightForGradient(void);
 static void _setHeadLeftForGradient(void);
 static void _setHeadForGradient(int headDirection);
+static void _setHead(int horizontalDegrees, int verticalDegrees);
 static bool _solveBluegate(void);
 static bool _balanceToSolveBlueGate(void);
 static bool _arrangeAngle(int headDirection, bool doHeadSet);
 static Line_t* _captureLine(Screen_t* pScreen, int headDirection);
 static Line_t* _captureRightLine(Screen_t* pScreen);
 static Line_t* _captureLeftLine(Screen_t* pScreen);
+static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY);
 static int _getZeroGradient(int headDirection);
 static void _moveForSetGradient(int lineGradient);
 static bool _arrangeDistanceBalance(void);
@@ -93,6 +96,7 @@ static bool _approchBlueGate(void) {
         }
         else {
             printDebug("전진보행으로 이동하자. (거리: %d)\n", distance);
+            _setStandardStand();
             walkForward(distance - APPROACH_DISTANCE);
             mdelay(500);
             nTries = 0;
@@ -255,51 +259,39 @@ static Matrix8_t* _createBlueMatrix(Screen_t* pScreen) {
 }
 
 static void _setHeadRight(void) {
-    setServoSpeed(30);
-    //runMotion(MOTION_CHECK_SIDELINE_STANCE);
-    setHead(35, -40);
-    mdelay(1000);
-    resetServoSpeed();
+    _setHead(35, -40);
 }
 
 static void _setHeadLeft(void) {
-    setServoSpeed(30);
-    //runMotion(MOTION_CHECK_SIDELINE_STANCE);
-    setHead(-35, -40);
-    mdelay(1000);
-    resetServoSpeed();
+    _setHead(-35, -40);
 }
 
 static void _setHeadForward(void) {
     setServoSpeed(30);
     runMotion(MOTION_BASIC_STANCE);
-    setHead(0, -40);
-    mdelay(1000);
     resetServoSpeed();
+    _setHead(0, -40);
 }
 
 static void _setStandardStand(void) {
     setServoSpeed(30);
     runMotion(MOTION_BASIC_STANCE);
-    setHead(0, 0);
-    mdelay(1000);
     resetServoSpeed();
+    _setHead(0, 0);
 }
 
 static void _setHeadRightForGradient(void) {
     setServoSpeed(30);
     runMotion(MOTION_CHECK_SIDELINE_STANCE);
-    setHead(85, -50);
-    mdelay(1000);
     resetServoSpeed();
+    _setHead(85, -50);
 }
 
 static void _setHeadLeftForGradient(void) {
     setServoSpeed(30);
     runMotion(MOTION_CHECK_SIDELINE_STANCE);
-    setHead(-85, -50);
-    mdelay(1000);
     resetServoSpeed();
+    _setHead(-85, -50);
 }
 
 static void _setHeadForGradient(int headDirection) {
@@ -309,6 +301,24 @@ static void _setHeadForGradient(int headDirection) {
         _setHeadLeftForGradient();
     else
         printDebug("잘못된 매개 변수 값!(%d)\n", headDirection);
+}
+
+static void _setHead(int horizontalDegrees, int verticalDegrees) {
+    static const int ERROR_RANGE = 3;
+
+    bool isAlreadySet = true;
+    if (abs(getHeadHorizontal() - horizontalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
+    if (abs(getHeadVertical() - verticalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
+
+    if (isAlreadySet)
+        return;
+
+    setServoSpeed(30);
+    setHead(horizontalDegrees, verticalDegrees);
+    resetServoSpeed();
+    mdelay(1000);
 }
 
 static bool _solveBluegate(void) {
@@ -323,7 +333,7 @@ static bool _solveBluegate(void) {
 static bool _balanceToSolveBlueGate(void) {
 
     if( !_arrangeAngle(HEAD_DIRECTION_RIGHT, true) )
-        _arrangeAngle(HEAD_DIRECTION_LEFT, ture);
+        _arrangeAngle(HEAD_DIRECTION_LEFT, true);
 
     if( !_arrangeDistanceBalance() ) {
         return false;
@@ -336,13 +346,13 @@ static bool _balanceToSolveBlueGate(void) {
 
 static bool _arrangeAngle(int headDirection, bool doHeadSet) {
     static const int RANGE_OF_GRADIENT = 5;
-    static const int LIMIT_TRY_COUNT = 10;
+    static const int LIMIT_TRY = 10;
 
     if(headDirection == HEAD_DIRECTION_ERROR)
         return false;
 
     if(doHeadSet)
-        _setHead(headDirection);
+        _setHeadForGradient(headDirection);
 
     Screen_t* pScreen = createDefaultScreen();
     Line_t* pLine = NULL;
@@ -370,14 +380,14 @@ static bool _arrangeAngle(int headDirection, bool doHeadSet) {
             tryCount++;
             lineGradient = RANGE_OF_GRADIENT;
         }
-    } while(tryCount < LIMIT_TRY_COUNT);
+    } while(tryCount < LIMIT_TRY);
 
     if(pLine != NULL)
         free(pLine);
 
     destroyScreen(pScreen);
 
-    if(tryCount >= LIMIT_TRY_COUNT) {
+    if(tryCount >= LIMIT_TRY) {
         printDebug("최대 촬영 횟수(%d) 초과!\n", tryCount);
         return false;
     } else {
@@ -452,6 +462,28 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     return returnLine;
 }
 
+static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
+    
+    PixelData_t* pixels = pScreen->elements;
+
+    
+    int centerX = (int)pLine->centerPoint.x + minX;
+
+    for(int x = minX; x <= centerX; ++x) {
+        int y = (int)pLine->leftPoint.y + minY;
+        int index = y * pScreen->width + x;
+        uint16_t* pOutput = (uint16_t*)&pixels[index];
+        *pOutput = 0xF800;
+    }
+
+    for(int x = minX + pLine->rightPoint.x; x >= centerX; --x) {
+        int y = (int)pLine->rightPoint.y + minY;
+        int index = y * pScreen->width + x;
+        uint16_t* pOutput = (uint16_t*)&pixels[index];
+        *pOutput = 0xF800;
+    }
+}
+
 static int _getZeroGradient(int headDirection) {
     if(headDirection == HEAD_DIRECTION_RIGHT)
         return RIGHT_ZERO_GRADIENT;
@@ -471,52 +503,65 @@ static void _moveForSetGradient(int lineGradient) {
 
 static bool _arrangeDistanceBalance(void) {
     
-    int tryCount = 0;
+    int rightTryCount = 0;
+    int leftTryCount = 0;
 
     bool right = false;
     bool left = false;
+    bool ing = false;
 
-    while( tryCount < LIMIT_TRY_COUNT ) {
+    while( rightTryCount < LIMIT_TRY_COUNT && leftTryCount < LIMIT_TRY_COUNT) {
 
-        _setHeadRight();
-        Object_t* rightBlueGate = _captureBlueGate();
-    
-        if(rightBlueGate != NULL) {
-            tryCount = 0;
+        if(!ing) {
+            _setHeadRight();
+            Object_t* rightBlueGate = _captureBlueGate();
+        
+            if(rightBlueGate != NULL) {
+                rightTryCount = 0;
 
-            int rightDistance = rightBlueGate->minX;
-            if(rightDistance >= 90)
-                right = true;
-            else {
-                walkLeft(5);
-                right = false;
-                left = false;
-            }
-        } else 
-            tryCount++;
-
+                int rightDistance = rightBlueGate->minX;
+                if(rightDistance >= 100)
+                    right = true;
+                else {
+                    walkLeft(5);
+                    right = false;
+                    left = false;
+                    continue;
+                }
+            } else 
+                rightTryCount++;
+        }
+        
         _setHeadLeft();
         Object_t* leftBlueGate = _captureBlueGate();
 
         if(leftBlueGate != NULL) {
-            tryCount = 0;
-
+            leftTryCount = 0;
+            printf("leftBlueGate %d\n", leftBlueGate->cnt);    
             int leftDistance = leftBlueGate->maxX;
-            if(leftDistance <= 90)
+            if(leftDistance <= 80) {
                 left = true;
+                ing = false;
+            }
             else {
                 walkRight(5);
                 right = false;
                 left = false;
+                ing = true;
+                continue;
             }
-        } else 
-            tryCount++;
+        } else {
+            leftTryCount++;
+            printf("lefttry %d\n", leftTryCount);
+            ing = false;
+        }
+            
 
         if(right && left)
             break;
     }
     
-    if(tryCount > LIMIT_TRY_COUNT)
+    if(rightTryCount > LIMIT_TRY_COUNT || leftTryCount > LIMIT_TRY_COUNT)
         return false;
     else
         return true;
