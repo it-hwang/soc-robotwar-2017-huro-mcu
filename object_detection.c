@@ -15,9 +15,11 @@ void _sortArray(uint16_t* array, int size);
 uint8_t _searchAdjacencyLabel(uint16_t* array, int size);
 
 ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
-                                     Matrix16_t* pOutputLabelMatrix) {
-    static uint16_t equalLabelList[_LABEL_SIZE];
-    static int labelCntList[_LABEL_SIZE];
+    Matrix16_t* pOutputLabelMatrix) {
+    //static uint16_t equalLabelList[_LABEL_SIZE];
+    //static int labelCntList[_LABEL_SIZE];
+    int* labelCntList = (int*)calloc(_LABEL_SIZE, sizeof(int));
+    uint16_t* equalLabelList = (int*)calloc(_LABEL_SIZE, sizeof(uint16_t));
 
     int x;
     int y;
@@ -33,42 +35,44 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
 
     Object_t* labelLocationInfo = (Object_t*)malloc(_LABEL_SIZE * sizeof(Object_t));
 
-    for(y = 0; y < height; ++y) {
-        for(x = 0; x < width; ++x) {
+    for (y = 0; y < height; ++y) {
+        for (x = 0; x < width; ++x) {
             int index = y * width + x;
             uint8_t pixelData = pixels[index];
 
-            if(pixelData != 0) {
+            if (pixelData != 0) {
                 uint16_t adjacencyLabels[4];
                 uint8_t listSize;
-                
+
                 if (y > 0)
-                    adjacencyLabels[0] = pLabelMatrix->elements[(y-1)*width + x];
+                    adjacencyLabels[0] = pLabelMatrix->elements[(y - 1)*width + x];
                 else
                     adjacencyLabels[0] = 0;
                 if (x > 0)
-                    adjacencyLabels[1] = pLabelMatrix->elements[y*width + x-1];
+                    adjacencyLabels[1] = pLabelMatrix->elements[y*width + x - 1];
                 else
                     adjacencyLabels[1] = 0;
                 if (y > 0 && x > 0)
-                    adjacencyLabels[2] = pLabelMatrix->elements[(y-1)*width + x-1];
+                    adjacencyLabels[2] = pLabelMatrix->elements[(y - 1)*width + x - 1];
                 else
                     adjacencyLabels[2] = 0;
                 if (y > 0 && x < width - 1)
-                    adjacencyLabels[3] = pLabelMatrix->elements[(y-1)*width + x+1];
+                    adjacencyLabels[3] = pLabelMatrix->elements[(y - 1)*width + x + 1];
                 else
                     adjacencyLabels[3] = 0;
-                
+
                 _sortArray(adjacencyLabels, 4);
-                
+
                 listSize = _searchAdjacencyLabel(adjacencyLabels, 4);
 
-                if(listSize == 0) {
+                if (listSize == 0) {
                     ++lastLabel;
 
-                    if(lastLabel > _LABEL_SIZE) {
+                    if (lastLabel > _LABEL_SIZE) {
                         destroyMatrix16(pLabelMatrix);
                         free(labelLocationInfo);
+                        free(labelCntList);
+                        free(equalLabelList);
                         return NULL;
                     }
 
@@ -83,45 +87,47 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
                     labelLocationInfo[lastLabel].centerX = x;
                     labelLocationInfo[lastLabel].centerY = y;
 
-                } else {
+                }
+                else {
                     pLabelMatrix->elements[y*width + x] = adjacencyLabels[0];
                     int currentCnt = ++labelCntList[adjacencyLabels[0]];
 
                     Object_t* label = &labelLocationInfo[adjacencyLabels[0]];
 
-                    if(label->minX > x)
+                    if (label->minX > x)
                         label->minX = x;
-                    
-                    if(label->minY > y)
+
+                    if (label->minY > y)
                         label->minY = y;
-                    
-                    if(label->maxX < x)
+
+                    if (label->maxX < x)
                         label->maxX = x;
-                    
-                    if(label->maxY < y)
+
+                    if (label->maxY < y)
                         label->maxY = y;
-                    
-                    label->centerX = ((label->centerX * (currentCnt-1))
-                                            + x) / currentCnt;
-                    label->centerY = ((label->centerY * (currentCnt-1))
-                                            + y) / currentCnt;
-                    
+
+                    label->centerX = ((label->centerX * (currentCnt - 1))
+                        + x) / currentCnt;
+                    label->centerY = ((label->centerY * (currentCnt - 1))
+                        + y) / currentCnt;
+
                     uint16_t finalLabel = adjacencyLabels[0];
-                    while(equalLabelList[finalLabel] != 0) {
+                    while (equalLabelList[finalLabel] != 0) {
                         finalLabel = equalLabelList[finalLabel];
                     }
 
                     int i;
-                    for(i = 1; i < listSize; ++i) {
+                    for (i = 1; i < listSize; ++i) {
                         int listIndex = adjacencyLabels[i];
-                        while(equalLabelList[listIndex] != 0) {
+                        while (equalLabelList[listIndex] != 0) {
                             listIndex = equalLabelList[listIndex];
                         }
 
-                        if(listIndex != finalLabel) {
-                            if(listIndex > finalLabel) {
+                        if (listIndex != finalLabel) {
+                            if (listIndex > finalLabel) {
                                 equalLabelList[listIndex] = finalLabel;
-                            } else {
+                            }
+                            else {
                                 equalLabelList[finalLabel] = listIndex;
                                 finalLabel = listIndex;
                             }
@@ -131,46 +137,47 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
             }
         }
     }
-    
+
     uint16_t i;
     int realLabels = 0;
-    for(i = 1; i < _LABEL_SIZE; ++i) {
+    for (i = 1; i < _LABEL_SIZE; ++i) {
         uint16_t listIndex = i;
-        
-        while(equalLabelList[listIndex] != 0) {
+
+        while (equalLabelList[listIndex] != 0) {
             listIndex = equalLabelList[listIndex];
         }
 
-        if(listIndex != i) {
+        if (listIndex != i) {
             Object_t* targetLabel = &labelLocationInfo[listIndex];
             Object_t* sourceLabel = &labelLocationInfo[i];
-            
+
             int targetCnt = labelCntList[listIndex];
             int sourceCnt = labelCntList[i];
-            
+
             labelCntList[listIndex] += labelCntList[i];
-            
-            targetLabel->centerX = (targetCnt * targetLabel->centerX 
-                                    + (sourceLabel->centerX)* sourceCnt)
-                                    / labelCntList[listIndex];
-        
-            targetLabel->centerY = (targetCnt * targetLabel->centerY 
-                                    + (sourceLabel->centerY) * sourceCnt)
-                                    / labelCntList[listIndex];
 
-            if(targetLabel->minX > sourceLabel->minX)
+            targetLabel->centerX = (targetCnt * targetLabel->centerX
+                + (sourceLabel->centerX)* sourceCnt)
+                / labelCntList[listIndex];
+
+            targetLabel->centerY = (targetCnt * targetLabel->centerY
+                + (sourceLabel->centerY) * sourceCnt)
+                / labelCntList[listIndex];
+
+            if (targetLabel->minX > sourceLabel->minX)
                 targetLabel->minX = sourceLabel->minX;
-            
-            if(targetLabel->minY > sourceLabel->minY)
-                targetLabel->minY = sourceLabel->minY;
-            
-            if(targetLabel->maxX < sourceLabel->maxX)
-                targetLabel->maxX = sourceLabel->maxX;
-            
-            if(targetLabel->maxY < sourceLabel->maxY)
-                targetLabel->maxY = sourceLabel->maxY; 
 
-        } else if (labelCntList[i] > 0) {
+            if (targetLabel->minY > sourceLabel->minY)
+                targetLabel->minY = sourceLabel->minY;
+
+            if (targetLabel->maxX < sourceLabel->maxX)
+                targetLabel->maxX = sourceLabel->maxX;
+
+            if (targetLabel->maxY < sourceLabel->maxY)
+                targetLabel->maxY = sourceLabel->maxY;
+
+        }
+        else if (labelCntList[i] > 0) {
             realLabels++;
         }
     }
@@ -178,11 +185,11 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
     Object_t* resultObjects = (Object_t*)malloc(realLabels * sizeof(Object_t));
 
     int resultIndex = 0;
-    for(i = 1; i < _LABEL_SIZE; ++i) {
+    for (i = 1; i < _LABEL_SIZE; ++i) {
         bool hasParentLabel = (equalLabelList[i] != 0);
         bool isEmptyLabel = (labelCntList[i] == 0);
 
-        if(!hasParentLabel && !isEmptyLabel) {
+        if (!hasParentLabel && !isEmptyLabel) {
             Object_t* targetObject = &resultObjects[resultIndex];
             Object_t* sourceObject = &labelLocationInfo[i];
             targetObject->minX = sourceObject->minX;
@@ -203,34 +210,37 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
     /*********************************/
 
     bool hasOutputLabelMatrix = false;
-    if(pOutputLabelMatrix != NULL) {
-        hasOutputLabelMatrix = ( pOutputLabelMatrix->width == width &&
-                                 pOutputLabelMatrix->height == height );
+    if (pOutputLabelMatrix != NULL) {
+        hasOutputLabelMatrix = (pOutputLabelMatrix->width == width &&
+            pOutputLabelMatrix->height == height);
     }
 
-    if(hasOutputLabelMatrix) {
-        int cmpArray[_LABEL_SIZE] = {0,};
+    if (hasOutputLabelMatrix) {
+        int* cmpArray = (int*)calloc(_LABEL_SIZE, sizeof(int));
         int latestLabelId = 0;
-        for(y=0; y<height; ++y) {
-            for(x=0; x<width; ++x) {
-                int labelId = pLabelMatrix->elements[y*width+x];
-                
-                if(labelId != 0 && cmpArray[labelId] == 0) {
+        for (y = 0; y<height; ++y) {
+            for (x = 0; x<width; ++x) {
+                int labelId = pLabelMatrix->elements[y*width + x];
+
+                if (labelId != 0 && cmpArray[labelId] == 0) {
                     int rootLabelId = labelId;
-                    while(equalLabelList[rootLabelId] != 0) 
+                    while (equalLabelList[rootLabelId] != 0)
                         rootLabelId = equalLabelList[rootLabelId];
-                    
-                    if(cmpArray[rootLabelId] == 0) cmpArray[rootLabelId] = ++latestLabelId;
+
+                    if (cmpArray[rootLabelId] == 0) cmpArray[rootLabelId] = ++latestLabelId;
                     cmpArray[labelId] = cmpArray[rootLabelId];
                 }
 
-                pOutputLabelMatrix->elements[y*width+x] = cmpArray[labelId];
+                pOutputLabelMatrix->elements[y*width + x] = cmpArray[labelId];
             }
         }
+        free(cmpArray);
     }
 
     destroyMatrix16(pLabelMatrix);
     free(labelLocationInfo);
+    free(labelCntList);
+    free(equalLabelList);
 
     return resultObjectList;
 }
@@ -240,7 +250,7 @@ ObjectList_t* detectObjectsLocation(Matrix8_t* pMatrix) {
 }
 
 ObjectList_t* detectObjectsLocationWithLabeling(Matrix8_t* pMatrix,
-                                                Matrix16_t* pLabelMatrix) {
+    Matrix16_t* pLabelMatrix) {
     return _detectObjectsLocation(pMatrix, pLabelMatrix);
 }
 
@@ -249,18 +259,18 @@ uint8_t _searchAdjacencyLabel(uint16_t* array, int size) {
     int i = 0;
     int labelSize = 0;
 
-    for(i = 0; i < size; ++i) {
-        if(array[i] != 0) {
+    for (i = 0; i < size; ++i) {
+        if (array[i] != 0) {
             array[labelSize] = array[i];
             ++labelSize;
-        }    
+        }
     }
 
-    for(i = labelSize; i < size; ++i) {
+    for (i = labelSize; i < size; ++i) {
         array[i] = 0;
     }
 
-    return labelSize; 
+    return labelSize;
 }
 
 void _sortArray(uint16_t* array, int size) {
@@ -268,12 +278,12 @@ void _sortArray(uint16_t* array, int size) {
     int j;
     int temp;
 
-    for(i = 1; i < size; ++i) {
+    for (i = 1; i < size; ++i) {
         temp = array[i];
-        for(j = i; j > 0; --j) {
-            if(array[j-1] > temp) {
-                array[j] = array[j-1];
-                array[j-1] = temp;
+        for (j = i; j > 0; --j) {
+            if (array[j - 1] > temp) {
+                array[j] = array[j - 1];
+                array[j - 1] = temp;
             }
         }
     }
@@ -428,5 +438,5 @@ float getRectangleCorrelation(Matrix8_t* pMatrix, Object_t* pObject) {
     float centerCorrelation = 1.0 - (centerDistance / radius);
 
     return (areaCorrelation   * AREA_CORRELATION_RATIO) +
-           (centerCorrelation * CENTER_CORRELATION_RATIO);
+        (centerCorrelation * CENTER_CORRELATION_RATIO);
 }

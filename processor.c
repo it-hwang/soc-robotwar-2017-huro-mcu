@@ -1,4 +1,4 @@
-// #define DEBUG
+#define DEBUG
 
 #include <math.h>
 #include <stdio.h>
@@ -14,9 +14,11 @@
 #include "graphic_interface.h"
 #include "obstacle_manager.h"
 #include "object_detection.h"
+#include "line_detection.h"
+#include "polygon_detection.h"
+#include "location_detection.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
-#include "line_detection.h"
 #include "check_center.h"
 #include "vertical_barricade.h"
 #include "red_bridge.h"
@@ -28,6 +30,9 @@
 #include "screenio.h"
 #include "debug.h"
 
+#define PI 3.141592
+#define DEG_TO_RAD  (PI / 180)
+#define RAD_TO_DEG  (180 / PI)
 
 static const char* _WHITE_BALANCE_TABLE_PATH = "./data/white_balance.lut";
 // static ObstacleId_t* _obstacleSequence;
@@ -321,7 +326,7 @@ static void _runCaptureScreen(void) {
     printLog("Capture Screen\n");
 
     enableDirectCameraDisplay();
-    runMotion(ROBOT_RELEASE_ARM_SERVOS);
+    //runMotion(ROBOT_RELEASE_ARM_SERVOS);
     printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
 
     while (true) {
@@ -383,6 +388,7 @@ static void _runCaptureScreen(void) {
 // Test
 ///////////////////////////////////////////////////////////////////////////////
 static void _hurdleGaeYangArch(void);
+static void _testCenter(void);
 
 static void _runTest(void) {
     printLog("Test\n");
@@ -395,47 +401,22 @@ static void _runTest(void) {
 
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
-    
-    //redBridgeMain();
-    /*for(int i = 0; i < 10000; ++i) {
-        _testBoundary();
-    }*/
 
-    // solveVerticalBarricade();
-    // checkCenterMain();
-    // redBridgeMain();
-    // checkCenterMain();
-    // mineMain();
-    // checkCenterMain();
-    // _hurdleGaeYangArch();
-    // cornerDetectionMain();
-}
 
-static void _testBoundary(void) {
-    Screen_t* pScreen = createDefaultScreen();
+    _testCenter();
 
-    readFpgaVideoDataWithWhiteBalance(pScreen);
 
-    Matrix8_t* pWhiteColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
-    Matrix8_t* pBlueColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
 
-    Matrix8_t* pMergedColorMatrix = 
-             overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
-
-    // applyFastErosionToMatrix8(pMergedColorMatrix, 1);
-    // applyFastDilationToMatrix8(pMergedColorMatrix, 1);
-
-    Matrix8_t* pBoundaryMatrix = establishBoundary(pMergedColorMatrix);
-
-    applyBoundary(pScreen, pBoundaryMatrix);
-
-    //drawColorMatrix(pScreen, pMergedColorMatrix);
-    displayScreen(pScreen);
-    destroyMatrix8(pWhiteColorMatrix);
-    destroyMatrix8(pBlueColorMatrix);
-    destroyMatrix8(pMergedColorMatrix);
-    destroyMatrix8(pBoundaryMatrix);
-    destroyScreen(pScreen);
+    /*
+    solveVerticalBarricade();
+    checkCenterMain();
+    redBridgeMain();
+    checkCenterMain();
+    mineMain();
+    checkCenterMain();
+    _hurdleGaeYangArch();
+    cornerDetectionMain();
+    */
 }
 
 static void _hurdleGaeYangArch(void) {
@@ -443,4 +424,127 @@ static void _hurdleGaeYangArch(void) {
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
     mdelay(500);
     runMotion(MOTION_HURDLE);
+}
+
+static void _setHead(int horizontalDegrees, int verticalDegrees) {
+    static const int ERROR_RANGE = 3;
+
+    bool isAlreadySet = true;
+    if (abs(getHeadHorizontal() - horizontalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
+    if (abs(getHeadVertical() - verticalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
+
+    if (isAlreadySet)
+        return;
+
+    setServoSpeed(30);
+    setHead(horizontalDegrees, verticalDegrees);
+    resetServoSpeed();
+    mdelay(800);
+}
+
+
+static void _drawPolygon(Screen_t* pScreen, Polygon_t* pPolygon);
+static void _drawLine(Screen_t* pScreen, Line_t* pLine);
+
+static void _testCenter(void) {
+    static const int HEAD_HORIZONTAL_DEGREES = 0;
+    static const int HEAD_VERTICAL_DEGREES = -35;
+
+    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
+
+    while (true) {
+        Screen_t* pScreen = createDefaultScreen();
+        readFpgaVideoDataWithWhiteBalance(pScreen);
+
+        Matrix8_t* pColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_RED]);
+        applyFastErosionToMatrix8(pColorMatrix, 1);
+        applyFastDilationToMatrix8(pColorMatrix, 1);
+
+        ObjectList_t* pObjectList = detectObjectsLocation(pColorMatrix);
+        Object_t* pObject = findLargestObject(pObjectList);
+       
+        drawColorMatrix(pScreen, pColorMatrix);
+        drawObjectEdge(pScreen, pObject, NULL);
+        displayScreen(pScreen);
+
+        CameraParameters_t camParams;
+        camParams.height = 0.330;
+        camParams.yaw = 0.;
+        camParams.pitch = (-35.) * DEG_TO_RAD;
+        camParams.fx = 140.142;
+        camParams.fy = 127.463;
+        camParams.cx = 90.481;
+        camParams.cy = 61.825;
+        camParams.k1 = -0.406476;
+        camParams.k2 = 0.267154;
+        camParams.p1 = -0.002105;
+        camParams.p2 = 0.004383;
+
+        PixelLocation_t screenLoc;
+        screenLoc.x = (int)pObject->centerX;
+        screenLoc.y = (int)pObject->maxY;
+
+        WorldLocation_t worldLoc;
+        convertScreenLocationToWorldLocation(&camParams, &screenLoc, &worldLoc);
+
+        printDebug("distance: %f, angle: %f\n", worldLoc.distance * 1000, worldLoc.angle * RAD_TO_DEG);
+
+        destroyMatrix8(pColorMatrix);
+        destroyObjectList(pObjectList);
+        destroyScreen(pScreen);
+    }
+}
+
+static void _drawPolygon(Screen_t* pScreen, Polygon_t* pPolygon) {
+    if (!pScreen) return;
+    if (!pPolygon) return;
+
+    for (int i = 0; i < pPolygon->size; ++i) {
+        PixelLocation_t* pVertexLoc = &(pPolygon->vertices[i]);
+        int index = pVertexLoc->y * pScreen->width + pVertexLoc->x;
+        pScreen->elements[index] = 0xffff;
+    }
+}
+
+#define _MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+#define _MAX(X,Y) ((X) > (Y) ? (X) : (Y))
+static void _drawLine(Screen_t* pScreen, Line_t* pLine) {
+    if (!pScreen) return;
+    if (!pLine) return;
+
+    int x1 = pLine->leftPoint.x;
+    int y1 = pLine->leftPoint.y;
+    int x2 = pLine->rightPoint.x;
+    int y2 = pLine->rightPoint.y;
+    int minX = _MIN(x1, x2);
+    int maxX = _MAX(x1, x2);
+    int minY = _MIN(y1, y2);
+    int maxY = _MAX(y1, y2);
+
+    int width = pScreen->width;
+    if (x1 == x2) {
+        int x = x1;
+        for (int y = minY; y <= maxY; ++y) {
+            int index = y * width + x;
+            pScreen->elements[index] = 0x07e0;
+        }
+    }
+    else if (abs(x2 - x1) > abs(y2 - y1)) {
+        double a = (double)(y2 - y1) / (x2 - x1);
+        for (int x = minX; x <= maxX; ++x) {
+            int y = a * (x - x1) + y1;
+            int index = y * width + x;
+            pScreen->elements[index] = 0x07e0;
+        }
+    }
+    else {
+        double a = (double)(x2 - x1) / (y2 - y1);
+        for (int y = minY; y <= maxY; ++y) {
+            int x = a * (y - y1) + x1;
+            int index = y * width + x;
+            pScreen->elements[index] = 0x07e0;
+        }
+    }
 }
