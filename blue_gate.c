@@ -537,7 +537,6 @@ static bool _arrangeDistanceBalance(void) {
 
         if(leftBlueGate != NULL) {
             leftTryCount = 0;
-            printf("leftBlueGate %d\n", leftBlueGate->cnt);    
             int leftDistance = leftBlueGate->maxX;
             if(leftDistance <= 80) {
                 left = true;
@@ -552,7 +551,6 @@ static bool _arrangeDistanceBalance(void) {
             }
         } else {
             leftTryCount++;
-            printf("lefttry %d\n", leftTryCount);
             ing = false;
         }
             
@@ -561,7 +559,7 @@ static bool _arrangeDistanceBalance(void) {
             break;
     }
     
-    if(rightTryCount > LIMIT_TRY_COUNT || leftTryCount > LIMIT_TRY_COUNT)
+    if(rightTryCount >= LIMIT_TRY_COUNT || leftTryCount >= LIMIT_TRY_COUNT)
         return false;
     else
         return true;
