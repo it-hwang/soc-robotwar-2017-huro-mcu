@@ -18,7 +18,12 @@
 #include "log.h"
 #include "debug.h"
 
-#define LIMIT_TRY_COUNT 2
+#define LIMIT_TRY_COUNT 4
+#define RIGHT_ZERO_GRADIENT 4
+#define LEFT_ZERO_GRADIENT -8
+#define HEAD_DIRECTION_ERROR -1
+#define HEAD_DIRECTION_RIGHT 0
+#define HEAD_DIRECTION_LEFT 1
 
 static bool _approchBlueGate(void);
 static void _establishBoundary(Screen_t* pScreen);
@@ -28,9 +33,17 @@ static void _setHeadRight(void);
 static void _setHeadLeft(void);
 static void _setHeadForward(void);
 static void _setStandardStand(void);
+static void _setHeadRightForGradient(void);
+static void _setHeadLeftForGradient(void);
+static void _setHeadForGradient(int headDirection);
 static bool _solveBluegate(void);
 static bool _balanceToSolveBlueGate(void);
-static bool _arrangeAngleBalance(void);
+static bool _arrangeAngle(int headDirection, bool doHeadSet);
+static Line_t* _captureLine(Screen_t* pScreen, int headDirection);
+static Line_t* _captureRightLine(Screen_t* pScreen);
+static Line_t* _captureLeftLine(Screen_t* pScreen);
+static int _getZeroGradient(int headDirection);
+static void _moveForSetGradient(int lineGradient);
 static bool _arrangeDistanceBalance(void);
 static Object_t* _captureBlueGate(void);
 static void _passThroughBlueGate(void);
@@ -58,7 +71,7 @@ static bool _approchBlueGate(void) {
     // 빨간 다리를 발견하지 못할 경우 다시 찍는 횟수
     static const int MAX_TRIES = 10;
     // 장애물에 다가갈 거리 (밀리미터)
-    static const int APPROACH_DISTANCE = 100;
+    static const int APPROACH_DISTANCE = 150;
     // 거리 허용 오차 (밀리미터)
     static const int APPROACH_DISTANCE_ERROR = 50;
     
@@ -273,6 +286,30 @@ static void _setStandardStand(void) {
     resetServoSpeed();
 }
 
+static void _setHeadRightForGradient(void) {
+    setServoSpeed(30);
+    runMotion(MOTION_CHECK_SIDELINE_STANCE);
+    setHead(85, -50);
+    mdelay(1000);
+    resetServoSpeed();
+}
+
+static void _setHeadLeftForGradient(void) {
+    setServoSpeed(30);
+    runMotion(MOTION_CHECK_SIDELINE_STANCE);
+    setHead(-85, -50);
+    mdelay(1000);
+    resetServoSpeed();
+}
+
+static void _setHeadForGradient(int headDirection) {
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        _setHeadRightForGradient();
+    else if(headDirection == HEAD_DIRECTION_LEFT)
+        _setHeadLeftForGradient();
+    else
+        printDebug("잘못된 매개 변수 값!(%d)\n", headDirection);
+}
 
 static bool _solveBluegate(void) {
 
@@ -285,9 +322,8 @@ static bool _solveBluegate(void) {
 
 static bool _balanceToSolveBlueGate(void) {
 
-    /* if( !_arrangeAngleBalance() ) {
-        return false;
-    } */
+    if( !_arrangeAngle(HEAD_DIRECTION_RIGHT, true) )
+        _arrangeAngle(HEAD_DIRECTION_LEFT, ture);
 
     if( !_arrangeDistanceBalance() ) {
         return false;
@@ -298,74 +334,188 @@ static bool _balanceToSolveBlueGate(void) {
     return true;
 }
 
-static bool _arrangeAngleBalance(void) {
-    
+static bool _arrangeAngle(int headDirection, bool doHeadSet) {
+    static const int RANGE_OF_GRADIENT = 5;
+    static const int LIMIT_TRY_COUNT = 10;
+
+    if(headDirection == HEAD_DIRECTION_ERROR)
+        return false;
+
+    if(doHeadSet)
+        _setHead(headDirection);
+
+    Screen_t* pScreen = createDefaultScreen();
+    Line_t* pLine = NULL;
+
+    int zeroGradient = _getZeroGradient(headDirection);
+    int lineGradient = 0;
     int tryCount = 0;
 
-    while( tryCount < LIMIT_TRY_COUNT ) {
+    do {
+        pLine = _captureLine(pScreen, headDirection);
 
-        _setHeadRight();
-        Object_t* rightBlueGate = _captureBlueGate();
+        if(pLine != NULL) {
+            lineGradient = (int)pLine->theta - zeroGradient;
+            tryCount = 0;
 
-        _setHeadLeft();
-        Object_t* leftBlueGate = _captureBlueGate();
+            if(abs(lineGradient) < RANGE_OF_GRADIENT)
+                break;
 
-        if(rightBlueGate == NULL || leftBlueGate == NULL) {
+            printDebug("중앙으로 부터 각도차(%d) 머리 방향(%d)\n", lineGradient, headDirection);
+            _moveForSetGradient(lineGradient);
+            
+            free(pLine);
+        } else {
+            printDebug("선을 확인 하지 못하여 다시 찍는 중.\n");
             tryCount++;
-            continue;
+            lineGradient = RANGE_OF_GRADIENT;
         }
+    } while(tryCount < LIMIT_TRY_COUNT);
 
-        tryCount = 0;
+    if(pLine != NULL)
+        free(pLine);
 
-        int differnceY = rightBlueGate->maxY - leftBlueGate->maxY;
+    destroyScreen(pScreen);
 
-        if( abs(differnceY) < 5 )
-            break;
-
-        if(differnceY < 0)
-            turnLeft(20);
-        else
-            turnRight(20);
-    }
-
-    if(tryCount < LIMIT_TRY_COUNT)
+    if(tryCount >= LIMIT_TRY_COUNT) {
+        printDebug("최대 촬영 횟수(%d) 초과!\n", tryCount);
         return false;
-    else
+    } else {
+        printDebug("각도 조절 완료. 머리 방향(%d)\n", headDirection);
         return true;
+    }
+    
+}
+
+static Line_t* _captureLine(Screen_t* pScreen, int headDirection) {
+    if(headDirection == HEAD_DIRECTION_RIGHT) 
+        return _captureRightLine(pScreen);
+    else if(headDirection == HEAD_DIRECTION_LEFT)
+        return _captureLeftLine(pScreen);
+    else {
+        printDebug("잘못된 매개 변수 값!(%d)\n", headDirection);
+        return NULL;
+    }
+}
+
+static Line_t* _captureRightLine(Screen_t* pScreen) {
+    
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 70, 0, 89, 110);
+
+    Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
+                                pColorTables[COLOR_BLACK]);
+
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    applyFastErosionToMatrix8(pColorMatrix, 2);
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+
+    Line_t* returnLine = lineDetection(pColorMatrix);
+
+    drawColorMatrix(pSubMatrix, pColorMatrix);
+    overlapMatrix16(pSubMatrix, pScreen, 70, 0);
+
+    _drawLine(pScreen, returnLine, 70, 0);
+    displayScreen(pScreen);
+
+    destroyMatrix8(pColorMatrix);
+    destroyMatrix16(pSubMatrix);
+
+    return returnLine;
+}
+
+static Line_t* _captureLeftLine(Screen_t* pScreen) {
+
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 90, 0, 109, 110);
+
+    Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
+                                pColorTables[COLOR_BLACK]);
+
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+    applyFastErosionToMatrix8(pColorMatrix, 2);
+    applyFastDilationToMatrix8(pColorMatrix, 1);
+
+    Line_t* returnLine = lineDetection(pColorMatrix);
+
+    drawColorMatrix(pSubMatrix, pColorMatrix);
+    overlapMatrix16(pSubMatrix, pScreen, 90, 0);
+
+    _drawLine(pScreen, returnLine, 90, 0);
+    displayScreen(pScreen);
+
+    destroyMatrix8(pColorMatrix);
+    destroyMatrix16(pSubMatrix);
+
+    return returnLine;
+}
+
+static int _getZeroGradient(int headDirection) {
+    if(headDirection == HEAD_DIRECTION_RIGHT)
+        return RIGHT_ZERO_GRADIENT;
+    else
+        return LEFT_ZERO_GRADIENT;
+}
+
+static void _moveForSetGradient(int lineGradient) {
+    if(lineGradient < 0) {
+        printDebug("왼쪽으로 회전. 기울기(%d)\n", lineGradient);
+        turnLeft(lineGradient * -1);
+    } else {
+        printDebug("오른쪽으로 회전. 기울기(%d)\n", lineGradient);
+        turnRight(lineGradient);
+    }
 }
 
 static bool _arrangeDistanceBalance(void) {
     
     int tryCount = 0;
 
+    bool right = false;
+    bool left = false;
+
     while( tryCount < LIMIT_TRY_COUNT ) {
 
         _setHeadRight();
         Object_t* rightBlueGate = _captureBlueGate();
+    
+        if(rightBlueGate != NULL) {
+            tryCount = 0;
+
+            int rightDistance = rightBlueGate->minX;
+            if(rightDistance >= 90)
+                right = true;
+            else {
+                walkLeft(5);
+                right = false;
+                left = false;
+            }
+        } else 
+            tryCount++;
 
         _setHeadLeft();
         Object_t* leftBlueGate = _captureBlueGate();
 
-        if(rightBlueGate == NULL || leftBlueGate == NULL) {
+        if(leftBlueGate != NULL) {
+            tryCount = 0;
+
+            int leftDistance = leftBlueGate->maxX;
+            if(leftDistance <= 90)
+                left = true;
+            else {
+                walkRight(5);
+                right = false;
+                left = false;
+            }
+        } else 
             tryCount++;
-            continue;
-        }
 
-        tryCount = 0;
-
-        int rightDistance = rightBlueGate->minX;
-        int leftDistance = 179 - leftBlueGate->maxX;
-        int differnceDistance = rightDistance - leftDistance;
-
-        if( abs(differnceDistance) < 36 )
+        if(right && left)
             break;
-
-        if(differnceDistance < 0)
-            walkLeft(5);
-        else
-            walkRight(5);
     }
-
+    
     if(tryCount > LIMIT_TRY_COUNT)
         return false;
     else
