@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 
 #include <stdlib.h>
 #include <string.h>
@@ -285,9 +285,9 @@ static bool _solveBluegate(void) {
 
 static bool _balanceToSolveBlueGate(void) {
 
-    if( !_arrangeAngleBalance() ) {
+    /* if( !_arrangeAngleBalance() ) {
         return false;
-    }
+    } */
 
     if( !_arrangeDistanceBalance() ) {
         return false;
@@ -357,7 +357,7 @@ static bool _arrangeDistanceBalance(void) {
         int leftDistance = 179 - leftBlueGate->maxX;
         int differnceDistance = rightDistance - leftDistance;
 
-        if( abs(differnceDistance) < 5 )
+        if( abs(differnceDistance) < 36 )
             break;
 
         if(differnceDistance < 0)
@@ -366,7 +366,7 @@ static bool _arrangeDistanceBalance(void) {
             walkRight(5);
     }
 
-    if(tryCount < LIMIT_TRY_COUNT)
+    if(tryCount > LIMIT_TRY_COUNT)
         return false;
     else
         return true;
