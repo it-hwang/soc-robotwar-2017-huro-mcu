@@ -21,8 +21,6 @@ static PixelLocation_t _directionToPoint(PixelLocation_t curPoint, int direction
 static int _notAllDirection(Matrix16_t* pLabelMatrix, Object_t* pObject, PixelLocation_t nextPoint, int* direction, int* checkAllDirection);
 static void _fillBoundary(Matrix8_t* pBoundaryMatrix);
 static int _findRightX(Matrix8_t* pBoundaryMatrix, int y);
-static int _findLeftX(Matrix8_t* pBoundaryMatrix, int y);
-static void _fillLeftToRight(Matrix8_t* pBoundaryMatrix, int leftX, int rightX, int y);
 
 Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix) {
 
@@ -58,6 +56,9 @@ Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix) {
 
 void applyBoundary(Screen_t* pScreen, Matrix8_t* pBoundaryMatrix) {
     
+    if(pBoundaryMatrix == NULL)
+        return;
+
     if(pScreen->width != pBoundaryMatrix->width)
         return;
     
