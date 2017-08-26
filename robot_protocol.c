@@ -217,20 +217,58 @@ bool walkRight(int millimeters) {
 }
 
 bool turnLeft(int degrees) {
-    while (degrees > 0) {
-        if (!runMotion(MOTION_TURN_LEFT_MIDDLE))
-            return false;
-        degrees -= 20;
+    if (degrees < 5) {
+        degrees = 5;
     }
-    
+
+    float remainingDegrees = degrees;
+
+    int nSteps;	
+    nSteps = remainingDegrees / 30.;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_LEFT_30DEG);
+        remainingDegrees -= 30.;
+    }
+
+    nSteps = remainingDegrees / 9.;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_LEFT_9DEG);
+        remainingDegrees -= 9.;
+    }
+
+    nSteps = remainingDegrees / 4.1;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_LEFT_4DEG);
+        remainingDegrees -= 4.1;
+    }
+
     return true;
 }
 
 bool turnRight(int degrees) {
-    while (degrees > 0) {
-        if (!runMotion(MOTION_TURN_RIGHT_MIDDLE))
-            return false;
-        degrees -= 20;
+    if (degrees < 5) {
+        degrees = 5;
+    }
+
+    float remainingDegrees = degrees;
+
+    int nSteps;	
+    nSteps = remainingDegrees / 30.;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_RIGHT_30DEG);
+        remainingDegrees -= 30.;
+    }
+
+    nSteps = remainingDegrees / 9.;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_RIGHT_9DEG);
+        remainingDegrees -= 9.;
+    }
+
+    nSteps = remainingDegrees / 4.1;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_RIGHT_4DEG);
+        remainingDegrees -= 4.1;
     }
     
     return true;
