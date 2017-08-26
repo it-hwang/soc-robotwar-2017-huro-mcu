@@ -232,6 +232,10 @@ Line_t* findTopLine(Polygon_t* pPolygon) {
 
     double prevSlope = _getAngle(prevLoc, mainLoc);
     double nextSlope = _getAngle(mainLoc, nextLoc);
+    if (prevSlope > 90.) prevSlope -= 180.;
+    else if (prevSlope < -90.) prevSlope += 180.;
+    if (nextSlope > 90.) nextSlope -= 180.;
+    else if (nextSlope < -90.) nextSlope += 180.;
 
     Line_t* pLine = NULL;
     if (fabs(prevSlope) < fabs(nextSlope))
@@ -257,6 +261,10 @@ Line_t* findBottomLine(Polygon_t* pPolygon) {
 
     double prevSlope = _getAngle(prevLoc, mainLoc);
     double nextSlope = _getAngle(mainLoc, nextLoc);
+    if (prevSlope > 90.) prevSlope -= 180.;
+    else if (prevSlope < -90.) prevSlope += 180.;
+    if (nextSlope > 90.) nextSlope -= 180.;
+    else if (nextSlope < -90.) nextSlope += 180.;
 
     Line_t* pLine = NULL;
     if (fabs(prevSlope) < fabs(nextSlope))
