@@ -337,8 +337,8 @@ static Line_t* _createLine(PixelLocation_t* pLoc1, PixelLocation_t* pLoc2) {
         pLine->leftPoint = *pLoc2;
         pLine->rightPoint = *pLoc1;
     }
-    pLine->centerPoint.x = (pLine->leftPoint.x + pLine->rightPoint.x) / 2;
-    pLine->centerPoint.y = (pLine->leftPoint.y + pLine->rightPoint.y) / 2;
+    pLine->centerPoint.x = (double)(pLine->leftPoint.x + pLine->rightPoint.x) / 2;
+    pLine->centerPoint.y = (double)(pLine->leftPoint.y + pLine->rightPoint.y) / 2;
     pLine->theta = _getAngle(pLine->leftPoint, pLine->rightPoint);
 
     return pLine;
