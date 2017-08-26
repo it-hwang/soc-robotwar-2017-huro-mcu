@@ -1,4 +1,4 @@
-#define DEBUG
+// #define DEBUG
 
 #include <math.h>
 #include <stdio.h>
@@ -23,19 +23,20 @@ static const int   _MIN_AREA = 300;
 static const float _MIN_CORRELATION = 0.1;
 
 static const int   _LINE_DETECTION_WIDTH = 80;
-static const int   _LINE_DETECTION_HEIGHT = 80;
+static const int   _LINE_DETECTION_HEIGHT = 86;
 
 
 #define _MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define _MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
-static bool _approachGreenBridge(void);
+static bool _approachUpStair(void);
 static bool _climbUpStair(void);
 static bool _crossGreenBridge(void);
+static bool _approachDownStair(void);
 static bool _climbDownStair(void);
 static double _calculateBridgeAngle(Matrix16_t* pLabelMatrix, Object_t* pBridgeObject);
+static double _calculateStairAngle(Matrix16_t* pLabelMatrix, Object_t* pStairObject);
 static int _measureGreenBridgeCenterOffsetX(void);
-static void _displayDebugScreen(Screen_t* pScreen, Object_t* pObject);
 static bool _searchGreenBridge(Screen_t* pScreen, Object_t* pObject, Matrix16_t* pLabelMatrix);
 static bool _searchBlackLine(Screen_t* pScreen, Object_t* pObject, Matrix16_t* pLabelMatrix);
 static float _getGreenBridgeCorrelation(Matrix8_t* pGreenMatrix, Object_t* pObject);
@@ -65,7 +66,6 @@ int measureGreenBridgeDistance(void) {
 
     Object_t object;
     bool hasFound = _searchGreenBridge(pScreen, &object, NULL);
-    _displayDebugScreen(pScreen, &object);
 
     int millimeters = 0;
     if (hasFound) {
@@ -90,15 +90,16 @@ int measureGreenBridgeDistance(void) {
 
 
 bool solveGreenBridge(void) {
-    //_approachGreenBridge();
-    //_climbUpStair();
+    _approachUpStair();
+    _climbUpStair();
     _crossGreenBridge();
+    _approachDownStair();
     _climbDownStair();
 
     return false;
 }
 
-static bool _approachGreenBridge(void) {
+static bool _approachUpStair(void) {
     // 녹색 다리를 발견하지 못할 경우 다시 찍는 횟수
     const int MAX_TRIES = 10;
 
@@ -205,8 +206,10 @@ static bool _crossGreenBridge(void) {
     const double ALIGN_FACING_ERROR = 5.;
     // 좌우 정렬 허용 오차 (밀리미터)
     const double ALIGN_CENTER_X_ERROR = 10.;
-    const double ALIGN_MAX_TURN_DEGREES = 20.;
-    const double ALIGN_MAX_WALK_DISTANCE = 30.;
+    // 각도 정렬 제한 회전 각도 (도)
+    const double ALIGN_TURN_DEGREES_LIMIT = 20.;
+    // 좌우 정렬 제한 이동 거리 (밀리미터)
+    const double ALIGN_WALK_DISTANCE_LIMIT = 30.;
 
     _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
 
@@ -219,7 +222,6 @@ static bool _crossGreenBridge(void) {
         readFpgaVideoDataWithWhiteBalance(pScreen);
 
         bool isOnBridge = _searchGreenBridge(pScreen, &bridge, pLabelMatrix);
-        _displayDebugScreen(pScreen, &bridge);
         if (!isOnBridge)
             break;
 
@@ -234,25 +236,87 @@ static bool _crossGreenBridge(void) {
 
         if (fabs(bridgeAngle) > ALIGN_FACING_ERROR) {
             if (bridgeAngle < 0)
-                turnLeft(_MIN(fabs(bridgeAngle), ALIGN_MAX_TURN_DEGREES));
+                turnLeft(_MIN(fabs(bridgeAngle), ALIGN_TURN_DEGREES_LIMIT));
             else
-                turnRight(_MIN(fabs(bridgeAngle), ALIGN_MAX_TURN_DEGREES));
-            //mdelay(20);
+                turnRight(_MIN(fabs(bridgeAngle), ALIGN_TURN_DEGREES_LIMIT));
+            mdelay(200);
             continue;
         }
 
         if (fabs(dx) > ALIGN_CENTER_X_ERROR) {
             if (dx < 0)
-                walkLeft(_MIN(fabs(dx), ALIGN_MAX_WALK_DISTANCE));
+                walkLeft(_MIN(fabs(dx), ALIGN_WALK_DISTANCE_LIMIT));
             else
-                walkRight(_MIN(fabs(dx), ALIGN_MAX_WALK_DISTANCE));
-            //mdelay(20);
+                walkRight(_MIN(fabs(dx), ALIGN_WALK_DISTANCE_LIMIT));
+            mdelay(200);
             continue;
         }
 
         printDebug("walk.\n");
-        walkForward(128);
-        //mdelay(40);
+        walkForward(256);
+        mdelay(200);
+    }
+    
+    destroyScreen(pScreen);
+    destroyMatrix16(pLabelMatrix);
+
+    return true;
+}
+
+
+static bool _approachDownStair(void) {
+    // 거리 측정에 사용되는 머리 각도
+    const int HEAD_HORIZONTAL_DEGREES = 0;
+    const int HEAD_VERTICAL_DEGREES = -80;
+
+    const double MILLIMETERS_PER_PIXELS = 2.25;
+    // 각도 허용 오차 (도)
+    const double ALIGN_FACING_ERROR = 10.;
+    // 최대 회전 각도 (도)
+    const double ALIGN_TURN_DEGREES_LIMIT = 20.;
+    // 전진보행 접근 거리 (밀리미터)
+    const double APPROACH_DISTANCE = 0.;
+    // 전진보행 허용 오차 (밀리미터)
+    const double APPROACH_DISTANCE_ERROR = 0.;
+    // 전진보행으로 갈 수 있는 최대 제한 거리 (밀리미터)
+    const double APPROACH_WALK_DISTANCE_LIMIT = 150.;
+    // 브라켓이 가려서 영상에서 최대한 달라붙어도 10mm 오차가 생긴다. 때문에 접근할 때 10mm 더 간다.
+    const double APPROACH_ADD_WALK_DISTANCE = 10.;
+
+    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
+
+    Screen_t* pScreen = createDefaultScreen();
+    Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
+
+    while (true) {
+        Object_t blackLine;
+        
+        readFpgaVideoDataWithWhiteBalance(pScreen);
+
+        bool isOnStair = _searchBlackLine(pScreen, &blackLine, pLabelMatrix);
+        if (!isOnStair)
+            break;
+
+        double stairAngle = _calculateStairAngle(pLabelMatrix, &blackLine);
+        double dy = (double)(_LINE_DETECTION_HEIGHT - blackLine.minY) * MILLIMETERS_PER_PIXELS;
+        printDebug("stairAngle: %f, dy: %f\n", stairAngle, dy);
+
+        if (fabs(stairAngle) > ALIGN_FACING_ERROR) {
+            if (stairAngle < 0)
+                turnLeft(_MIN(fabs(stairAngle), ALIGN_TURN_DEGREES_LIMIT));
+            else
+                turnRight(_MIN(fabs(stairAngle), ALIGN_TURN_DEGREES_LIMIT));
+            mdelay(200);
+            continue;
+        }
+
+        if (dy > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
+            walkForward(_MIN(dy - APPROACH_DISTANCE + APPROACH_ADD_WALK_DISTANCE, APPROACH_WALK_DISTANCE_LIMIT));
+            mdelay(200);
+            continue;
+        }
+
+        break;
     }
     
     destroyScreen(pScreen);
@@ -263,53 +327,7 @@ static bool _crossGreenBridge(void) {
 
 
 static bool _climbDownStair(void) {
-    // 거리 측정에 사용되는 머리 각도
-    const int HEAD_HORIZONTAL_DEGREES = 0;
-    const int HEAD_VERTICAL_DEGREES = -80;
-
-    // 각도 허용 오차 (도)
-    const double ALIGN_FACING_ERROR = 5.;
-/*
-    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
-
-    Screen_t* pScreen = createDefaultScreen();
-    Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
-
-    while (true) {
-        Object_t blackLine;
-
-        bool isOnBridge = _searchBlackLine(pScreen, &blackLine, pLabelMatrix);
-        if (!isOnBridge)
-            break;
-
-        double bridgeAngle = _calculateBridgeAngle(pLabelMatrix, &bridge);
-        if (fabs(bridgeAngle) > ALIGN_FACING_ERROR) {
-            if (bridgeAngle < 0)
-                turnLeft(fabs(bridgeAngle));
-            else
-                turnRight(fabs(bridgeAngle));
-            
-            continue;
-        }
-
-        int screenCenterX = pScreen->width / 2;
-        double dx = bridge.centerX - screenCenterX;
-        if (fabs(dx) > ALIGN_CENTER_X_ERROR) {
-            if (dx < 0)
-                walkLeft(fabs(dx));
-            else
-                walkRight(fabs(dx));
-                
-            continue;
-        }
-
-        walkForward(128);
-    }
-    
-    destroyScreen(pScreen);
-    destroyMatrix16(pLabelMatrix);
-*/
-    return true;
+    return runMotion(MOTION_CLIMB_DOWN_STAIR);
 }
 
 
@@ -331,6 +349,23 @@ static double _calculateBridgeAngle(Matrix16_t* pLabelMatrix, Object_t* pBridgeO
     return degrees;
 }
 
+static double _calculateStairAngle(Matrix16_t* pLabelMatrix, Object_t* pStairObject) {
+    Polygon_t* pPolygon = createPolygon(pLabelMatrix, pStairObject, 3);
+    Line_t* pLine = NULL;
+
+    if (pStairObject->maxY == _LINE_DETECTION_HEIGHT - 1)
+        pLine = findTopLine(pPolygon);
+    else
+        pLine = findBottomLine(pPolygon);
+
+    double degrees = pLine->theta;
+
+    destroyPolygon(pPolygon);
+    free(pLine);
+
+    return degrees;
+}
+
 
 static int _measureGreenBridgeCenterOffsetX(void) {
     // 거리 측정에 사용되는 머리 각도
@@ -344,9 +379,8 @@ static int _measureGreenBridgeCenterOffsetX(void) {
 
     Object_t object;
     bool hasFound = _searchGreenBridge(pScreen, &object, NULL);
-    _displayDebugScreen(pScreen, &object);
 
-    int offsetX = 0;;
+    int offsetX = 0;
     if (hasFound) {
         printDebug("minX: %d, centerX: %f, maxX: %d, minY: %d, centerY: %f, maxY: %d\n", object.minX, object.centerX, object.maxX, object.minY, object.centerY, object.maxY);
 
@@ -358,21 +392,6 @@ static int _measureGreenBridgeCenterOffsetX(void) {
     return offsetX;
 }
 
-
-static void _displayDebugScreen(Screen_t* pScreen, Object_t* pObject) {
-    Screen_t* pDebugScreen = cloneMatrix16(pScreen);
-    Matrix8_t* pGreenMatrix = _createGreenMatrix(pScreen);
-
-    drawColorMatrix(pDebugScreen, pGreenMatrix);
-
-    drawObjectEdge(pDebugScreen, pObject, NULL);
-    drawObjectCenter(pDebugScreen, pObject, NULL);
-
-    displayScreen(pDebugScreen);
-
-    destroyMatrix16(pDebugScreen);
-    destroyMatrix8(pGreenMatrix);
-}
 
 // pScreen에서 녹색 다리를 찾는다.
 static bool _searchGreenBridge(Screen_t* pScreen, Object_t* pObject, Matrix16_t* pLabelMatrix) {
@@ -410,6 +429,13 @@ static bool _searchGreenBridge(Screen_t* pScreen, Object_t* pObject, Matrix16_t*
     
     if (hasFound && pObject)
         memcpy(pObject, pGreenBridge, sizeof(Object_t));
+    
+    Screen_t* pDebugScreen = cloneMatrix16(pScreen);
+    drawColorMatrix(pDebugScreen, pGreenMatrix);
+    drawObjectEdge(pDebugScreen, pGreenBridge, NULL);
+    drawObjectCenter(pDebugScreen, pGreenBridge, NULL);
+    displayScreen(pDebugScreen);
+    destroyScreen(pDebugScreen);
 
     destroyMatrix8(pGreenMatrix);
     destroyObjectList(pObjectList);
@@ -454,7 +480,7 @@ static float _getGreenBridgeCorrelation(Matrix8_t* pGreenMatrix, Object_t* pObje
     return (areaCorrelation * AREA_CORRELATION_RATIO) + (centerCorrelation * CENTER_CORRELATION_RATIO);
 }
 
-/*
+
 static bool _searchBlackLine(Screen_t* pScreen, Object_t* pObject, Matrix16_t* pLabelMatrix) {
     if (!pScreen) return false;
 
@@ -462,39 +488,50 @@ static bool _searchBlackLine(Screen_t* pScreen, Object_t* pObject, Matrix16_t* p
 
     ObjectList_t* pObjectList = NULL;
     if (pLabelMatrix)
-        pObjectList = detectObjectsLocationWithLabeling(pGreenMatrix, pLabelMatrix);
+        pObjectList = detectObjectsLocationWithLabeling(pBlackMatrix, pLabelMatrix);
     else
-        pObjectList = detectObjectsLocation(pGreenMatrix);
+        pObjectList = detectObjectsLocation(pBlackMatrix);
 
-    // 가장 가까운 수평선을 찾는다.
+    // 가장 먼 수평선을 찾는다.
     Object_t* pMostNearestObject = NULL;
-    float maxCorrelation = 0.;
+    float minCenterY = 0;
     for (int i = 0; i < pObjectList->size; ++i) {
         Object_t* pObject = &(pObjectList->list[i]);
 
-        float correlation = _getGreenBridgeCorrelation(pGreenMatrix, pObject);
-        if (correlation > maxCorrelation) {
-            pMostSimilarObject = pObject;
-            maxCorrelation = correlation;
+        int width = pObject->maxX - pObject->minX + 1;
+        bool isLine = (width == _LINE_DETECTION_WIDTH);
+        if (!isLine)
+            continue;
+
+        if (!pMostNearestObject || pObject->centerY < minCenterY) {
+            pMostNearestObject = pObject;
+            minCenterY = pObject->centerY;
         }
     }
 
-    Object_t* pGreenBridge = NULL;
+    Object_t* pBlackLine = NULL;
     bool hasFound = false;
-    if (maxCorrelation >= _MIN_CORRELATION) {
-        pGreenBridge = pMostSimilarObject;
+    if (pMostNearestObject) {
+        pBlackLine = pMostNearestObject;
         hasFound = true;
     }
     
     if (hasFound && pObject)
-        memcpy(pObject, pGreenBridge, sizeof(Object_t));
+        memcpy(pObject, pBlackLine, sizeof(Object_t));
 
-    destroyMatrix8(pGreenMatrix);
+    Screen_t* pDebugScreen = cloneMatrix16(pScreen);
+    drawColorMatrix(pDebugScreen, pBlackMatrix);
+    drawObjectEdge(pDebugScreen, pBlackLine, NULL);
+    drawObjectCenter(pDebugScreen, pBlackLine, NULL);
+    displayScreen(pDebugScreen);
+    destroyScreen(pDebugScreen);
+
+    destroyMatrix8(pBlackMatrix);
     destroyObjectList(pObjectList);
 
     return hasFound;
 }
-*/
+
 
 static Matrix8_t* _createGreenMatrix(Screen_t* pScreen) {
     Matrix8_t* pMatrix = createColorMatrix(pScreen, pColorTables[COLOR_GREEN]);
@@ -517,8 +554,15 @@ static Matrix8_t* _createBlackMatrix(Screen_t* pScreen) {
     int width = pScreen->width;
     int height = pScreen->height;
     int centerX = width / 2;
-    int minX = centerX - _LINE_DETECTION_WIDTH;
+    int minX = centerX - (_LINE_DETECTION_WIDTH / 2);
     int maxX = minX + _LINE_DETECTION_WIDTH - 1;
+    int minY = 0;
+    int maxY = minY + _LINE_DETECTION_HEIGHT - 1;
+    
+    Matrix8_t* pSubMatrix = createSubMatrix8(pMatrix, minX, minY, maxX, maxY);
+    memset(pMatrix->elements, 0, width * height * sizeof(uint8_t));
+    overlapMatrix8(pSubMatrix, pMatrix, minX, minY);
+    destroyMatrix8(pSubMatrix);
 
     return pMatrix;
 }
