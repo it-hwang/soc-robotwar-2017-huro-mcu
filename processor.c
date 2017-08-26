@@ -21,6 +21,7 @@
 #include "vertical_barricade.h"
 #include "red_bridge.h"
 #include "corner_detection.h"
+#include "green_bridge.h"
 #include "boundary.h"
 #include "white_balance.h"
 #include "mine.h"
@@ -396,19 +397,7 @@ static void _runTest(void) {
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
     
-    //redBridgeMain();
-    /*for(int i = 0; i < 10000; ++i) {
-        _testBoundary();
-    }*/
-
-    // solveVerticalBarricade();
-    // checkCenterMain();
-    // redBridgeMain();
-    // checkCenterMain();
-    // mineMain();
-    // checkCenterMain();
-    // _hurdleGaeYangArch();
-    // cornerDetectionMain();
+    greenBridgeMain();
 }
 
 static void _testBoundary(void) {
