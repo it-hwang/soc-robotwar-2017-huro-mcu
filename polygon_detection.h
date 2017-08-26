@@ -13,4 +13,6 @@ typedef struct {
 Polygon_t* createPolygon(Matrix16_t* pLabelMatrix, Object_t* pObject, int threshold);
 void destroyPolygon(Polygon_t* pPolygon);
 
+void drawPolygon(Screen_t* pScreen, Polygon_t* pPolygon, Rgab5515_t* pPointColor);
+
 #endif //__POLYGON_DETECTION_H__
