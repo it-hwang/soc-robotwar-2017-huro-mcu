@@ -24,6 +24,10 @@ typedef Matrix16_t Screen_t;
 #define CAMERA_HORIZONTAL_ANGLE_OF_VIEW     69.984040
 #define CAMERA_VERTICAL_ANGLE_OF_VIEW       49.641083
 
+#define CAMERA_OFFSET_X     0.0000
+#define CAMERA_OFFSET_Y     0.0410
+#define CAMERA_OFFSET_Z     0.0095
+
 int openGraphicInterface(void);
 void closeGraphicInterface(void);
 
