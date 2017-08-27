@@ -450,15 +450,18 @@ static void _drawLine(Screen_t* pScreen, Line_t* pLine);
 
 static void _testCenter(void) {
     static const int HEAD_HORIZONTAL_DEGREES = 0;
-    static const int HEAD_VERTICAL_DEGREES = -35;
+    static const int HEAD_VERTICAL_DEGREES = -80;
 
-    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
+    runMotion(ROBOT_RELEASE_ARM_SERVOS);
+    printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
+    
+    //_setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
 
     while (true) {
         Screen_t* pScreen = createDefaultScreen();
         readFpgaVideoDataWithWhiteBalance(pScreen);
 
-        Matrix8_t* pColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_RED]);
+        Matrix8_t* pColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
         applyFastErosionToMatrix8(pColorMatrix, 1);
         applyFastDilationToMatrix8(pColorMatrix, 1);
 
@@ -469,27 +472,29 @@ static void _testCenter(void) {
         drawObjectEdge(pScreen, pObject, NULL);
         displayScreen(pScreen);
 
-        CameraParameters_t camParams;
-        camParams.height = 0.330;
-        camParams.yaw = 0.;
-        camParams.pitch = (-35.) * DEG_TO_RAD;
-        camParams.fx = 140.142;
-        camParams.fy = 127.463;
-        camParams.cx = 90.481;
-        camParams.cy = 61.825;
-        camParams.k1 = -0.406476;
-        camParams.k2 = 0.267154;
-        camParams.p1 = -0.002105;
-        camParams.p2 = 0.004383;
+        if (pObject) {
+            CameraParameters_t camParams;
+            camParams.height = 0.330;
+            camParams.yaw = (double)getHeadHorizontal() * -1 * DEG_TO_RAD;
+            camParams.pitch = (double)getHeadVertical() * DEG_TO_RAD;
+            camParams.fx = 146.181;
+            camParams.fy = 132.462;
+            camParams.cx = 94.868;
+            camParams.cy = 63.161;
+            camParams.k1 = -0.417426;
+            camParams.k2 = 0.172889;
+            camParams.p1 = -0.004961;
+            camParams.p2 = -0.002298;
 
-        PixelLocation_t screenLoc;
-        screenLoc.x = (int)pObject->centerX;
-        screenLoc.y = (int)pObject->maxY;
+            PixelLocation_t screenLoc;
+            screenLoc.x = (int)pObject->centerX;
+            screenLoc.y = (int)pObject->maxY;
 
-        WorldLocation_t worldLoc;
-        convertScreenLocationToWorldLocation(&camParams, &screenLoc, &worldLoc);
+            WorldLocation_t worldLoc;
+            convertScreenLocationToWorldLocation(&camParams, &screenLoc, &worldLoc);
 
-        printDebug("distance: %f, angle: %f\n", worldLoc.distance * 1000, worldLoc.angle * RAD_TO_DEG);
+            printDebug("distance: %f, angle: %f\n", worldLoc.distance * 1000, worldLoc.angle * RAD_TO_DEG);
+        }
 
         destroyMatrix8(pColorMatrix);
         destroyObjectList(pObjectList);
