@@ -25,6 +25,7 @@
 #include "boundary.h"
 #include "white_balance.h"
 #include "mine.h"
+#include "trap.h"
 #include "log.h"
 #include "screenio.h"
 #include "debug.h"
@@ -397,20 +398,12 @@ static void _runTest(void) {
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
     
-    blueGateMain();
-    //redBridgeMain();
-    /*for(int i = 0; i < 10000; ++i) {
-        _testBoundary();
-    }*/
+    setHead(0, -35);
+    
+    for(int i = 0; i < 5000; ++i) {
+        trapMain();
+    }
 
-    // solveVerticalBarricade();
-    // checkCenterMain();
-    // redBridgeMain();
-    // checkCenterMain();
-    // mineMain();
-    // checkCenterMain();
-    // _hurdleGaeYangArch();
-    // cornerDetectionMain();
 }
 
 static void _testBoundary(void) {
