@@ -73,6 +73,13 @@ static Object_t* _candidateObjectForBoundary(pScreen) {
 
     _establishBoundary(pScreen);
 
+    Matrix8_t* pYellowMatrix = createColorMatrix(pScreen);
+
+    Matrix16_t* pLabelMatrix = NULL;
+
+    ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pYellowMatrix, pLabelMatrix);
+
+    
 }
 
 static void _establishBoundary(Screen_t* pScreen) {
@@ -83,9 +90,11 @@ static void _establishBoundary(Screen_t* pScreen) {
     Matrix8_t* pMergedColorMatrix = 
     overlapColorMatrix(pYellowMatrix, pWhiteMatrix);
 
-    applyFastErosionToMatrix8(pMergedColorMatrix, 1);
     applyFastDilationToMatrix8(pMergedColorMatrix, 2);
-    applyFastErosionToMatrix8(pMergedColorMatrix, 1);
+    applyFastErosionToMatrix8(pMergedColorMatrix, 2);
+    
+    applyFastErosionToMatrix8(pMergedColorMatrix, 2);
+    applyFastDilationToMatrix8(pMergedColorMatrix, 2);
     
     Matrix8_t* pBoundaryMatrix = establishBoundary(pMergedColorMatrix);
 
