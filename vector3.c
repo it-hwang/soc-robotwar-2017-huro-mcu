@@ -9,7 +9,7 @@ const Vector3_t VECTOR3_AXIS_X = {1.0, 0.0, 0.0};
 const Vector3_t VECTOR3_AXIS_Y = {0.0, 1.0, 0.0};
 const Vector3_t VECTOR3_AXIS_Z = {0.0, 0.0, 1.0};
 
-double getLengthVector3(Vector3_t* pVector) {
+double getLengthVector3(const Vector3_t* pVector) {
     if (!pVector) {
         printDebug("pVector is NULL.\n");
         return 0.0;
@@ -41,7 +41,7 @@ void setLengthVector3(Vector3_t* pVector, double length) {
     pVector->z *= l;
 }
 
-void addVector3(Vector3_t* pAugend, Vector3_t* pAddend) {
+void addVector3(Vector3_t* pAugend, const Vector3_t* pAddend) {
     if (!pAugend) {
         printDebug("pAugend is NULL.\n");
         return;
@@ -56,7 +56,7 @@ void addVector3(Vector3_t* pAugend, Vector3_t* pAddend) {
     pAugend->z += pAddend->z;
 }
 
-void subtractVector3(Vector3_t* pMinuend, Vector3_t* pSubtrahend) {
+void subtractVector3(Vector3_t* pMinuend, const Vector3_t* pSubtrahend) {
     if (!pMinuend) {
         printDebug("pMinuend is NULL.\n");
         return;
@@ -71,7 +71,7 @@ void subtractVector3(Vector3_t* pMinuend, Vector3_t* pSubtrahend) {
     pMinuend->z -= pSubtrahend->z;
 }
 
-double dotProductVector3(Vector3_t* pVectorA, Vector3_t* pVectorB) {
+double dotProductVector3(const Vector3_t* pVectorA, const Vector3_t* pVectorB) {
     if (!pVectorA) {
         printDebug("pVectorA is NULL.\n");
         return 0.0;
@@ -86,7 +86,7 @@ double dotProductVector3(Vector3_t* pVectorA, Vector3_t* pVectorB) {
             pVectorA->z * pVectorB->z);
 }
 
-Vector3_t crossProductVector3(Vector3_t* pVectorA, Vector3_t* pVectorB) {
+Vector3_t crossProductVector3(const Vector3_t* pVectorA, const Vector3_t* pVectorB) {
     Vector3_t result = {0.0, 0.0, 0.0};
 
     if (!pVectorA) {
@@ -104,7 +104,7 @@ Vector3_t crossProductVector3(Vector3_t* pVectorA, Vector3_t* pVectorB) {
     return result;
 }
 
-Vector3_t projectVector3(Vector3_t* pProjected, Vector3_t* pDirection) {
+Vector3_t projectVector3(const Vector3_t* pProjected, const Vector3_t* pDirection) {
     Vector3_t result = {0.0, 0.0, 0.0};
 
     if (!pProjected) {
@@ -129,7 +129,7 @@ Vector3_t projectVector3(Vector3_t* pProjected, Vector3_t* pDirection) {
     return result;
 }
 
-Vector3_t projectPlaneVector3(Vector3_t* pProjected, Vector3_t* pNormal) {
+Vector3_t projectPlaneVector3(const Vector3_t* pProjected, const Vector3_t* pNormal) {
     Vector3_t result = {0.0, 0.0, 0.0};
 
     if (!pProjected) {
@@ -154,7 +154,7 @@ Vector3_t projectPlaneVector3(Vector3_t* pProjected, Vector3_t* pNormal) {
     return result;
 }
 
-double getAngleVector3(Vector3_t* pVectorA, Vector3_t* pVectorB) {
+double getAngleVector3(const Vector3_t* pVectorA, const Vector3_t* pVectorB) {
     if (!pVectorA) {
         printDebug("pVectorA is NULL.\n");
         return 0.0;
@@ -173,7 +173,7 @@ double getAngleVector3(Vector3_t* pVectorA, Vector3_t* pVectorB) {
     return acos(dotProductVector3(pVectorA, pVectorB) / l);
 }
 
-void rotateVector3(Vector3_t* pVector, Vector3_t* pAxis, double angle) {
+void rotateVector3(Vector3_t* pVector, const Vector3_t* pAxis, double angle) {
     if (!pVector) {
         printDebug("pVector is NULL.\n");
         return;
