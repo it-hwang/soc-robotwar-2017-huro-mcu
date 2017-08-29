@@ -17,16 +17,30 @@
 static Object_t* _searchTrap(void);
 static Object_t* _candidateObjectForBoundary(Screen_t* pScreen);
 static void _establishBoundary(Screen_t* pScreen);
-static void _setBoundary(Screen_t* pScreen, Object_t* pObject);
+static void _setBoundary(Screen_t* pScreen);
 static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject);
 static int _measureObjectDistance(Object_t* pTrapsObject);
 static void _approachObject(int distance);
+static bool _approachTrap(Object_t* pObject);
+static bool _climbUpTrap(void);
+static bool _approachBlackLine(void);
+static bool _forwardRoll(void);
 
 bool trapMain(void) {
 
-    _searchTrap();
+    Object_t* pTrap = _searchTrap();
 
-    return false;
+    if(pTrap == NULL)
+        return false;
+
+    _approachTrap(pTrap);
+    _climbUpTrap();
+    _approachBlackLine();
+    _forwardRoll();
+    
+    free(pTrap);
+
+    return true;
 }
 
 static Object_t* _searchTrap(void) {
@@ -38,18 +52,11 @@ static Object_t* _searchTrap(void) {
     const int APPROACH_DISTANCE_ERROR = 30;
 
     Screen_t* pScreen = createDefaultScreen();
-    
+
     for(int nTries = 0; nTries < MAX_TRIES; ++nTries) {
-        Object_t* pObject = _candidateObjectForBoundary(pScreen);
-
-        displayScreen(pScreen);
-
-        if(pObject == NULL)
+        
+        if( !_setBoundary(pScreen) )
             continue;
-
-        _setBoundary(pScreen, pObject);
-    
-        free(pObject);
 
         Object_t* pTrapObject = NULL;
         bool isTrap = _isTrapObject(pScreen, pTrapObject);
@@ -76,28 +83,49 @@ static Object_t* _searchTrap(void) {
     return NULL;
 }
 
-static Object_t* _candidateObjectForBoundary(Screen_t* pScreen) {
+static bool _setBoundary(Screen_t* pScreen) {
+    Matrix16_t* pLabelMatrix = NULL;
+    
+    Object_t* pObject = _candidateObjectForBoundary(pScreen, pLabelMatrix);
+
+    displayScreen(pScreen);
+
+    if(pObject == NULL){
+        destroyMatrix16(pLabelMatrix);
+        return false;
+    }
+        
+    Matrix8_t* pMatrix8 = traceBoundaryLine(pObject, pLabelMatrix);
+    
+    fillBoundary(pMatrix8);
+    applyBoundary(pScreen, pMatrix8);
+
+    destroyMatrix8(pMatrix8);
+    destroyMatrix16(pLabelMatrix);
+    free(pObject);
+
+    return true;
+}
+
+static Object_t* _candidateObjectForBoundary(Screen_t* pScreen, Matrix16_t* pLabelMatrix) {
 
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
     _establishBoundary(pScreen);
 
-    Object_t* pObject = _getCandidateObjectForBoundary(pScreen);
+    Object_t* pObject = _getCandidateObjectForBoundary(pScreen, pLabelMatrix);
 
     return pObject;
 }
 
-static Object_t* _getCandidateObjectForBoundary(Screen_t* pScreen) {
+static Object_t* _getCandidateObjectForBoundary(Screen_t* pScreen, Matrix16_t* pLabelMatrix) {
     Matrix8_t* pYellowMatrix = createColorMatrix(pScreen, pColorTables[COLOR_YELLOW]);
-    
-    Matrix16_t* pLabelMatrix = NULL;
 
     ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pYellowMatrix, pLabelMatrix);
 
     if(pObjectList == NULL || pObjectList->size == 0) {
         destroyObjectList(pObjectList);
         destroyMatrix8(pYellowMatrix);
-        destroyMatrix16(pLabelMatrix);
         return NULL;
     }
 
@@ -112,7 +140,6 @@ static Object_t* _getCandidateObjectForBoundary(Screen_t* pScreen) {
     if(pMaxObject == NULL) {
         destroyObjectList(pObjectList);
         destroyMatrix8(pYellowMatrix);
-        destroyMatrix16(pLabelMatrix);
         return NULL;
     }
 
@@ -121,7 +148,6 @@ static Object_t* _getCandidateObjectForBoundary(Screen_t* pScreen) {
 
     destroyObjectList(pObjectList);
     destroyMatrix8(pYellowMatrix);
-    destroyMatrix16(pLabelMatrix);
 
     return pReturnObject;
 }
@@ -153,11 +179,9 @@ static void _establishBoundary(Screen_t* pScreen) {
     destroyMatrix8(pBoundaryMatrix);
 }
 
-static void _setBoundary(Screen_t* pScreen, Object_t* pObject) {
-
-}
-
 static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject) {
+
+    
     return false;
 }
 
