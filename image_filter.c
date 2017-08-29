@@ -199,7 +199,7 @@ void applyDilationToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
     destroyMatrix8(pComparator);
 }
 
-void applyFastLengthErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+void applyFastHeightErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     PixelCoordinate_t width = pBinaryMatrix->width;
     PixelCoordinate_t height = pBinaryMatrix->height;
     int x;
@@ -272,7 +272,7 @@ void applyFastWidthErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
 void applyFastErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     
     applyFastWidthErosionToMatrix8(pBinaryMatrix, n);
-    applyFastLengthErosionToMatrix8(pBinaryMatrix, n);
+    applyFastHeightErosionToMatrix8(pBinaryMatrix, n);
 }
 
 void applyFastWidthDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
@@ -315,7 +315,7 @@ void applyFastWidthDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     }
 }
 
-void applyFastLengthDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+void applyFastHeightDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     PixelCoordinate_t width = pBinaryMatrix->width;
     PixelCoordinate_t height = pBinaryMatrix->height;
     int x;
@@ -357,5 +357,5 @@ void applyFastLengthDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
 
 void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     applyFastWidthDilationToMatrix8(pBinaryMatrix, n);
-    applyFastLengthDilationToMatrix8(pBinaryMatrix, n);
+    applyFastHeightDilationToMatrix8(pBinaryMatrix, n);
 }
