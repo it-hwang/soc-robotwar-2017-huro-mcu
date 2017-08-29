@@ -23,6 +23,7 @@
 #include "vertical_barricade.h"
 #include "red_bridge.h"
 #include "corner_detection.h"
+#include "green_bridge.h"
 #include "boundary.h"
 #include "white_balance.h"
 #include "mine.h"
