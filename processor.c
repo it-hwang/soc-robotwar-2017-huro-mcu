@@ -1,4 +1,4 @@
-// #define DEBUG
+#define DEBUG
 
 #include <math.h>
 #include <stdio.h>
@@ -14,9 +14,11 @@
 #include "graphic_interface.h"
 #include "obstacle_manager.h"
 #include "object_detection.h"
+#include "line_detection.h"
+#include "polygon_detection.h"
+#include "camera.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
-#include "line_detection.h"
 #include "check_center.h"
 #include "vertical_barricade.h"
 #include "red_bridge.h"
@@ -25,10 +27,14 @@
 #include "boundary.h"
 #include "white_balance.h"
 #include "mine.h"
+#include "vector3.h"
 #include "log.h"
 #include "screenio.h"
 #include "debug.h"
 
+#define PI 3.141592
+#define DEG_TO_RAD  (PI / 180)
+#define RAD_TO_DEG  (180 / PI)
 
 static const char* _WHITE_BALANCE_TABLE_PATH = "./data/white_balance.lut";
 // static ObstacleId_t* _obstacleSequence;
@@ -307,14 +313,14 @@ static void _autoSaveScreen(Screen_t* pScreen, char* savedFilePath) {
     // 적합한 파일 이름 찾기
     int i = 0;
     while (true) {
-        sprintf(savedFilePath, "./screenshots/sc%d", i);
+        sprintf(savedFilePath, "./screenshots/sc%d.bmp", i);
         bool isExists = (access(savedFilePath, F_OK) == 0);
         if (!isExists)
             break;
         i++;
     }
 
-    writeScreen(pScreen, savedFilePath);
+    saveScreen(pScreen, savedFilePath);
 }
 
 
@@ -322,7 +328,7 @@ static void _runCaptureScreen(void) {
     printLog("Capture Screen\n");
 
     enableDirectCameraDisplay();
-    runMotion(ROBOT_RELEASE_ARM_SERVOS);
+    //runMotion(ROBOT_RELEASE_ARM_SERVOS);
     printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
 
     while (true) {
@@ -383,7 +389,7 @@ static void _runCaptureScreen(void) {
 ///////////////////////////////////////////////////////////////////////////////
 // Test
 ///////////////////////////////////////////////////////////////////////////////
-static void _hurdleGaeYangArch(void);
+static void _testWorldLoc(void);
 
 static void _runTest(void) {
     printLog("Test\n");
@@ -396,53 +402,43 @@ static void _runTest(void) {
 
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
-    
-    blueGateMain();
-    //redBridgeMain();
-    /*for(int i = 0; i < 10000; ++i) {
-        _testBoundary();
-    }*/
 
-    // solveVerticalBarricade();
-    // checkCenterMain();
-    // redBridgeMain();
-    // checkCenterMain();
-    // mineMain();
-    // checkCenterMain();
-    // _hurdleGaeYangArch();
-    // cornerDetectionMain();
+    _testWorldLoc();
 }
 
-static void _testBoundary(void) {
-    Screen_t* pScreen = createDefaultScreen();
+static void _testWorldLoc(void) {
+    runMotion(ROBOT_RELEASE_ARM_SERVOS);
+    printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
 
-    readFpgaVideoDataWithWhiteBalance(pScreen);
+    while (true) {
+        Screen_t* pScreen = createDefaultScreen();
+        readFpgaVideoDataWithWhiteBalance(pScreen);
 
-    Matrix8_t* pWhiteColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
-    Matrix8_t* pBlueColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
+        Matrix8_t* pColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
+        applyFastErosionToMatrix8(pColorMatrix, 1);
+        applyFastDilationToMatrix8(pColorMatrix, 1);
 
-    Matrix8_t* pMergedColorMatrix = 
-             overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
+        ObjectList_t* pObjectList = detectObjectsLocation(pColorMatrix);
+        Object_t* pObject = findLargestObject(pObjectList);
+       
+        drawColorMatrix(pScreen, pColorMatrix);
+        drawObjectEdge(pScreen, pObject, NULL);
+        displayScreen(pScreen);
 
-    // applyFastErosionToMatrix8(pMergedColorMatrix, 1);
-    // applyFastDilationToMatrix8(pMergedColorMatrix, 1);
+        if (pObject) {
+            Vector3_t headOffset = {0.0, -0.020, 0.296};
+            CameraParameters_t camParams;
+            readCameraParameters(&camParams, &headOffset);
 
-    Matrix8_t* pBoundaryMatrix = establishBoundary(pMergedColorMatrix);
+            PixelLocation_t screenLoc = {(int)pObject->centerX, pObject->maxY};
+            Vector3_t worldLoc;
+            convertScreenLocationToWorldLocation(&camParams, &screenLoc, 0.0, &worldLoc);
 
-    applyBoundary(pScreen, pBoundaryMatrix);
+            printDebug("x: %.0f, y: %.0f, z: %.0f\n", worldLoc.x * 1000, worldLoc.y * 1000, worldLoc.z * 1000);
+        }
 
-    //drawColorMatrix(pScreen, pMergedColorMatrix);
-    displayScreen(pScreen);
-    destroyMatrix8(pWhiteColorMatrix);
-    destroyMatrix8(pBlueColorMatrix);
-    destroyMatrix8(pMergedColorMatrix);
-    destroyMatrix8(pBoundaryMatrix);
-    destroyScreen(pScreen);
-}
-
-static void _hurdleGaeYangArch(void) {
-    runWalk(ROBOT_WALK_FORWARD_QUICK, 30);
-    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
-    mdelay(500);
-    runMotion(MOTION_HURDLE);
+        destroyMatrix8(pColorMatrix);
+        destroyObjectList(pObjectList);
+        destroyScreen(pScreen);
+    }
 }
