@@ -3,6 +3,7 @@
 
 #include "matrix.h"
 #include "graphic_interface.h"
+#include "object_detection.h"
 
 Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix);
 void applyBoundary(Screen_t* pScreen, Matrix8_t* pBoundaryMatrix);

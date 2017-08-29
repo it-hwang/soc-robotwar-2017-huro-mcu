@@ -43,7 +43,7 @@ Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix) {
 
     Matrix8_t* pReturnMatrix = traceBoundaryLine(pObject, pLabelMatrix);
 
-    _fillBoundary(pReturnMatrix);
+    fillBoundary(pReturnMatrix);
 
     destroyObjectList(pObjectList);
     
@@ -66,10 +66,14 @@ void applyBoundary(Screen_t* pScreen, Matrix8_t* pBoundaryMatrix) {
     int width = pScreen->width;
     int height = pScreen->height;
     int length = width * height;
+    uint8_t* pBoundaryPixels = pBoundaryMatrix->elements;
+    PixelData_t* pScreenPixels = pScreen->elements;
 
     for(int i = 0; i < length; ++i) {
-        if(pBoundaryMatrix->elements[i] != 0xff)
-            pScreen->elements[i] = 0x7bcf; //NONE_COLOR
+        if(*pBoundaryPixels != 0xff)
+            *pScreenPixels = 0x7bcf; //NONE_COLOR
+        pBoundaryPixels++;
+        pScreenPixels++;
     }
 }
 
