@@ -120,8 +120,14 @@ void printFpgaVideoData(void) {
 // TODO: 이 곳에 다음 코드들이 오는 것이 적절한지 검토해야한다.
 //       "screenio.c"에 위치하는게 좋을지 다시 생각해보아야 한다.
 // 출처: C 언어 코딩 도장
+              // 구조체를 1바이트 크기로 정렬
 
-#pragma pack(push, 1)                // 구조체를 1바이트 크기로 정렬
+#ifdef _WIN32
+    #pragma pack(push, 1)
+    #define _STRUCT_ATTRIBUTE 
+#else
+    #define _STRUCT_ATTRIBUTE __attribute__((packed))
+#endif
 
 typedef struct _BITMAPFILEHEADER     // BMP 비트맵 파일 헤더 구조체
 {
@@ -130,7 +136,8 @@ typedef struct _BITMAPFILEHEADER     // BMP 비트맵 파일 헤더 구조체
     unsigned short bfReserved1;      // 예약
     unsigned short bfReserved2;      // 예약
     unsigned int   bfOffBits;        // 비트맵 데이터의 시작 위치
-} BITMAPFILEHEADER;
+} _STRUCT_ATTRIBUTE BITMAPFILEHEADER;
+
 
 typedef struct _BITMAPINFOHEADER     // BMP 비트맵 정보 헤더 구조체(DIB 헤더)
 {
@@ -145,16 +152,18 @@ typedef struct _BITMAPINFOHEADER     // BMP 비트맵 정보 헤더 구조체(DI
     int            biYPelsPerMeter;  // 그림의 세로 해상도(미터당 픽셀)
     unsigned int   biClrUsed;        // 색상 테이블에서 실제 사용되는 색상 수
     unsigned int   biClrImportant;   // 비트맵을 표현하기 위해 필요한 색상 인덱스 수
-} BITMAPINFOHEADER;
+} _STRUCT_ATTRIBUTE BITMAPINFOHEADER;
 
 typedef struct _RGBTRIPLE            // 24비트 비트맵 이미지의 픽셀 구조체
 {
     unsigned char rgbtBlue;          // 파랑
     unsigned char rgbtGreen;         // 초록
     unsigned char rgbtRed;           // 빨강
-} RGBTRIPLE;
+} _STRUCT_ATTRIBUTE RGBTRIPLE;
 
-#pragma pack(pop)
+#ifdef _WIN32
+    #pragma pack(pop)
+#endif
 
 #define PIXEL_SIZE   3    // 픽셀 한 개의 크기 3바이트(24비트)
 #define PIXEL_ALIGN  4    // 픽셀 데이터 가로 한 줄은 4의 배수 크기로 저장됨
