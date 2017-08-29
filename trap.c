@@ -82,13 +82,48 @@ static Object_t* _candidateObjectForBoundary(Screen_t* pScreen) {
 
     _establishBoundary(pScreen);
 
-    Matrix8_t* pYellowMatrix = createColorMatrix(pScreen, pColorTables[COLOR_YELLOW]);
+    Object_t* pObject = _getCandidateObjectForBoundary(pScreen);
 
+    return pObject;
+}
+
+static Object_t* _getCandidateObjectForBoundary(Screen_t* pScreen) {
+    Matrix8_t* pYellowMatrix = createColorMatrix(pScreen, pColorTables[COLOR_YELLOW]);
+    
     Matrix16_t* pLabelMatrix = NULL;
 
     ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pYellowMatrix, pLabelMatrix);
-    
-    return NULL;
+
+    if(pObjectList == NULL || pObjectList->size == 0) {
+        destroyObjectList(pObjectList);
+        destroyMatrix8(pYellowMatrix);
+        destroyMatrix16(pLabelMatrix);
+        return NULL;
+    }
+
+    Object_t* pMaxObject = NULL;
+    for(int i = 0; i < pObjectList->size; ++i) {
+        Object_t* pObject = &pObjectList->list[i];
+
+        if(pMaxObject == NULL || pMaxObject->cnt < pObject->cnt)
+            pMaxObject = pObject;
+    }
+
+    if(pMaxObject == NULL) {
+        destroyObjectList(pObjectList);
+        destroyMatrix8(pYellowMatrix);
+        destroyMatrix16(pLabelMatrix);
+        return NULL;
+    }
+
+    Object_t* pReturnObject = (Object_t*)malloc(sizeof(Object_t));
+    mamcpy(pReturnObject, pMaxObject, sizeof(Object_t));
+
+    destroyObjectList(pObjectList);
+    destroyMatrix8(pYellowMatrix);
+    destroyMatrix16(pLabelMatrix);
+
+    return pReturnObject;
 }
 
 static void _establishBoundary(Screen_t* pScreen) {
