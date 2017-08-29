@@ -20,9 +20,9 @@ typedef struct {
 } CameraParameters_t;
 
 // pHeadOffset: 현재 로봇의 머리 위치 (meters)
-void readCameraParameters(CameraParameters_t* pCamParams, Vector3_t* pHeadOffset);
-void convertScreenLocationToWorldLocation(CameraParameters_t* pCamParams, PixelLocation_t* pScreenLoc, double height, Vector3_t* pWorldLoc);
+void readCameraParameters(CameraParameters_t* pCamParams, const Vector3_t* pHeadOffset);
+void convertScreenLocationToWorldLocation(const CameraParameters_t* pCamParams, const PixelLocation_t* pScreenLoc, double height, Vector3_t* pWorldLoc);
 
-Screen_t* createUndistortedScreen(Screen_t* pScreen, CameraParameters_t* pCamParams);
+Screen_t* createUndistortedScreen(const Screen_t* pScreen, const CameraParameters_t* pCamParams);
 
 #endif // __CAMERA_H__
