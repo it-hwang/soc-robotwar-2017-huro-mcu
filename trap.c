@@ -19,7 +19,7 @@ static Object_t* _candidateObjectForBoundary(Screen_t* pScreen);
 static void _establishBoundary(Screen_t* pScreen);
 static void _setBoundary(Screen_t* pScreen);
 static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject);
-static int _measureObjectDistance(Object_t* pTrapsObject);
+static int _measureObjectDistance(Object_t* pTrapObject);
 static void _approachObject(int distance);
 static bool _approachTrap(Object_t* pObject);
 static bool _climbUpTrap(void);
@@ -181,7 +181,72 @@ static void _establishBoundary(Screen_t* pScreen) {
 
 static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject) {
 
+    Matrix8_t* pYellowMatrix = createColorMatrix(pScreen, pColorTables[COLOR_YELLOW]);
+
+    ObjectList_t* pYellowObjectList = detectObjectsLocation(pYellowMatrix);
     
+    if(pYellowObjectList == NULL || pYellowObjectList->size == 0) {
+        destroyObjectList(pYellowObjectList);
+        destroyMatrix8(pYellowMatrix);
+        return false;
+    }
+
+    Object_t* pMaxYellowObject = NULL;
+    for(int i = 0; i < pYellowObjectList->size; ++i) {
+        Object_t* pObject = &pYellowObjectList->list[i];
+
+        if(pMaxYellowObject == NULL || pMaxYellowObject->cnt < pObject->cnt)
+            pMaxYellowObject = pObject;
+    }
+
+    if(pMaxYellowObject == NULL) {
+        destroyObjectList(pYellowObjectList);
+        destroyMatrix8(pYellowMatrix);
+        return false;
+    }
+
+    Matrix8_t* pBlackMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLACK]);
+    
+    ObjectList_t* pBlackObjectList = detectObjectsLocation(pBlackMatrix);
+    
+    if(pBlackObjectList == NULL || pBlackObjectList->size == 0) {
+        destroyObjectList(pBlackObjectList);
+        destroyMatrix8(pBlackMatrix);
+        return false;
+    }
+
+    Object_t* pMaxBlackObject = NULL;
+    for(int i = 0; i < pBlackObjectList->size; ++i) {
+        Object_t* pObject = &pBlackObjectList->list[i];
+
+        if(pMaxBlackObject == NULL || pMaxBlackObject->cnt < pObject->cnt)
+            pMaxBlackObject = pObject;
+    }
+
+    if(pMaxBlackObject == NULL) {
+        destroyObjectList(pBlackObjectList);
+        destroyMatrix8(pBlackMatrix);
+        return false;
+    }
+
+    bool isBlackXInsideYellowX = (pMaxBlackObject->minX > pMaxYellowObject->minX && pMaxBlackObject->maxX < pMaxYellowObject->maxX);
+    bool isBlackYInsideYellowY = (pMaxBlackObject->minY > pMaxYellowObject->minY && pMaxBlackObject->maxY < pMaxYellowObject->maxY);
+
+    free(pMaxBlackObject);
+    destroyObjectList(pYellowObjectList);
+    destroyMatrix8(pYellowMatrix);
+    destroyObjectList(pBlackObjectList);
+    destroyMatrix8(pBlackMatrix);
+
+    if(isBlackXInsideYellowX && isBlackYInsideYellowY){
+        pTrapObject = (Object_t*)malloc(sizeof(Object_t));
+        memcpy(pTrapObject, pMaxYellowObject, sizeof(Object_t));
+        free(pMaxYellowObject);
+        return true;
+    }
+
+    free(pMaxYellowObject);
+
     return false;
 }
 

@@ -15,11 +15,9 @@
 
 static Object_t* _getBoundaryObject(ObjectList_t* pObjectList, Matrix16_t* pLabelMatrix);
 static int _getObjectLabel(Matrix16_t* pLabelMatrix);
-static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix);
 static PixelLocation_t _getStartPointForTraceLine(Object_t* pObject, Matrix16_t* pLabelMatrix);
 static PixelLocation_t _directionToPoint(PixelLocation_t curPoint, int direction);
 static int _notAllDirection(Matrix16_t* pLabelMatrix, Object_t* pObject, PixelLocation_t nextPoint, int* direction, int* checkAllDirection);
-static void _fillBoundary(Matrix8_t* pBoundaryMatrix);
 static int _findRightX(Matrix8_t* pBoundaryMatrix, int y);
 
 Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix) {
@@ -43,7 +41,7 @@ Matrix8_t* establishBoundary(Matrix8_t* pColorMatrix) {
         return NULL;
     }
 
-    Matrix8_t* pReturnMatrix = _traceBoundaryLine(pObject, pLabelMatrix);
+    Matrix8_t* pReturnMatrix = traceBoundaryLine(pObject, pLabelMatrix);
 
     _fillBoundary(pReturnMatrix);
 
@@ -125,7 +123,7 @@ static int _getObjectLabel(Matrix16_t* pLabelMatrix) {
     return maxLabel;
 }
 
-static Matrix8_t* _traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix) {
+Matrix8_t* traceBoundaryLine(Object_t* pObject, Matrix16_t* pLabelMatrix) {
     
     PixelLocation_t startPoint = _getStartPointForTraceLine(pObject, pLabelMatrix);
 
@@ -267,7 +265,7 @@ static int _notAllDirection(Matrix16_t* pLabelMatrix, Object_t* pObject, PixelLo
         return 1;
 }
 
-static void _fillBoundary(Matrix8_t* pBoundaryMatrix) {
+void fillBoundary(Matrix8_t* pBoundaryMatrix) {
 
     int height = pBoundaryMatrix->height;
 
