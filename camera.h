@@ -1,12 +1,11 @@
-#ifndef __LOCATION_DETECTION_H__
-#define __LOCATION_DETECTION_H__
+#ifndef __CAMERA_H__
+#define __CAMERA_H__
 
-#include <stdbool.h>
-
+#include "vector3.h"
 #include "graphic_interface.h"
 
 typedef struct {
-    double height;  // 높이 (meters)
+    Vector3_t worldLoc;  // 초점의 월드 좌표 (meters)
     double yaw;     // 머리 좌우 각도 (radians)
     double pitch;   // 머리 상하 각도 (radians)
     // 캘리브레이션 결과 (GML C++ Camera Calibration Toolbox)
@@ -20,13 +19,10 @@ typedef struct {
     double p2;      // Distortion[3]: tangential distortion 계수
 } CameraParameters_t;
 
-typedef struct {
-    double distance;    // meters
-    double angle;       // radians
-} WorldLocation_t;
+// pHeadOffset: 현재 로봇의 머리 위치 (meters)
+void readCameraParameters(CameraParameters_t* pCamParams, Vector3_t* pHeadOffset);
+void convertScreenLocationToWorldLocation(CameraParameters_t* pCamParams, PixelLocation_t* pScreenLoc, double height, Vector3_t* pWorldLoc);
 
+Screen_t* createUndistortedScreen(Screen_t* pScreen, CameraParameters_t* pCamParams);
 
-bool convertScreenLocationToWorldLocation(CameraParameters_t* pCamParams, PixelLocation_t* pScreenLoc, WorldLocation_t* pWorldLoc);
-
-
-#endif // __LOCATION_DETECTION_H__
+#endif // __CAMERA_H__

@@ -1,22 +1,75 @@
 #include <math.h>
 
-#include "location_detection.h"
-
-#define PI 3.141592
-
+#include "camera.h"
+#include "robot_protocol.h"
+#include "math.h"
 
 typedef struct {
     double x;
     double y;
 } _NormalizedLoc_t;
 
-
 static void _undistortPixel(CameraParameters_t* pCamParams, int* pX, int* pY);
 
-bool convertScreenLocationToWorldLocation(CameraParameters_t* pCamParams, PixelLocation_t* pScreenLoc, WorldLocation_t* pWorldLoc) {
-    if (!pCamParams) return false;
-    if (!pScreenLoc) return false;
-    if (!pWorldLoc) return false;
+
+void readCameraParameters(CameraParameters_t* pCamParams, Vector3_t* pHeadOffset) {
+    // 목에서 카메라 초점까지의 거리 (meters)
+    double cameraOffsetX = 0.0000;
+    double cameraOffsetY = 0.0095;
+    double cameraOffsetZ = 0.0410;
+    double yaw = (double)getHeadHorizontal() * -1 * DEG_TO_RAD;
+    double pitch = (double)getHeadVertical() * DEG_TO_RAD;
+    
+    // double fx = 146.181;
+    // double fy = 132.462;
+    // double cx = 94.868;
+    // double cy = 63.161;
+    // double k1 = -0.417426;
+    // double k2 = 0.172889;
+    // double p1 = -0.004961;
+    // double p2 = -0.002298;
+
+    // double fx = 142.962;
+    // double fy = 129.645;
+    // double cx = 94.609;
+    // double cy = 58.863;
+    // double k1 = -0.397926;
+    // double k2 = 0.152559;
+    // double p1 = 0.001119;
+    // double p2 = -0.001430;
+
+    double fx = 142.991;
+    double fy = 129.732;
+    double cx = 94.003;
+    double cy = 59.221;
+    double k1 = -0.406361;
+    double k2 = 0.168461;
+    double p1 = 0.000926;
+    double p2 = -0.000226;
+
+    Vector3_t camOffset = {cameraOffsetX, cameraOffsetY, cameraOffsetZ};
+    rotateVector3(&camOffset, &VECTOR3_AXIS_X, pitch);
+    rotateVector3(&camOffset, &VECTOR3_AXIS_Z, yaw);
+
+    pCamParams->worldLoc.x = pHeadOffset->x + camOffset.x;
+    pCamParams->worldLoc.y = pHeadOffset->y + camOffset.y;
+    pCamParams->worldLoc.z = pHeadOffset->z + camOffset.z;
+    pCamParams->yaw = yaw;
+    pCamParams->pitch = pitch;
+    pCamParams->fx = fx;
+    pCamParams->fy = fy;
+    pCamParams->cx = cx;
+    pCamParams->cy = cy;
+    pCamParams->k1 = k1;
+    pCamParams->k2 = k2;
+    pCamParams->p1 = p1;
+    pCamParams->p2 = p2;
+}
+
+void convertScreenLocationToWorldLocation(CameraParameters_t* pCamParams, PixelLocation_t* pScreenLoc, double height, Vector3_t* pWorldLoc) {
+    if (!pCamParams) return;
+    if (!pScreenLoc) return;
+    if (!pWorldLoc) return;
 
     int ux = pScreenLoc->x;
     int uy = pScreenLoc->y;
@@ -32,18 +85,20 @@ bool convertScreenLocationToWorldLocation(CameraParameters_t* pCamParams, PixelL
     double u = (x - cx) / fx;
     double v = (y - cy) / fy;
 
-    double c1c2 = pCamParams->height;
-    double c2p2 = c1c2 * tan((PI / 2) + pCamParams->pitch - atan(v));
+    double c1c2 = pCamParams->worldLoc.z - height;
+    double c2p2 = c1c2 * tan((M_PI / 2) + pCamParams->pitch - atan(v));
     double c1p2 = sqrt(c1c2*c1c2 + c2p2*c2p2);
     double c1p3 = sqrt(1 + v*v);
     double p1p2 = u * c1p2 / c1p3;
     double d = sqrt(c2p2*c2p2 + p1p2*p1p2);
-    double theta = -atan2(p1p2, c2p2);
+    double angle = pCamParams->yaw - atan2(p1p2, c2p2);
 
-    pWorldLoc->distance = d;
-    pWorldLoc->angle = pCamParams->yaw + theta;
-
-    return true;
+    double wx = d * sin(angle * -1);
+    double wy = d * cos(angle);
+    
+    pWorldLoc->x = wx + pCamParams->worldLoc.x;
+    pWorldLoc->y = wy + pCamParams->worldLoc.y;
+    pWorldLoc->z = height;
 }
 
 static void _normalize(CameraParameters_t* pCamParams,  double* pX, double* pY) {
@@ -122,7 +177,7 @@ static void _undistortPixel(CameraParameters_t* pCamParams, int* pX, int* pY) {
     *pY = (int)(yu + 0.5);
 }
 
-static Screen_t* _createUndistortedScreen(Screen_t* pScreen, CameraParameters_t* pCamParams) {
+Screen_t* createUndistortedScreen(Screen_t* pScreen, CameraParameters_t* pCamParams) {
     double fx = pCamParams->fx;
     double fy = pCamParams->fy;
     double cx = pCamParams->cx;
@@ -160,32 +215,3 @@ static Screen_t* _createUndistortedScreen(Screen_t* pScreen, CameraParameters_t*
 
     return pUndistortedScreen;
 }
-
-/*
-static double _coordinateToAngle(double angleOfView, int length, int coordinate);
-
-bool convertScreenLocationToWorldLocation(CameraParameters_t* pCamParams, PixelLocation_t* pScreenLoc, WorldLocation_t* pWorldLoc) {
-    if (!pCamParams) return false;
-    if (!pScreenLoc) return false;
-    if (!pWorldLoc) return false;
-
-    int x = pScreenLoc->x - pCamParams->centerX;
-    int y = pScreenLoc->y - pCamParams->centerY;
-    double angleX = _coordinateToAngle(pCamParams->horizontalAngleOfView, pCamParams->screenWidth, x);
-    double angleY = _coordinateToAngle(pCamParams->verticalAngleOfView, pCamParams->screenHeight, y);
-
-    double theta = (PI / 2) + pCamParams->pitch + angleY;
-    double distanceY = pCamParams->height * tan(theta);
-    double distance = distanceY / cos(angleX);
-
-    pWorldLoc->distance = distance;
-    pWorldLoc->angle = pCamParams->yaw + angleX;
-
-    return true;
-}
-
-static double _coordinateToAngle(double angleOfView, int length, int coordinate) {
-    double d = ((double)length / 2) / (tan(angleOfView / 2));
-    return atan((double)coordinate / d);
-}
-*/
