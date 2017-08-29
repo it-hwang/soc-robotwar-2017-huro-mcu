@@ -279,7 +279,7 @@ Color_t _convertOrangeColorV1(PixelData_t pixelData) {
     float b = 0.12;
     float c = -0.06;
 
-	if (h >= 10 && h < 32) {
+	if (h >= 2 && h < 32) {
         if (s <= b)
             return COLOR_NONE;
         else if (v > (a / (s - b)) + c)
