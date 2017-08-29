@@ -12,6 +12,7 @@ typedef struct {
 static void _undistortPixel(CameraParameters_t* pCamParams, int* pX, int* pY);
 
 
+// TODO: 설정 파일의 내용을 읽어오도록 변경할 필요가 있다.
 void readCameraParameters(CameraParameters_t* pCamParams, Vector3_t* pHeadOffset) {
     // 목에서 카메라 초점까지의 거리 (meters)
     double cameraOffsetX = 0.0000;
