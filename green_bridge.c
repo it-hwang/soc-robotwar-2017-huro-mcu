@@ -37,8 +37,8 @@ static bool _climbDownStair(void);
 static double _calculateBridgeAngle(Matrix16_t* pLabelMatrix, Object_t* pBridgeObject);
 static double _calculateStairAngle(Matrix16_t* pLabelMatrix, Object_t* pStairObject);
 static int _measureGreenBridgeCenterOffsetX(void);
-static bool _searchGreenBridge(Screen_t* pScreen, Object_t* pObject, Matrix16_t* pLabelMatrix);
-static bool _searchBlackLine(Screen_t* pScreen, Object_t* pObject, Matrix16_t* pLabelMatrix);
+static bool _searchGreenBridge(Screen_t* pScreen, Object_t* pOutputObject, Matrix16_t* pLabelMatrix);
+static bool _searchBlackLine(Screen_t* pScreen, Object_t* pReturnedObject, Matrix16_t* pLabelMatrix);
 static float _getGreenBridgeCorrelation(Matrix8_t* pGreenMatrix, Object_t* pObject);
 static Matrix8_t* _createGreenMatrix(Screen_t* pScreen);
 static Matrix8_t* _createBlackMatrix(Screen_t* pScreen);
@@ -394,7 +394,7 @@ static int _measureGreenBridgeCenterOffsetX(void) {
 
 
 // pScreen에서 녹색 다리를 찾는다.
-static bool _searchGreenBridge(Screen_t* pScreen, Object_t* pObject, Matrix16_t* pLabelMatrix) {
+static bool _searchGreenBridge(Screen_t* pScreen, Object_t* pReturnedObject, Matrix16_t* pLabelMatrix) {
     if (!pScreen) return false;
 
     Matrix8_t* pGreenMatrix = _createGreenMatrix(pScreen);
@@ -427,8 +427,8 @@ static bool _searchGreenBridge(Screen_t* pScreen, Object_t* pObject, Matrix16_t*
         hasFound = true;
     }
     
-    if (hasFound && pObject)
-        memcpy(pObject, pGreenBridge, sizeof(Object_t));
+    if (hasFound && pReturnedObject)
+        memcpy(pReturnedObject, pGreenBridge, sizeof(Object_t));
     
     Screen_t* pDebugScreen = cloneMatrix16(pScreen);
     drawColorMatrix(pDebugScreen, pGreenMatrix);
@@ -481,7 +481,7 @@ static float _getGreenBridgeCorrelation(Matrix8_t* pGreenMatrix, Object_t* pObje
 }
 
 
-static bool _searchBlackLine(Screen_t* pScreen, Object_t* pObject, Matrix16_t* pLabelMatrix) {
+static bool _searchBlackLine(Screen_t* pScreen, Object_t* pReturnedObject, Matrix16_t* pLabelMatrix) {
     if (!pScreen) return false;
 
     Matrix8_t* pBlackMatrix = _createBlackMatrix(pScreen);
@@ -516,8 +516,8 @@ static bool _searchBlackLine(Screen_t* pScreen, Object_t* pObject, Matrix16_t* p
         hasFound = true;
     }
     
-    if (hasFound && pObject)
-        memcpy(pObject, pBlackLine, sizeof(Object_t));
+    if (hasFound && pReturnedObject)
+        memcpy(pReturnedObject, pBlackLine, sizeof(Object_t));
 
     Screen_t* pDebugScreen = cloneMatrix16(pScreen);
     drawColorMatrix(pDebugScreen, pBlackMatrix);
