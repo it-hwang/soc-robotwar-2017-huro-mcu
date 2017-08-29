@@ -96,20 +96,21 @@ static void _establishBoundary(Screen_t* pScreen) {
     Matrix8_t* pYellowMatrix = createColorMatrix(pScreen, pColorTables[COLOR_YELLOW]);
     Matrix8_t* pWhiteMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
 
-    /* applyFastErosionToMatrix8(pYellowMatrix, 1); 
-    applyFastDilationToMatrix8(pYellowMatrix, 2); */
+    applyFastDilationToMatrix8(pYellowMatrix, 1);
+    applyFastErosionToMatrix8(pYellowMatrix, 3);
+    applyFastDilationToMatrix8(pYellowMatrix, 5);
 
     Matrix8_t* pMergedColorMatrix = 
     overlapColorMatrix(pYellowMatrix, pWhiteMatrix);
 
-    /* applyFastErosionToMatrix8(pMergedColorMatrix, 1); 
+    applyFastErosionToMatrix8(pMergedColorMatrix, 1); 
     applyFastDilationToMatrix8(pMergedColorMatrix, 2);
-    applyFastErosionToMatrix8(pMergedColorMatrix, 1); */
+    applyFastErosionToMatrix8(pMergedColorMatrix, 1);
     
     Matrix8_t* pBoundaryMatrix = establishBoundary(pMergedColorMatrix);
 
-    //applyBoundary(pScreen, pBoundaryMatrix);
-    drawColorMatrix(pScreen, pMergedColorMatrix);
+    applyBoundary(pScreen, pBoundaryMatrix);
+    //drawColorMatrix(pScreen, pMergedColorMatrix);
 
     destroyMatrix8(pWhiteMatrix);
     destroyMatrix8(pYellowMatrix);
