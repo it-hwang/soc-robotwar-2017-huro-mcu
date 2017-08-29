@@ -87,7 +87,7 @@ static Object_t* _candidateObjectForBoundary(Screen_t* pScreen) {
     Matrix16_t* pLabelMatrix = NULL;
 
     ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pYellowMatrix, pLabelMatrix);
-
+    
     return NULL;
 }
 
