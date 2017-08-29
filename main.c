@@ -26,8 +26,6 @@ int main(void) {
     
     _initLog();
 
-    int i = 0;
-    _bigMemory[i] = 0;
     int command = _chooseMenu(_MENU_TIMEOUT_MILLISECONDS);
     if (command == 0) {
         printLog("Program is interrupted.\n");
