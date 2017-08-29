@@ -16,7 +16,7 @@
 #include "object_detection.h"
 #include "line_detection.h"
 #include "polygon_detection.h"
-#include "location_detection.h"
+#include "camera.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "check_center.h"
@@ -26,6 +26,7 @@
 #include "boundary.h"
 #include "white_balance.h"
 #include "mine.h"
+#include "vector3.h"
 #include "log.h"
 #include "screenio.h"
 #include "debug.h"
@@ -311,14 +312,14 @@ static void _autoSaveScreen(Screen_t* pScreen, char* savedFilePath) {
     // 적합한 파일 이름 찾기
     int i = 0;
     while (true) {
-        sprintf(savedFilePath, "./screenshots/sc%d", i);
+        sprintf(savedFilePath, "./screenshots/sc%d.bmp", i);
         bool isExists = (access(savedFilePath, F_OK) == 0);
         if (!isExists)
             break;
         i++;
     }
 
-    writeScreen(pScreen, savedFilePath);
+    saveScreen(pScreen, savedFilePath);
 }
 
 
@@ -473,27 +474,15 @@ static void _testCenter(void) {
         displayScreen(pScreen);
 
         if (pObject) {
+            Vector3_t headOffset = {0.0, -0.020, 0.296};
             CameraParameters_t camParams;
-            camParams.height = 0.330;
-            camParams.yaw = (double)getHeadHorizontal() * -1 * DEG_TO_RAD;
-            camParams.pitch = (double)getHeadVertical() * DEG_TO_RAD;
-            camParams.fx = 146.181;
-            camParams.fy = 132.462;
-            camParams.cx = 94.868;
-            camParams.cy = 63.161;
-            camParams.k1 = -0.417426;
-            camParams.k2 = 0.172889;
-            camParams.p1 = -0.004961;
-            camParams.p2 = -0.002298;
+            readCameraParameters(&camParams, &headOffset);
 
-            PixelLocation_t screenLoc;
-            screenLoc.x = (int)pObject->centerX;
-            screenLoc.y = (int)pObject->maxY;
+            PixelLocation_t screenLoc = {(int)pObject->centerX, pObject->maxY};
+            Vector3_t worldLoc;
+            convertScreenLocationToWorldLocation(&camParams, &screenLoc, 0.0, &worldLoc);
 
-            WorldLocation_t worldLoc;
-            convertScreenLocationToWorldLocation(&camParams, &screenLoc, &worldLoc);
-
-            printDebug("distance: %f, angle: %f\n", worldLoc.distance * 1000, worldLoc.angle * RAD_TO_DEG);
+            printDebug("x: %.0f, y: %.0f, z: %.0f\n", worldLoc.x * 1000, worldLoc.y * 1000, worldLoc.z * 1000);
         }
 
         destroyMatrix8(pColorMatrix);
