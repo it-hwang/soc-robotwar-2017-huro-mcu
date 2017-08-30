@@ -14,8 +14,19 @@ typedef struct {
 
 typedef Matrix16_t Screen_t;
 
-extern const PixelCoordinate_t DEFAULT_SCREEN_WIDTH;
-extern const PixelCoordinate_t DEFAULT_SCREEN_HEIGHT;
+// 화면의 너비/높이
+#define DEFAULT_SCREEN_WIDTH    180
+#define DEFAULT_SCREEN_HEIGHT   120
+// 화면의 중심 좌표
+#define DEFAULT_SCREEN_CENTER_X     (DEFAULT_SCREEN_WIDTH / 2)
+#define DEFAULT_SCREEN_CENTER_Y     (DEFAULT_SCREEN_HEIGHT / 2)
+// 카메라의 가로/세로 화각
+#define CAMERA_HORIZONTAL_ANGLE_OF_VIEW     69.984040
+#define CAMERA_VERTICAL_ANGLE_OF_VIEW       49.641083
+
+#define CAMERA_OFFSET_X     0.0000
+#define CAMERA_OFFSET_Y     0.0410
+#define CAMERA_OFFSET_Z     0.0095
 
 int openGraphicInterface(void);
 void closeGraphicInterface(void);

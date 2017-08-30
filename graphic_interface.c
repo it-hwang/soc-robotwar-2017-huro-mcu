@@ -4,9 +4,6 @@
 #include "graphic_api.h"
 #include "color_model.h"
 
-const PixelCoordinate_t DEFAULT_SCREEN_WIDTH = 180;
-const PixelCoordinate_t DEFAULT_SCREEN_HEIGHT = 120;
-
 
 int openGraphicInterface(void) {
     int status = open_graphic();
