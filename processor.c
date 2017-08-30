@@ -399,6 +399,7 @@ static void _runTest(void) {
     sdelay(3);
     
     setHead(0, -35);
+    mdelay(1000);
     
     for(int i = 0; i < 5000; ++i) {
         trapMain();

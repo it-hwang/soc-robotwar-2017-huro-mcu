@@ -1,6 +1,8 @@
 //defien DEBUG
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "trap.h"
 #include "graphic_interface.h"
@@ -15,10 +17,13 @@
 #include "debug.h"
 
 static Object_t* _searchTrap(void);
-static Object_t* _candidateObjectForBoundary(Screen_t* pScreen);
+static Object_t* _candidateObjectForBoundary(Screen_t* pScreen, Matrix16_t* pLabelMatrix);
+static Object_t* _getCandidateObjectForBoundary(Screen_t* pScreen, Matrix16_t* pLabelMatrix);
 static void _establishBoundary(Screen_t* pScreen);
-static void _setBoundary(Screen_t* pScreen);
+static bool _setBoundary(Screen_t* pScreen);
 static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject);
+static Matrix8_t* _createYellowMatrix(Screen_t* pScreen);
+static Matrix8_t* _createBlackMatrix(Screen_t* pScreen);
 static int _measureObjectDistance(Object_t* pTrapObject);
 static void _approachObject(int distance);
 static bool _approachTrap(Object_t* pObject);
@@ -57,10 +62,13 @@ static Object_t* _searchTrap(void) {
         
         if( !_setBoundary(pScreen) )
             continue;
-
+            
         Object_t* pTrapObject = NULL;
         bool isTrap = _isTrapObject(pScreen, pTrapObject);
-    
+        
+        if( pTrapObject == NULL)
+            continue;
+
         if( isTrap ) {
             destroyScreen(pScreen);
             return pTrapObject;
@@ -84,22 +92,21 @@ static Object_t* _searchTrap(void) {
 }
 
 static bool _setBoundary(Screen_t* pScreen) {
-    Matrix16_t* pLabelMatrix = NULL;
+    Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
+    memset(pLabelMatrix->elements, 0, (pLabelMatrix->width * pLabelMatrix->height) * sizeof(uint16_t));
     
     Object_t* pObject = _candidateObjectForBoundary(pScreen, pLabelMatrix);
-
-    displayScreen(pScreen);
-
+    
     if(pObject == NULL){
         destroyMatrix16(pLabelMatrix);
         return false;
     }
-        
+    
     Matrix8_t* pMatrix8 = traceBoundaryLine(pObject, pLabelMatrix);
     
     fillBoundary(pMatrix8);
     applyBoundary(pScreen, pMatrix8);
-
+    
     destroyMatrix8(pMatrix8);
     destroyMatrix16(pLabelMatrix);
     free(pObject);
@@ -112,9 +119,9 @@ static Object_t* _candidateObjectForBoundary(Screen_t* pScreen, Matrix16_t* pLab
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
     _establishBoundary(pScreen);
-
+    // displayScreen(pScreen);
     Object_t* pObject = _getCandidateObjectForBoundary(pScreen, pLabelMatrix);
-
+    
     return pObject;
 }
 
@@ -144,7 +151,7 @@ static Object_t* _getCandidateObjectForBoundary(Screen_t* pScreen, Matrix16_t* p
     }
 
     Object_t* pReturnObject = (Object_t*)malloc(sizeof(Object_t));
-    mamcpy(pReturnObject, pMaxObject, sizeof(Object_t));
+    memcpy(pReturnObject, pMaxObject, sizeof(Object_t));
 
     destroyObjectList(pObjectList);
     destroyMatrix8(pYellowMatrix);
@@ -157,9 +164,11 @@ static void _establishBoundary(Screen_t* pScreen) {
     Matrix8_t* pYellowMatrix = createColorMatrix(pScreen, pColorTables[COLOR_YELLOW]);
     Matrix8_t* pWhiteMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
 
-    applyFastDilationToMatrix8(pYellowMatrix, 1);
-    applyFastErosionToMatrix8(pYellowMatrix, 3);
-    applyFastDilationToMatrix8(pYellowMatrix, 5);
+    applyFastErosionToMatrix8(pYellowMatrix, 1);
+    applyFastDilationToMatrix8(pYellowMatrix, 2);
+    applyFastErosionToMatrix8(pYellowMatrix, 1);
+
+    applyFastHeightDilationToMatrix8(pYellowMatrix, 2);
 
     Matrix8_t* pMergedColorMatrix = 
     overlapColorMatrix(pYellowMatrix, pWhiteMatrix);
@@ -180,17 +189,18 @@ static void _establishBoundary(Screen_t* pScreen) {
 }
 
 static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject) {
-
-    Matrix8_t* pYellowMatrix = createColorMatrix(pScreen, pColorTables[COLOR_YELLOW]);
+    Matrix8_t* pYellowMatrix = _createYellowMatrix(pScreen);
 
     ObjectList_t* pYellowObjectList = detectObjectsLocation(pYellowMatrix);
     
-    if(pYellowObjectList == NULL || pYellowObjectList->size == 0) {
-        destroyObjectList(pYellowObjectList);
+    // drawColorMatrix(pScreen, pYellowMatrix);
+    // displayScreen(pScreen);
+
+    if(pYellowObjectList == NULL) {
         destroyMatrix8(pYellowMatrix);
         return false;
     }
-
+    
     Object_t* pMaxYellowObject = NULL;
     for(int i = 0; i < pYellowObjectList->size; ++i) {
         Object_t* pObject = &pYellowObjectList->list[i];
@@ -204,17 +214,14 @@ static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject) {
         destroyMatrix8(pYellowMatrix);
         return false;
     }
+    
+    Matrix8_t* pBlackMatrix = _createBlackMatrix(pScreen);
 
-    Matrix8_t* pBlackMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLACK]);
+    // drawColorMatrix(pScreen, pBlackMatrix);
+    // displayScreen(pScreen);
     
     ObjectList_t* pBlackObjectList = detectObjectsLocation(pBlackMatrix);
     
-    if(pBlackObjectList == NULL || pBlackObjectList->size == 0) {
-        destroyObjectList(pBlackObjectList);
-        destroyMatrix8(pBlackMatrix);
-        return false;
-    }
-
     Object_t* pMaxBlackObject = NULL;
     for(int i = 0; i < pBlackObjectList->size; ++i) {
         Object_t* pObject = &pBlackObjectList->list[i];
@@ -222,32 +229,46 @@ static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject) {
         if(pMaxBlackObject == NULL || pMaxBlackObject->cnt < pObject->cnt)
             pMaxBlackObject = pObject;
     }
+ 
+    pTrapObject = (Object_t*)malloc(sizeof(Object_t));
+    memcpy(pTrapObject, pMaxYellowObject, sizeof(Object_t));
 
-    if(pMaxBlackObject == NULL) {
-        destroyObjectList(pBlackObjectList);
-        destroyMatrix8(pBlackMatrix);
-        return false;
+    bool isBlackXInsideYellowX = false;
+    bool isBlackYInsideYellowY = false;
+    if(pMaxBlackObject != NULL) {
+        isBlackXInsideYellowX = (pMaxBlackObject->minX > pMaxYellowObject->minX && pMaxBlackObject->maxX < pMaxYellowObject->maxX);
+        isBlackYInsideYellowY = (pMaxBlackObject->minY > pMaxYellowObject->minY && pMaxBlackObject->maxY < pMaxYellowObject->maxY);
     }
-
-    bool isBlackXInsideYellowX = (pMaxBlackObject->minX > pMaxYellowObject->minX && pMaxBlackObject->maxX < pMaxYellowObject->maxX);
-    bool isBlackYInsideYellowY = (pMaxBlackObject->minY > pMaxYellowObject->minY && pMaxBlackObject->maxY < pMaxYellowObject->maxY);
-
-    free(pMaxBlackObject);
+    
     destroyObjectList(pYellowObjectList);
     destroyMatrix8(pYellowMatrix);
     destroyObjectList(pBlackObjectList);
     destroyMatrix8(pBlackMatrix);
 
-    if(isBlackXInsideYellowX && isBlackYInsideYellowY){
-        pTrapObject = (Object_t*)malloc(sizeof(Object_t));
-        memcpy(pTrapObject, pMaxYellowObject, sizeof(Object_t));
-        free(pMaxYellowObject);
+    if(isBlackXInsideYellowX && isBlackYInsideYellowY)
         return true;
-    }
-
-    free(pMaxYellowObject);
 
     return false;
+}
+
+static Matrix8_t* _createYellowMatrix(Screen_t* pScreen) {
+    Matrix8_t* pYellowMatrix = createColorMatrix(pScreen, pColorTables[COLOR_YELLOW]);
+    
+    applyFastErosionToMatrix8(pYellowMatrix, 1);
+    applyFastDilationToMatrix8(pYellowMatrix, 2);
+    applyFastErosionToMatrix8(pYellowMatrix, 1);
+
+    return pYellowMatrix;
+}
+
+static Matrix8_t* _createBlackMatrix(Screen_t* pScreen) {
+    Matrix8_t* pBlackMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLACK]);
+    
+    applyFastDilationToMatrix8(pBlackMatrix, 1);
+    applyFastErosionToMatrix8(pBlackMatrix, 2);
+    applyFastDilationToMatrix8(pBlackMatrix, 1);
+
+    return pBlackMatrix;
 }
 
 static int _measureObjectDistance(Object_t* pTrapObject) {
@@ -256,4 +277,17 @@ static int _measureObjectDistance(Object_t* pTrapObject) {
 
 static void _approachObject(int distance) {
 
+}
+
+static bool _approachTrap(Object_t* pObject) {
+    return false;
+}
+static bool _climbUpTrap(void) {
+    return false;
+}
+static bool _approachBlackLine(void) {
+    return false;
+}
+static bool _forwardRoll(void) {
+    return false;
 }
