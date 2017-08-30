@@ -48,8 +48,6 @@ static void _runTest(void);
 static void _adjustWhiteBalance(Rgba_t* pInputColor, Rgba_t* pRealColor);
 static void _adjustWhiteBalanceAuto(void);
 
-static void _testBoundary(void);
-
 static void _defineObstacle(void) {
 	// registerObstacle(OBSTACLE_ONE, helloWorld);
 	// registerObstacle(OBSTACLE_TWO, goodbyeWorld);
@@ -132,10 +130,11 @@ static void _runHuroC(void) {
 static bool _getYN(void) {
     while (true) {
         printf(">> ");
-        char input = getchar();
 
+        char input = '\0';
+        scanf("%c", &input);
         if (input != '\n')
-            while (getchar() != '\n');
+            while (input != '\n') scanf("%c", &input);
 
         if (input == 'y' || input == 'Y')
             return true;
@@ -146,10 +145,17 @@ static bool _getYN(void) {
     };
 }
 
+static void _waitEnter(void) {
+    printf(">> ");
+
+    char input = '\0';
+    while (input != '\n') scanf("%c", &input);
+}
+
 static void _adjustWhiteBalance(Rgba_t* pInputColor, Rgba_t* pRealColor) {
-    printDebug("inputColor: {r: %d, g: %d, b: %d}\n",
+    printLog("inputColor: {r: %d, g: %d, b: %d}\n",
              pInputColor->r, pInputColor->g, pInputColor->b);
-    printDebug("realColor: {r: %d, g: %d, b: %d}\n",
+    printLog("realColor: {r: %d, g: %d, b: %d}\n",
              pRealColor->r, pRealColor->g, pRealColor->b);
 
     LookUpTable16_t* pWhiteBalanceTable = createWhiteBalanceTable(pInputColor, pRealColor, _WHITE_BALANCE_TABLE_PATH, true);
@@ -195,35 +201,111 @@ static void _fillMatrix16(Matrix16_t* pMatrix, uint16_t value) {
     }
 }
 
-// 고개를 숙여 브라켓에 비치는 회색영역의 색을 기준으로 화이트밸런스 테이블을 생성합니다.
-static void _adjustWhiteBalanceAuto(void) {
-    setServoSpeed(30);
-    setHead(0, -90);
-    mdelay(1000);
-
+// 화면 중심으로 가로/세로 20% 영역의 평균 색상을 구한다.
+static Rgab5515_t _getSampleColor(void) {
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoData(pScreen);
-    displayScreen(pScreen);
 
     int width = pScreen->width;
     int height = pScreen->height;
-    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 10, height - 20, width - 10, height - 1);
+    int subWidth = width * 0.2;
+    int subHeight = height * 0.2;
+    int centerX = width * 0.5;
+    int centerY = height * 0.5;
+    int minX = centerX - subWidth * 0.5;
+    int minY = centerY - subHeight * 0.5;
+    int maxX = minX + subWidth - 1;
+    int maxY = minY + subHeight - 1;
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, minX, minY, maxX, maxY);
     Rgab5515_t meanRgab5515 = _getMeanRgab5515OfMatrix16(pSubMatrix);
-    
-    Rgba_t inputColor;
-    Rgba_t realColor;
-    inputColor.data = rgab5515ToRgbaData(&meanRgab5515);
-    realColor.r = 128;
-    realColor.g = 128;
-    realColor.b = 128;
-    _adjustWhiteBalance(&inputColor, &realColor);
 
     // Debug screen
     _fillMatrix16(pScreen, meanRgab5515.data);
-    overlapMatrix16(pSubMatrix, pScreen, 10, height - 20);
+    overlapMatrix16(pSubMatrix, pScreen, minX, maxX);
     displayScreen(pScreen);
 
     destroyMatrix16(pSubMatrix);
+    destroyScreen(pScreen);
+
+    return meanRgab5515;
+}
+
+static void _adjustWhiteBalanceAuto(void) {
+    runMotion(ROBOT_RELEASE_ARM_SERVOS);
+    printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
+
+    printf("화이트 밸런스를 조절합니다.\n");
+    printf("다음 지시사항을 따라주시고, 준비가 되었으면 Enter 키를 누르세요.\n");
+
+    printf("1. 화면 중앙에 회색이 보이게 합니다.\n");
+    enableDirectCameraDisplay();
+    _waitEnter();
+    disableDirectCameraDisplay();
+
+    printf("2. 카메라의 자동 화이트 밸런스 기능을 '활성화' 시킵니다.\n");
+    enableDirectCameraDisplay();
+    _waitEnter();
+    disableDirectCameraDisplay();
+    Rgab5515_t realRgab5515 = _getSampleColor();
+    sdelay(1);
+
+    printf("3. 카메라의 자동 화이트 밸런스 기능을 '비활성화' 시킵니다.\n");
+    enableDirectCameraDisplay();
+    _waitEnter();
+    disableDirectCameraDisplay();
+    Rgab5515_t inputRgab5515 = _getSampleColor();
+    sdelay(1);
+    
+    Rgba_t inputColor;
+    Rgba_t realColor;
+    inputColor.data = rgab5515ToRgbaData(&inputRgab5515);
+    realColor.data = rgab5515ToRgbaData(&realRgab5515);
+    _adjustWhiteBalance(&inputColor, &realColor);
+
+    Screen_t* pScreen = createDefaultScreen();
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+    displayScreen(pScreen);
+    destroyScreen(pScreen);
+
+    setHead(0, 0);
+    resetServoSpeed();
+}
+
+static void _adjustWhiteBalanceSemiAuto(void) {
+    runMotion(ROBOT_RELEASE_ARM_SERVOS);
+    printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
+
+    printf("화이트 밸런스를 조절합니다.\n");
+    printf("다음 지시사항을 따라주시고, 준비가 되었으면 Enter 키를 누르세요.\n");
+
+    printf("1. 화면 중앙에 회색이 보이게 합니다.\n");
+    enableDirectCameraDisplay();
+    _waitEnter();
+    disableDirectCameraDisplay();
+
+    printf("2. 카메라의 자동 화이트 밸런스 기능을 '비활성화' 시킵니다.\n");
+    enableDirectCameraDisplay();
+    _waitEnter();
+    disableDirectCameraDisplay();
+    Rgab5515_t inputRgab5515 = _getSampleColor();
+    
+    int r, g, b;
+    printf("realColor: r, g, b를 차례대로 입력하십시오. (범위: 0~255)\n");
+    printf(">> ");
+    scanf("%d %d %d", &r, &g, &b);
+
+    Rgba_t realColor;
+    realColor.r = r;
+    realColor.g = g;
+    realColor.b = b;
+    
+    Rgba_t inputColor;
+    inputColor.data = rgab5515ToRgbaData(&inputRgab5515);
+    _adjustWhiteBalance(&inputColor, &realColor);
+
+    Screen_t* pScreen = createDefaultScreen();
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+    displayScreen(pScreen);
     destroyScreen(pScreen);
 
     setHead(0, 0);
@@ -244,7 +326,7 @@ static void _adjustWhiteBalanceManual(void) {
     inputColor.g = g;
     inputColor.b = b;
 
-    printf("realColor: r, g, b를 차례대로 입력하십시오. (범위: 1~254)\n");
+    printf("realColor: r, g, b를 차례대로 입력하십시오. (범위: 0~255)\n");
     printf(">> ");
     scanf("%d %d %d", &r, &g, &b);
 
@@ -254,7 +336,44 @@ static void _adjustWhiteBalanceManual(void) {
     realColor.b = b;
     
     _adjustWhiteBalance(&inputColor, &realColor);
+}
 
+static void _testWhiteBalance(void) {
+    Screen_t* pDefaultScreen = createDefaultScreen();
+    for (int i = 0; i < 100; ++i) {
+        readFpgaVideoDataWithWhiteBalance(pDefaultScreen);
+        displayScreen(pDefaultScreen);
+    }
+    destroyScreen(pDefaultScreen);
+}
+
+static void _testColorTable(void) {
+    int color;
+    printf("색상을 선택하십시오.\n");
+    printf("1. COLOR_BLACK\n");
+    printf("2. COLOR_WHITE\n");
+    printf("3. COLOR_RED\n");
+    printf("4. COLOR_GREEN\n");
+    printf("5. COLOR_BLUE\n");
+    printf("6. COLOR_YELLOW\n");
+    printf("7. COLOR_ORANGE\n");
+    printf(">> ");
+    scanf("%d", &color);
+
+    if (color < 1 || color >= MAX_COLOR) {
+        printf("잘못된 입력입니다.\n");
+        return;
+    }
+
+    Screen_t* pDefaultScreen = createDefaultScreen();
+    for (int i = 0; i < 100; ++i) {
+        readFpgaVideoDataWithWhiteBalance(pDefaultScreen);
+        Matrix8_t* pColorMatrix = createColorMatrix(pDefaultScreen, pColorTables[color]);
+        drawColorMatrix(pDefaultScreen, pColorMatrix);
+        displayScreen(pDefaultScreen);
+        destroyMatrix8(pColorMatrix);
+    }
+    destroyScreen(pDefaultScreen);
 }
 
 static void _runAdjustWhiteBalance(void) {
@@ -264,8 +383,10 @@ static void _runAdjustWhiteBalance(void) {
         printf("\n");
         printf("[화이트 밸런스 설정 메뉴]\n");
         printf("1. 자동 설정\n");
-        printf("2. 수동 설정\n");
-        printf("3. 화이트 밸런스 시험\n");
+        printf("2. 반자동 설정\n");
+        printf("3. 수동 설정\n");
+        printf("4. 화이트 밸런스 시험\n");
+        printf("5. 컬러 테이블 시험\n");
         printf("x. 종료\n");
 
         char input;
@@ -276,23 +397,23 @@ static void _runAdjustWhiteBalance(void) {
 
         if (input == '1') {
             printf("[자동 설정]\n");
-
             _adjustWhiteBalanceAuto();
         }
         else if (input == '2') {
-            printf("[수동 설정]\n");
-
-            _adjustWhiteBalanceManual();
+            printf("[반자동 설정]\n");
+            _adjustWhiteBalanceSemiAuto();
         }
         else if (input == '3') {
+            printf("[수동 설정]\n");
+            _adjustWhiteBalanceManual();
+        }
+        else if (input == '4') {
             printf("[화이트 밸런스 시험]\n");
-
-            Screen_t* pDefaultScreen = createDefaultScreen();
-            for (int i = 0; i < 100; ++i) {
-                readFpgaVideoDataWithWhiteBalance(pDefaultScreen);
-                displayScreen(pDefaultScreen);
-            }
-            destroyScreen(pDefaultScreen);
+            _testWhiteBalance();
+        }
+        else if (input == '5') {
+            printf("[컬러 테이블 시험]\n");
+            _testColorTable();
         }
         else if (input == 'x' || input == 'X') {
             break;
@@ -328,7 +449,7 @@ static void _runCaptureScreen(void) {
     printLog("Capture Screen\n");
 
     enableDirectCameraDisplay();
-    //runMotion(ROBOT_RELEASE_ARM_SERVOS);
+    runMotion(ROBOT_RELEASE_ARM_SERVOS);
     printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
 
     while (true) {
