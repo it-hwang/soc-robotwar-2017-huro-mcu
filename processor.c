@@ -221,7 +221,7 @@ static Rgab5515_t _getSampleColor(void) {
 
     // Debug screen
     _fillMatrix16(pScreen, meanRgab5515.data);
-    overlapMatrix16(pSubMatrix, pScreen, minX, maxX);
+    overlapMatrix16(pSubMatrix, pScreen, minX, minY);
     displayScreen(pScreen);
 
     destroyMatrix16(pSubMatrix);
@@ -312,9 +312,6 @@ static void _adjustWhiteBalanceSemiAuto(void) {
     readFpgaVideoDataWithWhiteBalance(pScreen);
     displayScreen(pScreen);
     destroyScreen(pScreen);
-
-    setHead(0, 0);
-    resetServoSpeed();
 }
 
 static void _adjustWhiteBalanceManual(void) {
