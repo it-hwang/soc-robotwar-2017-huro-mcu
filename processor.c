@@ -231,6 +231,11 @@ static Rgab5515_t _getSampleColor(void) {
 }
 
 static void _adjustWhiteBalanceAuto(void) {
+    setServoSpeed(30);
+    setHead(0, -60);
+    sdelay(1);
+    resetServoSpeed();
+
     runMotion(ROBOT_RELEASE_ARM_SERVOS);
     printf("머리와 팔 모터의 토크가 해제되었습니다.\n");
 
