@@ -1,9 +1,8 @@
 #include <math.h>
 #include <stdlib.h>
-#include "white_balance.h"
 
-#define _MIN(X,Y) ((X) < (Y) ? (X) : (Y))
-#define _MAX(X,Y) ((X) > (Y) ? (X) : (Y))
+#include "white_balance.h"
+#include "math.h"
 
 static LookUpTable16_t* _pDefaultWhiteBalanceTable = NULL;
 
@@ -24,9 +23,9 @@ static uint16_t _convertRealColor(PixelData_t pixelData) {
     int g2 = _aG * g * g + _bG * g + _cG;
     int b2 = _aB * b * b + _bB * b + _cB;
 
-    rgba.r = _MIN(_MAX(r2, 0), 255);
-    rgba.g = _MIN(_MAX(g2, 0), 255);
-    rgba.b = _MIN(_MAX(b2, 0), 255);
+    rgba.r = MIN(MAX(r2, 0), 255);
+    rgba.g = MIN(MAX(g2, 0), 255);
+    rgba.b = MIN(MAX(b2, 0), 255);
     
     pRgab5515->data = rgbaToRgab5515Data(&rgba);
     return pRgab5515->data;
@@ -49,13 +48,10 @@ LookUpTable16_t* createWhiteBalanceTable(Rgba_t* pInputColor, Rgba_t* pRealColor
     int realR = pRealColor->r;
     int realG = pRealColor->g;
     int realB = pRealColor->b;
-
-    if (inputR == 0 || inputR == 255)
-        return NULL;
-    if (inputG == 0 || inputG == 255)
-        return NULL;
-    if (inputB == 0 || inputB == 255)
-        return NULL;
+    
+    inputR = MIN(MAX(inputR, 0), 255);
+    inputG = MIN(MAX(inputG, 0), 255);
+    inputB = MIN(MAX(inputB, 0), 255);
     
     _aR = (double)(realR - inputR) / (inputR * (inputR - 255));
     _bR = 1.0 - (_aR * 255);
