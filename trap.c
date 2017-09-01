@@ -285,8 +285,14 @@ static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc
     return distance * 1000;
 }
 
-static void _approachObject(int distance) {
+static void _approachObject(Vector3_t* pVector) {
 
+    if(pVector->x < 0)
+        walkLeft(pVector->x * -1000);
+    else
+        walkRigth(pVector->x * 1000);
+
+    walkForward(pVector->y * 1000);
 }
 
 static bool _approachTrap(Object_t* pObject) {
