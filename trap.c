@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "trap.h"
 #include "graphic_interface.h"
@@ -13,6 +14,7 @@
 #include "object_detection.h"
 #include "boundary.h"
 #include "color.h"
+#include "camera.h"
 #include "log.h"
 #include "debug.h"
 
@@ -24,8 +26,8 @@ static bool _setBoundary(Screen_t* pScreen);
 static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject);
 static Matrix8_t* _createYellowMatrix(Screen_t* pScreen);
 static Matrix8_t* _createBlackMatrix(Screen_t* pScreen);
-static int _measureObjectDistance(Object_t* pTrapObject);
-static void _approachObject(int distance);
+static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc);
+static void _approachObject(Vector3_t* pVector);
 static bool _approachTrap(Object_t* pObject);
 static bool _climbUpTrap(void);
 static bool _approachBlackLine(void);
@@ -63,8 +65,8 @@ static Object_t* _searchTrap(void) {
         if( !_setBoundary(pScreen) )
             continue;
             
-        Object_t* pTrapObject = NULL;
-        bool isTrap = _isTrapObject(pScreen, pTrapObject);
+        Object_t pTrapObject;
+        bool isTrap = _isTrapObject(pScreen, &pTrapObject);
         
         if( pTrapObject == NULL)
             continue;
@@ -74,16 +76,15 @@ static Object_t* _searchTrap(void) {
             return pTrapObject;
         }
 
-        int distance = _measureObjectDistance(pTrapObject);
-
-        free(pTrapObject);
+        Vector3_t trapVector;
+        double distance =  _measureObjectDistance(&pTrapObject, &trapVector);
 
         if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR)
             break;
 
         nTries = 0;
 
-        _approachObject(distance);
+        _approachObject(&trapVector);
     }
 
     destroyScreen(pScreen);
@@ -230,7 +231,6 @@ static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject) {
             pMaxBlackObject = pObject;
     }
  
-    pTrapObject = (Object_t*)malloc(sizeof(Object_t));
     memcpy(pTrapObject, pMaxYellowObject, sizeof(Object_t));
 
     bool isBlackXInsideYellowX = false;
@@ -271,8 +271,18 @@ static Matrix8_t* _createBlackMatrix(Screen_t* pScreen) {
     return pBlackMatrix;
 }
 
-static int _measureObjectDistance(Object_t* pTrapObject) {
-    return 0;
+static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc) {
+    const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.296 };
+
+    CameraParameters_t camParameter;
+    readCameraParameters(&camParameter, &HEAD_OFFSET);
+
+    PixelLocation_t trapLoc = {pTrapObject->centerX, pTrapObject->maxY};
+    convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, pWorldLoc);
+
+    double distance = sqrt(dotProductVector3(pWorldLoc, pWorldLoc));
+
+    return distance * 1000;
 }
 
 static void _approachObject(int distance) {
