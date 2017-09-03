@@ -231,11 +231,11 @@ Color_t _convertBlueColorV1(PixelData_t pixelData) {
     _calculateHSV(pixelData, &h, &s, &v);
 
     // i > ((a / (s - b)) + c)
-    float a = 0.05;
-    float b = 0.08;
-    float c = -0.05;
+    float a = 0.16;
+    float b = 0.00;
+    float c = -0.04;
 
-	if (h >= 170 && h < 275) {
+	if (h >= 180 && h < 275) {
         if (s <= b)
             return COLOR_NONE;
         else if (v > (a / (s - b)) + c)
