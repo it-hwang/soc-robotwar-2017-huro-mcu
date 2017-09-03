@@ -185,10 +185,10 @@ bool walkLeft(int millimeters) {
             millimeters -= 30;
         }
         
-        while (millimeters >= 20) {
+        while (millimeters >= 15) {
             if (!runMotion(MOTION_MOVE_LEFT_LIGHT))
                 return false;
-            millimeters -= 20;
+            millimeters -= 15;
         }
     }
     
@@ -206,10 +206,10 @@ bool walkRight(int millimeters) {
             millimeters -= 30;
         }
         
-        while (millimeters >= 20) {
+        while (millimeters >= 15) {
             if (!runMotion(MOTION_MOVE_RIGHT_LIGHT))
                 return false;
-            millimeters -= 20;
+            millimeters -= 15;
         }
     }
     
