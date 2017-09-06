@@ -26,9 +26,9 @@ static bool _setBoundary(Screen_t* pScreen);
 static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject);
 static Matrix8_t* _createYellowMatrix(Screen_t* pScreen);
 static Matrix8_t* _createBlackMatrix(Screen_t* pScreen);
-static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc);
+static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc, double height);
 static void _approachObject(Vector3_t* pVector);
-static bool _approachTrap(Object_t* pObject);
+static void _approachTrap(Object_t* pObject);
 static bool _climbUpTrap(void);
 static bool _approachBlackLine(void);
 static bool _forwardRoll(void);
@@ -41,9 +41,9 @@ bool trapMain(void) {
         return false;
 
     _approachTrap(pTrap);
-    _climbUpTrap();
-    _approachBlackLine();
-    _forwardRoll();
+    //_climbUpTrap();
+    //_approachBlackLine();
+    //_forwardRoll();
     
     free(pTrap);
 
@@ -54,9 +54,11 @@ static Object_t* _searchTrap(void) {
 
     const int MAX_TRIES = 10;
     
-    const int APPROACH_DISTANCE = 20;
+    const int APPROACH_DISTANCE = 80;
     
     const int APPROACH_DISTANCE_ERROR = 30;
+
+    const double OBJECT_HEIGHT = 0.2;
 
     Screen_t* pScreen = createDefaultScreen();
 
@@ -77,7 +79,7 @@ static Object_t* _searchTrap(void) {
         }
 
         Vector3_t trapVector;
-        double distance =  _measureObjectDistance(&pTrapObject, &trapVector);
+        double distance =  _measureObjectDistance(&pTrapObject, &trapVector, OBJECT_HEIGHT);
 
         if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR)
             break;
@@ -235,6 +237,7 @@ static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject) {
 
     bool isBlackXInsideYellowX = false;
     bool isBlackYInsideYellowY = false;
+
     if(pMaxBlackObject != NULL) {
         isBlackXInsideYellowX = (pMaxBlackObject->minX > pMaxYellowObject->minX && pMaxBlackObject->maxX < pMaxYellowObject->maxX);
         isBlackYInsideYellowY = (pMaxBlackObject->minY > pMaxYellowObject->minY && pMaxBlackObject->maxY < pMaxYellowObject->maxY);
@@ -271,14 +274,14 @@ static Matrix8_t* _createBlackMatrix(Screen_t* pScreen) {
     return pBlackMatrix;
 }
 
-static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc) {
+static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc, double height) {
     const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.296 };
 
     CameraParameters_t camParameter;
     readCameraParameters(&camParameter, &HEAD_OFFSET);
 
     PixelLocation_t trapLoc = {pTrapObject->centerX, pTrapObject->maxY};
-    convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, pWorldLoc);
+    convertScreenLocationToWorldLocation(&camParameter, &trapLoc, height, pWorldLoc);
 
     double distance = sqrt(dotProductVector3(pWorldLoc, pWorldLoc));
 
@@ -295,15 +298,33 @@ static void _approachObject(Vector3_t* pVector) {
     walkForward(pVector->y * 1000);
 }
 
-static bool _approachTrap(Object_t* pObject) {
-    return false;
+static void _approachTrap(Object_t* pTrap) {
+    const int MAX_TRIES = 10;
+    
+    const int APPROACH_DISTANCE = 20;
+    
+    const int APPROACH_DISTANCE_ERROR = 30;
+
+    const double TRAP_HEIGHT = 0.0;
+    
+    for(int nTries = 0; nTries < MAX_TRIES; ++nTries) {
+        Vector3_t trapVector;
+        double distance =  _measureObjectDistance(pTrap, &trapVector, TRAP_HEIGHT);
+
+        if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR)
+            break;
+    }
 }
+
 static bool _climbUpTrap(void) {
-    return false;
+    return runMotion(MOTION_CLIMB_UP_STAIR);
 }
+
 static bool _approachBlackLine(void) {
+    
     return false;
 }
+
 static bool _forwardRoll(void) {
     return false;
 }
