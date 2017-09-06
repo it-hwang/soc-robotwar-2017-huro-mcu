@@ -27,11 +27,8 @@
 #include "boundary.h"
 #include "white_balance.h"
 #include "mine.h"
-<<<<<<< HEAD
 #include "trap.h"
-=======
 #include "vector3.h"
->>>>>>> develop
 #include "log.h"
 #include "screenio.h"
 #include "debug.h"
@@ -410,10 +407,9 @@ static void _runTest(void) {
     setHead(0, -35);
     mdelay(1000);
     
-    for(int i = 0; i < 5000; ++i) {
+    // for(int i = 0; i < 5000; ++i) {
         trapMain();
-    }
-
+    // }
 }
 
 static void _testBoundary(void) {

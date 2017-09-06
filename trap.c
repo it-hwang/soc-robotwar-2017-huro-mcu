@@ -67,8 +67,8 @@ static Object_t* _searchTrap(void) {
         if( !_setBoundary(pScreen) )
             continue;
             
-        Object_t pTrapObject;
-        bool isTrap = _isTrapObject(pScreen, &pTrapObject);
+        Object_t* pTrapObject = (Object_t*)malloc(sizeof(Object_t));
+        bool isTrap = _isTrapObject(pScreen, pTrapObject);
         
         if( pTrapObject == NULL)
             continue;
@@ -80,6 +80,8 @@ static Object_t* _searchTrap(void) {
 
         Vector3_t trapVector;
         double distance =  _measureObjectDistance(&pTrapObject, &trapVector, OBJECT_HEIGHT);
+
+        free(pTrapObject);
 
         if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR)
             break;
@@ -293,7 +295,7 @@ static void _approachObject(Vector3_t* pVector) {
     if(pVector->x < 0)
         walkLeft(pVector->x * -1000);
     else
-        walkRigth(pVector->x * 1000);
+        walkRight(pVector->x * 1000);
 
     walkForward(pVector->y * 1000);
 }
