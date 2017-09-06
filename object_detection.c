@@ -392,6 +392,17 @@ void removeSmallObjects(ObjectList_t* pObjectList, int minimumCnt) {
 }
 
 
+Object_t* findObjectById(ObjectList_t* pObjectList, int id) {
+    if (!pObjectList) return NULL;
+
+    for (int i = 0 ; i < pObjectList->size; ++i) {
+        if (pObjectList->list[i].id == id)
+            return &(pObjectList->list[i]);
+    }
+
+    return NULL;
+}
+
 Object_t* findLargestObject(ObjectList_t* pObjectList) {
     if (pObjectList == NULL)
         return NULL;

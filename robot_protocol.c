@@ -9,6 +9,10 @@
 #define _UART_STOPS			1
 
 
+static void _setHeadVertical(int degrees);
+static void _setHeadHorizontal(int degrees);
+
+
 int openRobotPort(void) {
     int status;
 
@@ -100,6 +104,22 @@ int getHeadVertical(void) {
 }
 
 void setHeadVertical(int degrees) {
+    _setHeadVertical(degrees);
+    runMotion(ROBOT_WAIT_SERVO_OFFSET);
+}
+
+void setHeadHorizontal(int degrees) {
+    _setHeadHorizontal(degrees);
+    runMotion(ROBOT_WAIT_SERVO_OFFSET);
+}
+
+void setHead(int horizontalDegrees, int verticalDegrees) {
+    _setHeadHorizontal(horizontalDegrees);
+    _setHeadVertical(verticalDegrees);
+    runMotion(ROBOT_WAIT_SERVO_OFFSET);
+}
+
+static void _setHeadVertical(int degrees) {
     if (degrees < -90 || degrees > 90)
         return;
 
@@ -107,17 +127,12 @@ void setHeadVertical(int degrees) {
     setServoOffset(SERVO_HEAD_VERTICAL, offset);
 }
 
-void setHeadHorizontal(int degrees) {
+static void _setHeadHorizontal(int degrees) {
     if (degrees < -90 || degrees > 90)
         return;
 
     int offset = degrees + 100;
     setServoOffset(SERVO_HEAD_HORIZONTAL, offset);
-}
-
-void setHead(int horizontalDegrees, int verticalDegrees) {
-    setHeadHorizontal(horizontalDegrees);
-    setHeadVertical(verticalDegrees);
 }
 
 
@@ -185,10 +200,10 @@ bool walkLeft(int millimeters) {
             millimeters -= 30;
         }
         
-        while (millimeters >= 20) {
+        while (millimeters >= 15) {
             if (!runMotion(MOTION_MOVE_LEFT_LIGHT))
                 return false;
-            millimeters -= 20;
+            millimeters -= 15;
         }
     }
     
@@ -206,10 +221,10 @@ bool walkRight(int millimeters) {
             millimeters -= 30;
         }
         
-        while (millimeters >= 20) {
+        while (millimeters >= 15) {
             if (!runMotion(MOTION_MOVE_RIGHT_LIGHT))
                 return false;
-            millimeters -= 20;
+            millimeters -= 15;
         }
     }
     

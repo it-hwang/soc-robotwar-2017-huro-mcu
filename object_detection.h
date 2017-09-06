@@ -35,6 +35,7 @@ void drawObjectCenter(Screen_t* pScreen, Object_t* pObject, Rgab5515_t* pPointCo
 
 void removeSmallObjects(ObjectList_t* pObjectList, int minimumCnt);
 
+Object_t* findObjectById(ObjectList_t* pObjectList, int id);
 Object_t* findLargestObject(ObjectList_t* pObjectList);
 
 // pObject가 직사각형과의 유사한 정도를 반환한다. (범위: 0.0 ~ 1.0)

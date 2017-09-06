@@ -9,11 +9,11 @@ typedef struct {
     double y;
 } _NormalizedLoc_t;
 
-static void _undistortPixel(CameraParameters_t* pCamParams, int* pX, int* pY);
+static void _undistortPixel(const CameraParameters_t* pCamParams, int* pX, int* pY);
 
 
 // TODO: 설정 파일의 내용을 읽어오도록 변경할 필요가 있다.
-void readCameraParameters(CameraParameters_t* pCamParams, Vector3_t* pHeadOffset) {
+void readCameraParameters(CameraParameters_t* pCamParams, const Vector3_t* pHeadOffset) {
     // 목에서 카메라 초점까지의 거리 (meters)
     double cameraOffsetX = 0.0000;
     double cameraOffsetY = 0.0095;
@@ -67,7 +67,7 @@ void readCameraParameters(CameraParameters_t* pCamParams, Vector3_t* pHeadOffset
     pCamParams->p2 = p2;
 }
 
-void convertScreenLocationToWorldLocation(CameraParameters_t* pCamParams, PixelLocation_t* pScreenLoc, double height, Vector3_t* pWorldLoc) {
+void convertScreenLocationToWorldLocation(const CameraParameters_t* pCamParams, const PixelLocation_t* pScreenLoc, double height, Vector3_t* pWorldLoc) {
     if (!pCamParams) return;
     if (!pScreenLoc) return;
     if (!pWorldLoc) return;
@@ -102,7 +102,7 @@ void convertScreenLocationToWorldLocation(CameraParameters_t* pCamParams, PixelL
     pWorldLoc->z = height;
 }
 
-static void _normalize(CameraParameters_t* pCamParams,  double* pX, double* pY) {
+static void _normalize(const CameraParameters_t* pCamParams,  double* pX, double* pY) {
     double x = *pX;
     double y = *pY;
     double y_n = (y - pCamParams->cy) / pCamParams->fy;
@@ -112,7 +112,7 @@ static void _normalize(CameraParameters_t* pCamParams,  double* pX, double* pY) 
     *pY = y_n;
 }
 
-static void _denormalize(CameraParameters_t* pCamParams, double* pX, double* pY) {
+static void _denormalize(const CameraParameters_t* pCamParams, double* pX, double* pY) {
     double x = *pX;
     double y = *pY;
     double x_p = pCamParams->fx*x + pCamParams->cx;
@@ -122,7 +122,7 @@ static void _denormalize(CameraParameters_t* pCamParams, double* pX, double* pY)
     *pY = y_p;
 }
 
-static void _distort(CameraParameters_t* pCamParams, double* pX, double* pY) {
+static void _distort(const CameraParameters_t* pCamParams, double* pX, double* pY) {
     double x = *pX;
     double y = *pY;
     double r2 = x*x + y*y;
@@ -134,7 +134,7 @@ static void _distort(CameraParameters_t* pCamParams, double* pX, double* pY) {
     *pY = y_d;
 }
 
-static void _distortPixel(CameraParameters_t* pCamParams, int* pX, int* pY) {
+static void _distortPixel(const CameraParameters_t* pCamParams, int* pX, int* pY) {
     double x = *pX;
     double y = *pY;
 
@@ -146,7 +146,7 @@ static void _distortPixel(CameraParameters_t* pCamParams, int* pX, int* pY) {
     *pY = (int)(y + 0.5);
 }
 
-static void _undistortPixel(CameraParameters_t* pCamParams, int* pX, int* pY) {
+static void _undistortPixel(const CameraParameters_t* pCamParams, int* pX, int* pY) {
     double xd = *pX;
     double yd = *pY;
 
@@ -178,7 +178,7 @@ static void _undistortPixel(CameraParameters_t* pCamParams, int* pX, int* pY) {
     *pY = (int)(yu + 0.5);
 }
 
-Screen_t* createUndistortedScreen(Screen_t* pScreen, CameraParameters_t* pCamParams) {
+Screen_t* createUndistortedScreen(const Screen_t* pScreen, const CameraParameters_t* pCamParams) {
     double fx = pCamParams->fx;
     double fy = pCamParams->fy;
     double cx = pCamParams->cx;

@@ -8,7 +8,7 @@
 #define RAD_TO_DEG  (180. / M_PI)
 #define DEG_TO_RAD  (M_PI / 180.)
 
-#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
-#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
+#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
 #endif // __MATH2_H__
