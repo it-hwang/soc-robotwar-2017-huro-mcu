@@ -1,4 +1,4 @@
-//defien DEBUG
+#define DEBUG
 
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +18,7 @@
 #include "log.h"
 #include "debug.h"
 
-static Object_t* _searchTrap(void);
+static bool _searchTrap(void);
 static Object_t* _candidateObjectForBoundary(Screen_t* pScreen, Matrix16_t* pLabelMatrix);
 static Object_t* _getCandidateObjectForBoundary(Screen_t* pScreen, Matrix16_t* pLabelMatrix);
 static void _establishBoundary(Screen_t* pScreen);
@@ -27,30 +27,25 @@ static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject);
 static Matrix8_t* _createYellowMatrix(Screen_t* pScreen);
 static Matrix8_t* _createBlackMatrix(Screen_t* pScreen);
 static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc, double height);
-static void _approachObject(Vector3_t* pVector);
-static void _approachTrap(Object_t* pObject);
+static void _approachObject(Vector3_t* pVector, int approachDistance);
+static bool _approachTrap(Object_t* pObject);
 static bool _climbUpTrap(void);
 static bool _approachBlackLine(void);
 static bool _forwardRoll(void);
 
 bool trapMain(void) {
 
-    Object_t* pTrap = _searchTrap();
-
-    if(pTrap == NULL)
+    if( !_searchTrap() )
         return false;
 
-    _approachTrap(pTrap);
     //_climbUpTrap();
     //_approachBlackLine();
     //_forwardRoll();
-    
-    free(pTrap);
 
     return true;
 }
 
-static Object_t* _searchTrap(void) {
+static bool _searchTrap(void) {
 
     const int MAX_TRIES = 10;
     
@@ -70,30 +65,45 @@ static Object_t* _searchTrap(void) {
         Object_t* pTrapObject = (Object_t*)malloc(sizeof(Object_t));
         bool isTrap = _isTrapObject(pScreen, pTrapObject);
         
-        if( pTrapObject == NULL)
-            continue;
+        drawObjectEdge(pScreen, pTrapObject, NULL);
+        displayScreen(pScreen);
 
+        if( pTrapObject == NULL){
+            printDebug("노란 물체가 없습니다.\n");
+            continue;
+        }
+            
         if( isTrap ) {
             destroyScreen(pScreen);
-            return pTrapObject;
+            printDebug("함정을 찾았습니다.\n");
+            nTries = 0;
+            if( _approachTrap(pTrapObject) ) {
+                free(pTrapObject);
+                return true;
+            }
+            free(pTrapObject);
+            continue;
         }
 
+        printDebug("노란 물체를 찾았지만, 함정인지는...\n");
         Vector3_t trapVector;
         double distance =  _measureObjectDistance(&pTrapObject, &trapVector, OBJECT_HEIGHT);
 
         free(pTrapObject);
-
-        if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR)
+        printDebug("노란 물체의 거리 %f\n", distance);
+        if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR){
+            printDebug("노란 물체에 더 이상 다가갈 수 없습니다. %f\n", distance);
             break;
-
+        }
+            
         nTries = 0;
 
-        _approachObject(&trapVector);
+        _approachObject(&trapVector, APPROACH_DISTANCE);
     }
 
     destroyScreen(pScreen);
     
-    return NULL;
+    return false;
 }
 
 static bool _setBoundary(Screen_t* pScreen) {
@@ -277,7 +287,7 @@ static Matrix8_t* _createBlackMatrix(Screen_t* pScreen) {
 }
 
 static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc, double height) {
-    const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.296 };
+    const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
 
     CameraParameters_t camParameter;
     readCameraParameters(&camParameter, &HEAD_OFFSET);
@@ -290,17 +300,19 @@ static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc
     return distance * 1000;
 }
 
-static void _approachObject(Vector3_t* pVector) {
-
+static void _approachObject(Vector3_t* pVector, int approachDistance) {
+    // const double X_ERROR = 
+    
     if(pVector->x < 0)
         walkLeft(pVector->x * -1000);
     else
         walkRight(pVector->x * 1000);
 
-    walkForward(pVector->y * 1000);
+    printDebug("y값 %f\n", pVector->y);
+    walkForward(pVector->y * 1000 - approachDistance);
 }
 
-static void _approachTrap(Object_t* pTrap) {
+static bool _approachTrap(Object_t* pTrap) {
     const int MAX_TRIES = 10;
     
     const int APPROACH_DISTANCE = 20;
@@ -309,13 +321,19 @@ static void _approachTrap(Object_t* pTrap) {
 
     const double TRAP_HEIGHT = 0.0;
     
-    for(int nTries = 0; nTries < MAX_TRIES; ++nTries) {
+    // for(int nTries = 0; nTries < MAX_TRIES; ++nTries) {
         Vector3_t trapVector;
         double distance =  _measureObjectDistance(pTrap, &trapVector, TRAP_HEIGHT);
+        printDebug("함정과의 거리 %f\n", distance);
 
-        if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR)
-            break;
-    }
+        if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR){
+            printDebug("함정과 가깝습니다.\n");
+            return true;
+        }
+
+        _approachObject(&trapVector, APPROACH_DISTANCE);
+    // }
+    return false;
 }
 
 static bool _climbUpTrap(void) {
