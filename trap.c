@@ -30,6 +30,7 @@ static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc
 static void _approachObject(Vector3_t* pVector, int approachDistance);
 static bool _approachTrap(Object_t* pObject);
 static bool _climbUpTrap(void);
+static bool _setPositionOnTrap(void);
 static bool _approachBlackLine(void);
 static bool _forwardRoll(void);
 
@@ -38,7 +39,8 @@ bool trapMain(void) {
     if( !_searchTrap() )
         return false;
 
-    //_climbUpTrap();
+    _climbUpTrap();
+    _setPositionOnTrap();
     //_approachBlackLine();
     //_forwardRoll();
 
@@ -301,47 +303,72 @@ static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc
 }
 
 static void _approachObject(Vector3_t* pVector, int approachDistance) {
-    // const double X_ERROR = 
+    const double X_ERROR = 0.02;
     
-    if(pVector->x < 0)
-        walkLeft(pVector->x * -1000);
-    else
-        walkRight(pVector->x * 1000);
+    if( pVector->x > fabs(X_ERROR) ) {
+        if(pVector->x < 0)
+            walkLeft(pVector->x * -1000);
+        else
+            walkRight(pVector->x * 1000);
+    }
 
     printDebug("y값 %f\n", pVector->y);
     walkForward(pVector->y * 1000 - approachDistance);
 }
 
 static bool _approachTrap(Object_t* pTrap) {
-    const int MAX_TRIES = 10;
-    
     const int APPROACH_DISTANCE = 20;
     
     const int APPROACH_DISTANCE_ERROR = 30;
 
     const double TRAP_HEIGHT = 0.0;
     
-    // for(int nTries = 0; nTries < MAX_TRIES; ++nTries) {
-        Vector3_t trapVector;
-        double distance =  _measureObjectDistance(pTrap, &trapVector, TRAP_HEIGHT);
-        printDebug("함정과의 거리 %f\n", distance);
 
-        if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR){
-            printDebug("함정과 가깝습니다.\n");
-            return true;
-        }
+    Vector3_t trapVector;
+    double distance =  _measureObjectDistance(pTrap, &trapVector, TRAP_HEIGHT);
+    printDebug("함정과의 거리 %f\n", distance);
 
-        _approachObject(&trapVector, APPROACH_DISTANCE);
-    // }
+    if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR){
+        printDebug("함정과 가깝습니다.\n");
+        return true;
+    }
+
+    _approachObject(&trapVector, APPROACH_DISTANCE);
+    
     return false;
 }
 
 static bool _climbUpTrap(void) {
+    
     return runMotion(MOTION_CLIMB_UP_STAIR);
 }
 
-static bool _approachBlackLine(void) {
+static bool _setPositionOnTrap(void) {
+
+    Screen_t* pScreen = createDefaultScreen();
+
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+
+    Matrix8_t* pYelloMatrix = _createYellowMatrix(pScreen);
+    Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
+    memset(pLabelMatrix->elements, 0, (pLabelMatrix->width * pLabelMatrix->height * sizeof(uint16_t)));
     
+    ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pYellowMatrix, pLabelMatrix);
+
+    Object_t* pObject = findLargestObject(pObjectList);
+
+    if(pObject == NULL)
+        return false;
+    
+    Polygon_t* pPolygon = createPolygon(pLabelMatrix, pObject, 5);
+
+    Line_t* pLine = findTopLine(pPolygon);
+    
+    if(pLine == NULL)
+        return false;
+}
+
+static bool _approachBlackLine(void) {
     return false;
 }
 
