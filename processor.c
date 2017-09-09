@@ -28,6 +28,7 @@
 #include "white_balance.h"
 #include "mine.h"
 #include "golf.h"
+#include "horizontal_barricade.h"
 #include "vector3.h"
 #include "log.h"
 #include "screenio.h"
@@ -527,7 +528,7 @@ static void _runTest(void) {
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
 
-    golfMain();
+    horizontalBarricadeMain();
 }
 
 static void _testWorldLoc(void) {
