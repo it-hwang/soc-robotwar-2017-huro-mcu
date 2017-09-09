@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "timer.h"
 #include "amazon2_timer_api.h"
 #include "log.h"
@@ -45,6 +43,10 @@ void closeTimer(void) {
     amazon2_timer_count_clear(_TIMER_ID);
     
     _isOpened = false;
+}
+
+bool isTimerOpened(void) {
+    return _isOpened;
 }
 
 uint64_t getTime(void) {
