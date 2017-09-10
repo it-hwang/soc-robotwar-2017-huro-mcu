@@ -29,6 +29,7 @@
 #include "white_balance.h"
 #include "mine.h"
 #include "hurdle.h"
+#include "blue_gate.h"
 #include "golf.h"
 #include "horizontal_barricade.h"
 #include "vector3.h"
@@ -41,7 +42,7 @@
 #define RAD_TO_DEG  (180 / PI)
 
 static const char* _WHITE_BALANCE_TABLE_PATH = "./data/white_balance.lut";
-// static ObstacleId_t* _obstacleSequence;
+static ObstacleId_t* _obstacleSequence;
 
 
 static void _runHuroC(void);
@@ -53,10 +54,17 @@ static void _adjustWhiteBalance(Rgba_t* pInputColor, Rgba_t* pRealColor);
 static void _adjustWhiteBalanceAuto(void);
 
 static void _defineObstacle(void) {
-	// registerObstacle(OBSTACLE_ONE, helloWorld);
-	// registerObstacle(OBSTACLE_TWO, goodbyeWorld);
+	registerObstacle(OBSTACLE_VERTICAL_BARRICADE, verticalBarricadeMain);
+	registerObstacle(OBSTACLE_RED_BRIDGE, redBridgeMain);
+	registerObstacle(OBSTACLE_MINE, mineMain);
+	registerObstacle(OBSTACLE_HURDLE, hurdleMain);
+	registerObstacle(OBSTACLE_CORNER, cornerDetectionMain);
+	registerObstacle(OBSTACLE_BLUE_GATE, blueGateMain);
+	registerObstacle(OBSTACLE_GREEN_BRIDGE, greenBridgeMain);
+	registerObstacle(OBSTACLE_GOLF, golfMain);
+	//registerObstacle(OBSTACLE_TRAP, trapMain);
+	registerObstacle(OBSTACLE_HORIZONTAL_BARRICADE, horizontalBarricadeMain);
 }
-
 
 int openProcessor(void) {
     if (openGraphicInterface() < 0) {
@@ -80,7 +88,7 @@ int openProcessor(void) {
     }
 
 	_defineObstacle();
-	// _obstacleSequence = loadObstaclesFile("/mnt/f0/obstacles.txt");
+	_obstacleSequence = loadObstaclesFile("/mnt/f0/obstacles.txt");
 
     return 0;
 }
@@ -92,7 +100,7 @@ void closeProcessor(void) {
     finalizeColor();
     resetDefaultWhiteBalanceTable();
     
-    // free(_obstacleSequence);
+    free(_obstacleSequence);
 }
 
 int runProcessor(int command) {
@@ -130,6 +138,24 @@ int runProcessor(int command) {
 ///////////////////////////////////////////////////////////////////////////////
 static void _runHuroC(void) {
     printLog("Start HURO-C\n");
+
+    // 작동 알림
+    setHead(0, -90);
+    setHead(0, 0);
+
+    // 바로 움직이면 위험하므로 잠시 대기한다.
+    sdelay(3);
+    
+    ObstacleId_t id = 0;
+    while (true) {
+        if (runSolveObstacle(id))
+            checkCenterMain();
+    
+        id++;
+        if (id >= OBSTACLE_SIZE)
+            id = 0;
+    }
+
 }
 
 
