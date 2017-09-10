@@ -89,10 +89,11 @@ bool solveHurdle(void) {
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
     mdelay(500);
 
-    checkCenterMain();
-    
-    runWalk(ROBOT_WALK_FORWARD_QUICK, 10);
-    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+    // TODO: 허들에 근접한 상태에서도 작동하는 중앙 정렬을 만들어야 한다.
+    // 허들에 근접한 상태에서 제대로 작동을 하지 않아 제외시켰다.
+    //checkCenterMain();
+    //runWalk(ROBOT_WALK_FORWARD_QUICK, 10);
+    //runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
 
     _crossHurdle();
 }
@@ -100,9 +101,9 @@ bool solveHurdle(void) {
 
 static bool _approachHurdle(void) {
     // 허들에 다가갈 거리 (밀리미터)
-    const int APPROACH_DISTANCE = 50;
+    const int APPROACH_DISTANCE = 30;
     // 거리 허용 오차 (밀리미터)
-    const int APPROACH_DISTANCE_ERROR = 20;
+    const int APPROACH_DISTANCE_ERROR = 50;
     
     const int APPROACH_MAX_DISTANCE = 300;
 
@@ -175,6 +176,9 @@ static double _getHurdleCorrelation(Matrix8_t* pColorMatrix, Object_t* pObject) 
     int objectWidth = pObject->maxX - pObject->minX + 1;
     int objectHeight = pObject->maxY - pObject->minY + 1;
     bool isWide = (((double)objectWidth / objectHeight) >= 2.5);
+
+    if (objectWidth < pColorMatrix->width * 0.3)
+        return 0.;
 
     if (isWide) {
         double rectangleCorrelation = getRectangleCorrelation(pColorMatrix, pObject);
