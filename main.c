@@ -42,6 +42,10 @@ int main(void) {
         printLog("[Error] Unable to open robot port.\n");
         return 1;
     }
+    else if (errorCode == PROCESSOR_TIMER_ERROR) {
+        printLog("[Error] Unable to open timer.\n");
+        return 1;
+    }
 
     printDebug("command: %d\n", command);
     runProcessor(command);

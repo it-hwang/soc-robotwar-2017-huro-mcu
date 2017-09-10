@@ -12,6 +12,7 @@
 #include "color.h"
 #include "color_model.h"
 #include "graphic_interface.h"
+#include "timer.h"
 #include "obstacle_manager.h"
 #include "object_detection.h"
 #include "line_detection.h"
@@ -65,6 +66,10 @@ int openProcessor(void) {
         closeProcessor();
         return PROCESSOR_ROBOT_PORT_ERROR;
     }
+    if (openTimer() < 0) {
+        closeProcessor();
+        return PROCESSOR_TIMER_ERROR;
+    }
     initializeColor();
     // Init white balance
     bool isWhiteBalanceTableExists = (access(_WHITE_BALANCE_TABLE_PATH, F_OK) == 0);
@@ -82,6 +87,7 @@ int openProcessor(void) {
 void closeProcessor(void) {
     closeGraphicInterface();
     closeRobotPort();
+    closeTimer();
     finalizeColor();
     resetDefaultWhiteBalanceTable();
     

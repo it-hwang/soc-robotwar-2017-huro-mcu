@@ -3,6 +3,7 @@
 
 #include "robot_protocol.h"
 #include "uart_api.h"
+#include "timer.h"
 
 #define _UART_BAUD_RATE		9600
 #define _UART_BITS			8
@@ -291,9 +292,15 @@ bool turnRight(int degrees) {
 
 
 void udelay(uint64_t microseconds) {
-    uint64_t counter = 18.4162 * microseconds;
-    while (counter) {
-        counter--;
+    if (isTimerOpened()) {
+        uint64_t endTime = getTime() + microseconds;
+        while (getTime() < endTime);
+    }
+    else {
+        uint64_t counter = 18.4162 * microseconds;
+        while (counter) {
+            counter--;
+        }
     }
 }
 
