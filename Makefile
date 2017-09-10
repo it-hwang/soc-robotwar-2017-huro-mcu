@@ -28,7 +28,7 @@ export AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP RANLIB CFLAGS
 PROJ = main
 
 
-OBJS = main.o log.o terminal.o uart_api.o robot_protocol.o graphic_api.o graphic_interface.o amazon2_timer_api.o timer.o matrix.o vector3.o lut.o color.o screenio.o obstacle_manager.o white_balance.o image_filter.o object_detection.o polygon_detection.o line_detection.o camera.o check_center.o check_bridge_center.o vertical_barricade.o red_bridge.o mine.o corner_detection.o boundary.o blue_gate.o green_bridge.o golf.o processor.o
+OBJS = main.o log.o terminal.o uart_api.o robot_protocol.o graphic_api.o graphic_interface.o amazon2_timer_api.o timer.o matrix.o vector3.o lut.o color.o screenio.o obstacle_manager.o white_balance.o image_filter.o object_detection.o polygon_detection.o line_detection.o camera.o check_center.o check_bridge_center.o vertical_barricade.o red_bridge.o mine.o corner_detection.o boundary.o blue_gate.o green_bridge.o golf.o horizontal_barricade.o processor.o
 
 
 all: $(PROJ)

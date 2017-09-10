@@ -9,5 +9,9 @@ void applyErosionToMatrix8(Matrix8_t* pMatrix, uint8_t n);
 void applyDilationToMatrix8(Matrix8_t* pMatrix, uint8_t n);
 void applyFastErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n);
 void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n);
+void applyFastWidthErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n);
+void applyFastHeightErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n);
+void applyFastWidthDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n);
+void applyFastHeightDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n);
 
 #endif // __IMAGE_FILTER_H__

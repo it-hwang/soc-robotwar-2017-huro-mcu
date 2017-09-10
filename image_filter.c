@@ -27,7 +27,7 @@ void applyMeanFilter(Screen_t* pScreen, PixelCoordinate_t n) {
     int forwardPosition;
     Rgab5515_t* pBackwardPixel;
     Rgab5515_t* pForwardPixel;
-    
+
     // 가로 방향 연산 수행
     for (y = 0; y < height; ++y) {
         // 행 초기화
@@ -66,7 +66,7 @@ void applyMeanFilter(Screen_t* pScreen, PixelCoordinate_t n) {
             pCurrentPixel++;
         }
     }
-    
+
     // 세로 방향 연산 수행
     for (x = 0; x < width; ++x) {
         // 열 초기화
@@ -126,8 +126,8 @@ void applyErosionToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
             if (x >= n && x < width - n) {
                 if (*pMatrixPixel) {
                     for (i = -n; i <= n; ++i) {
-                        *pMatrixPixel &= 
-                                pComparator->elements[y * width + x + i];
+                        *pMatrixPixel &=
+                            pComparator->elements[y * width + x + i];
                     }
                 }
             }
@@ -146,8 +146,8 @@ void applyErosionToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
             if (y >= n && y < height - n) {
                 if (*pMatrixPixel) {
                     for (i = -n; i <= n; ++i) {
-                        *pMatrixPixel &= 
-                                pComparator->elements[(y + i) * width + x];
+                        *pMatrixPixel &=
+                            pComparator->elements[(y + i) * width + x];
                     }
                 }
             }
@@ -175,8 +175,8 @@ void applyDilationToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
             uint8_t* pMatrixPixel = &(pMatrix->elements[y * width + x]);
             for (i = -n; i <= n; ++i) {
                 if (x + i >= 0 && x + i < width) {
-                    *pMatrixPixel |= 
-                            pComparator->elements[y * width + x + i];
+                    *pMatrixPixel |=
+                        pComparator->elements[y * width + x + i];
                 }
             }
         }
@@ -190,8 +190,8 @@ void applyDilationToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
             uint8_t* pMatrixPixel = &(pMatrix->elements[y * width + x]);
             for (i = -n; i <= n; ++i) {
                 if (y + i >= 0 && y + i < height) {
-                    *pMatrixPixel |= 
-                            pComparator->elements[(y + i) * width + x];
+                    *pMatrixPixel |=
+                        pComparator->elements[(y + i) * width + x];
                 }
             }
         }
@@ -199,7 +199,7 @@ void applyDilationToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
     destroyMatrix8(pComparator);
 }
 
-void applyFastErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+void applyFastHeightErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     PixelCoordinate_t width = pBinaryMatrix->width;
     PixelCoordinate_t height = pBinaryMatrix->height;
     int x;
@@ -207,39 +207,13 @@ void applyFastErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     int count;
     bool needErosion;
 
-    // 가로 방향 침식
-    // 왼쪽에서 오른쪽으로 진행하여 값이 0인 픽셀이 있다면 좌우로 번진다.
-    for (y = 0; y < height; ++y) {
-        count = 0;
-        for (x = 0; x < width; ++x) {
-            needErosion = pBinaryMatrix->elements[y * width + x] == 0;
-            
-            if (count > 0) {
-                if (x - n - 1 >= 0)
-                    pBinaryMatrix->elements[y * width + x - n - 1] = 0;
-                if (x < width)
-                    pBinaryMatrix->elements[y * width + x] = 0;
-                count--;
-            }
-
-            if (needErosion)
-                count = n;
-        }
-        // 잔여물 제거
-        while (count > 0) {
-            pBinaryMatrix->elements[y * width + x - n - 1] = 0;
-            count--;
-            x++;
-        }
-    }
-    
     // 세로 방향 침식
     // 위에서 아래로 진행하여 값이 0인 픽셀이 있다면 상하로 번진다.
     for (x = 0; x < width; ++x) {
         count = 0;
         for (y = 0; y < height; ++y) {
             needErosion = pBinaryMatrix->elements[y * width + x] == 0;
-            
+
             if (count > 0) {
                 if (y - n - 1 >= 0)
                     pBinaryMatrix->elements[(y - n - 1) * width + x] = 0;
@@ -260,7 +234,48 @@ void applyFastErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     }
 }
 
-void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+void applyFastWidthErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+    PixelCoordinate_t width = pBinaryMatrix->width;
+    PixelCoordinate_t height = pBinaryMatrix->height;
+    int x;
+    int y;
+    int count;
+    bool needErosion;
+
+    // 가로 방향 침식
+    // 왼쪽에서 오른쪽으로 진행하여 값이 0인 픽셀이 있다면 좌우로 번진다.
+    for (y = 0; y < height; ++y) {
+        count = 0;
+        for (x = 0; x < width; ++x) {
+            needErosion = pBinaryMatrix->elements[y * width + x] == 0;
+
+            if (count > 0) {
+                if (x - n - 1 >= 0)
+                    pBinaryMatrix->elements[y * width + x - n - 1] = 0;
+                if (x < width)
+                    pBinaryMatrix->elements[y * width + x] = 0;
+                count--;
+            }
+
+            if (needErosion)
+                count = n;
+        }
+        // 잔여물 제거
+        while (count > 0) {
+            pBinaryMatrix->elements[y * width + x - n - 1] = 0;
+            count--;
+            x++;
+        }
+    }
+}
+
+void applyFastErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+
+    applyFastWidthErosionToMatrix8(pBinaryMatrix, n);
+    applyFastHeightErosionToMatrix8(pBinaryMatrix, n);
+}
+
+void applyFastWidthDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
     PixelCoordinate_t width = pBinaryMatrix->width;
     PixelCoordinate_t height = pBinaryMatrix->height;
     int x;
@@ -279,7 +294,7 @@ void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
             needErosion = element != 0;
             if (needErosion)
                 value = element;
-            
+
             if (count > 0) {
                 if (x - n - 1 >= 0)
                     pBinaryMatrix->elements[y * width + x - n - 1] = value;
@@ -298,7 +313,18 @@ void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
             x++;
         }
     }
-    
+}
+
+void applyFastHeightDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+    PixelCoordinate_t width = pBinaryMatrix->width;
+    PixelCoordinate_t height = pBinaryMatrix->height;
+    int x;
+    int y;
+    int count;
+    uint8_t value = 0;
+    uint8_t element;
+    bool needErosion;
+
     // 세로 방향 팽창
     // 위에서 아래로 진행하여 값이 0이 아닌 픽셀이 있다면 상하로 번진다.
     for (x = 0; x < width; ++x) {
@@ -308,7 +334,7 @@ void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
             needErosion = element != 0;
             if (needErosion)
                 value = element;
-            
+
             if (count > 0) {
                 if (y - n - 1 >= 0)
                     pBinaryMatrix->elements[(y - n - 1) * width + x] = value;
@@ -327,4 +353,9 @@ void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
             y++;
         }
     }
+}
+
+void applyFastDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
+    applyFastWidthDilationToMatrix8(pBinaryMatrix, n);
+    applyFastHeightDilationToMatrix8(pBinaryMatrix, n);
 }
