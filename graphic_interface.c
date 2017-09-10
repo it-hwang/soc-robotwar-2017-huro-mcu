@@ -42,6 +42,10 @@ void destroyScreen(Screen_t* pScreen) {
 
 void readFpgaVideoData(Screen_t* pDefaultScreen) {
     read_fpga_video_data(pDefaultScreen->elements);
+    for(int i = 0; i < pDefaultScreen->height; ++i){
+        pDefaultScreen->elements[i * pDefaultScreen->width + 0] = 0x7bcf;
+        pDefaultScreen->elements[i * pDefaultScreen->width + 1] = 0x7bcf;
+    }
 }
 
 static void _convertRgab5515MatrixToRgb565Matrix(Screen_t* pScreen) {

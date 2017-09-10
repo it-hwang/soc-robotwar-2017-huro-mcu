@@ -12,9 +12,12 @@
 #include "image_filter.h"
 #include "matrix.h"
 #include "object_detection.h"
+#include "line_detection.h"
+#include "polygon_detection.h"
 #include "boundary.h"
 #include "color.h"
 #include "camera.h"
+#include "math.h"
 #include "log.h"
 #include "debug.h"
 
@@ -26,9 +29,13 @@ static bool _setBoundary(Screen_t* pScreen);
 static bool _isTrapObject(Screen_t* pScreen,  Object_t* pTrapObject);
 static Matrix8_t* _createYellowMatrix(Screen_t* pScreen);
 static Matrix8_t* _createBlackMatrix(Screen_t* pScreen);
+static Matrix8_t* _createBlackMatrix2(Screen_t* pScreen);
 static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc, double height);
 static void _approachObject(Vector3_t* pVector, int approachDistance);
+static void _approachObject2(Vector3_t* pVector, int approachDistance);
 static bool _approachTrap(Object_t* pObject);
+static Object_t* _getLargestYellowObject(Screen_t* pScreen, Matrix16_t* pLabelMatrix);
+static Object_t* _getLargestBlackObject(Screen_t* pScreen, Matrix16_t* pLabelMatrix);
 static bool _climbUpTrap(void);
 static bool _setPositionOnTrap(void);
 static bool _approachBlackLine(void);
@@ -36,13 +43,13 @@ static bool _forwardRoll(void);
 
 bool trapMain(void) {
 
-    if( !_searchTrap() )
-        return false;
+    // if( !_searchTrap() )
+        // return false;
 
-    _climbUpTrap();
+    // _climbUpTrap();
     _setPositionOnTrap();
-    //_approachBlackLine();
-    //_forwardRoll();
+    _approachBlackLine();
+    _forwardRoll();
 
     return true;
 }
@@ -76,11 +83,11 @@ static bool _searchTrap(void) {
         }
             
         if( isTrap ) {
-            destroyScreen(pScreen);
             printDebug("함정을 찾았습니다.\n");
             nTries = 0;
             if( _approachTrap(pTrapObject) ) {
                 free(pTrapObject);
+                destroyScreen(pScreen);
                 return true;
             }
             free(pTrapObject);
@@ -89,7 +96,7 @@ static bool _searchTrap(void) {
 
         printDebug("노란 물체를 찾았지만, 함정인지는...\n");
         Vector3_t trapVector;
-        double distance =  _measureObjectDistance(&pTrapObject, &trapVector, OBJECT_HEIGHT);
+        double distance =  _measureObjectDistance(pTrapObject, &trapVector, OBJECT_HEIGHT);
 
         free(pTrapObject);
         printDebug("노란 물체의 거리 %f\n", distance);
@@ -288,6 +295,15 @@ static Matrix8_t* _createBlackMatrix(Screen_t* pScreen) {
     return pBlackMatrix;
 }
 
+static Matrix8_t* _createBlackMatrix2(Screen_t* pScreen) {
+    Matrix8_t* pBlackMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLACK]);
+    
+    // applyFastErosionToMatrix8(pBlackMatrix, 1);
+    // applyFastDilationToMatrix8(pBlackMatrix, 1);
+    // applyFastErosionToMatrix8(pBlackMatrix, 1);
+
+    return pBlackMatrix;
+}
 static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc, double height) {
     const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
 
@@ -314,6 +330,24 @@ static void _approachObject(Vector3_t* pVector, int approachDistance) {
 
     printDebug("y값 %f\n", pVector->y);
     walkForward(pVector->y * 1000 - approachDistance);
+}
+
+static void _approachObject2(Vector3_t* pVector, int approachDistance) {
+    const double X_ERROR = 0.005;
+    const int MAX_WALK_DISTANCE = 100;
+
+    if( pVector->x > fabs(X_ERROR) ) {
+        if(pVector->x < 0)
+            walkLeft(pVector->x * -1000);
+        else
+            walkRight(pVector->x * 1000);
+    }
+
+    printDebug("y값 %f\n", pVector->y);
+    // runWalk(ROBOT_WALK_RUN_FORWARD_3MM, 10);
+    int walkDistance = pVector->y * 1000 - approachDistance;
+    walkDistance = MIN(walkDistance, MAX_WALK_DISTANCE);
+    walkForward(walkDistance);
 }
 
 static bool _approachTrap(Object_t* pTrap) {
@@ -346,32 +380,194 @@ static bool _climbUpTrap(void) {
 static bool _setPositionOnTrap(void) {
 
     Screen_t* pScreen = createDefaultScreen();
-
-    readFpgaVideoDataWithWhiteBalance(pScreen);
-
-    Matrix8_t* pYelloMatrix = _createYellowMatrix(pScreen);
     Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
+
+    while(true) {
+        readFpgaVideoDataWithWhiteBalance(pScreen);
+    
+        Object_t* pObject = _getLargestYellowObject(pScreen, pLabelMatrix);
+    
+        if(pObject == NULL)
+            break;
+        
+        Polygon_t* pPolygon = createPolygon(pLabelMatrix, pObject, 5);
+        drawPolygon(pScreen, pPolygon, NULL);
+        Line_t* pLine = findTopLine(pPolygon);
+        drawLine(pScreen, pLine, NULL);
+        displayScreen(pScreen);
+        free(pObject);
+        destroyPolygon(pPolygon);
+
+        if(pLine == NULL)
+            break;
+        
+        if(fabs(pLine->theta) > 3){
+            if(pLine->theta < 0) 
+                turnLeft(fabs(pLine->theta));
+            else
+                turnRight(fabs(pLine->theta));
+            mdelay(200);
+            free(pLine);
+            continue;
+        }
+    
+        int screenCenterX = pScreen->width / 2;
+        double dx = pLine->centerPoint.x - screenCenterX;
+        if (fabs(dx) > 10) {
+            if (dx < 0)
+                walkLeft(fabs(dx));
+            else
+                walkRight(fabs(dx));
+            mdelay(200);
+            free(pLine);
+            continue;
+        }
+        free(pLine);
+        break;
+    }
+
+    destroyScreen(pScreen);
+    destroyMatrix16(pLabelMatrix);
+    
+    return false;
+}
+
+static Object_t* _getLargestYellowObject(Screen_t* pScreen, Matrix16_t* pLabelMatrix) {
+    Matrix8_t* pYellowMatrix = _createYellowMatrix(pScreen);
+    drawColorMatrix(pScreen, pYellowMatrix);
     memset(pLabelMatrix->elements, 0, (pLabelMatrix->width * pLabelMatrix->height * sizeof(uint16_t)));
     
     ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pYellowMatrix, pLabelMatrix);
-
-    Object_t* pObject = findLargestObject(pObjectList);
-
-    if(pObject == NULL)
-        return false;
+    Object_t* tempObject = findLargestObject(pObjectList);
+    Object_t* pObject = NULL;
     
-    Polygon_t* pPolygon = createPolygon(pLabelMatrix, pObject, 5);
-
-    Line_t* pLine = findTopLine(pPolygon);
+    if(tempObject != NULL) {
+        pObject = (Object_t*)malloc(sizeof(Object_t));
+        memcpy(pObject, tempObject, sizeof(Object_t));
+    }
     
-    if(pLine == NULL)
-        return false;
+    destroyMatrix8(pYellowMatrix);
+    destroyObjectList(pObjectList);
+    return pObject;
+}
+
+static Object_t* _getLargestBlackObject(Screen_t* pScreen, Matrix16_t* pLabelMatrix) {
+    Matrix8_t* pBlackMatrix = _createBlackMatrix2(pScreen);
+    drawColorMatrix(pScreen, pBlackMatrix);
+    memset(pLabelMatrix->elements, 0, (pLabelMatrix->width * pLabelMatrix->height * sizeof(uint16_t)));
+    
+    ObjectList_t* pObjectList = detectObjectsLocationWithLabeling(pBlackMatrix, pLabelMatrix);
+    Object_t* tempObject = findLargestObject(pObjectList);
+    Object_t* pObject = NULL;
+    
+    if(tempObject != NULL) {
+        pObject = (Object_t*)malloc(sizeof(Object_t));
+        memcpy(pObject, tempObject, sizeof(Object_t));
+    }
+    
+    destroyMatrix8(pBlackMatrix);
+    destroyObjectList(pObjectList);
+    return pObject;
 }
 
 static bool _approachBlackLine(void) {
+    const int APPROACH_DISTANCE = 20;
+    
+    const int APPROACH_DISTANCE_ERROR = 30;
+
+    const int APPROACH_DISTANCE_TOP_LINE = 250;
+
+    const double TRAP_HEIGHT = 0.0;
+
+    setHead(0, -70);
+
+    Screen_t* pScreen = createDefaultScreen();
+    Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
+
+    while(true) {
+        readFpgaVideoDataWithWhiteBalance(pScreen);
+        
+        Object_t* pObject = _getLargestBlackObject(pScreen, pLabelMatrix);
+    
+        if(pObject == NULL)
+            break;
+        
+        Polygon_t* pPolygon = createPolygon(pLabelMatrix, pObject, 5);
+        drawPolygon(pScreen, pPolygon, NULL);
+        Line_t* pLine = NULL;
+
+        if(pObject->maxY >= pScreen->height-10){
+            pLine = findTopLine(pPolygon);
+            isTopLine = 1;
+        } else {
+            pLine = findBottomLine(pPolygon);
+            isTopLine = 0;
+        }
+        
+        drawLine(pScreen, pLine, NULL);
+        displayScreen(pScreen);
+        
+
+        Vector3_t pVector;
+        double distance =  _measureObjectDistance(pObject, &pVector, TRAP_HEIGHT);
+
+        free(pObject);
+        destroyPolygon(pPolygon);
+
+        if(pLine == NULL)
+            break;
+        
+        if(fabs(pLine->theta) > 3){
+            if(pLine->theta < 0) 
+                turnLeft(fabs(pLine->theta));
+            else
+                turnRight(fabs(pLine->theta));
+            mdelay(200);
+            free(pLine);
+            continue;
+        }
+
+        bool isFar = (distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR);
+    
+        Vector3_t headOffset = { 0.000, -0.020, 0.295 };
+        CameraParameters_t camParameter;
+        readCameraParameters(&camParameter, &headOffset);
+
+        Vector3_t lineWorldLoc;
+        PixelLocation_t linePixelLoc = {pLine->centerPoint.x, pLine->centerPoint.y};
+        convertScreenLocationToWorldLocation(&camParameter, &linePixelLoc, 0, &lineWorldLoc);
+
+        // int screenCenterX = pScreen->width / 2 + 10;
+        // double dx = pLine->centerPoint.x - screenCenterX;
+        int errorX = 3;
+        if (isFar)
+            errorX = 10;
+
+        int dx = lineWorldLoc.x * 1000;
+        if (fabs(dx) > errorX) {
+            if (dx < 0)
+                walkLeft(fabs(dx));
+            else
+                walkRight(fabs(dx));
+            mdelay(200);
+            free(pLine);
+            continue;
+        }
+        
+        if(isFar) {
+            _approachObject2(&pVector, APPROACH_DISTANCE);
+            mdelay(200);
+            free(pLine);
+            continue;
+        }
+        
+        free(pLine);
+        break;
+    }
+    
     return false;
 }
 
 static bool _forwardRoll(void) {
-    return false;
+    return runMotion(MOTION_TRAP);
 }
