@@ -1,5 +1,6 @@
 #define DEBUG
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "horizontal_barricade.h"
@@ -9,6 +10,7 @@
 #include "image_filter.h"
 #include "camera.h"
 #include "math.h"
+#include "timer.h"
 #include "log.h"
 #include "debug.h"
 #include "screenio.h"
@@ -26,8 +28,8 @@ int measureHorizontalBarricadeDistance(void) {
     const int MAX_DISTANCE = 5000;
 
     // 거리 측정에 사용되는 머리 각도
-    const int HEAD_HORIZONTAL_DEGREES[] = { 0 };
-    const int HEAD_VERTICAL_DEGREES[] = { -40 };
+    const int HEAD_HORIZONTAL_DEGREES[] = { 0, 0 };
+    const int HEAD_VERTICAL_DEGREES[] = { -35, -50 };
     const int NUMBER_OF_HEAD_DEGREES = (sizeof(HEAD_HORIZONTAL_DEGREES) / sizeof(HEAD_HORIZONTAL_DEGREES[0]));
 
     const Vector3_t HEAD_OFFSET = { -0.040, -0.020, 0.295 };
@@ -108,8 +110,6 @@ bool solveHorizontalBarricade(void) {
 static bool _approachHorizontalBarricade(void) {
     // 제한 시간 (밀리초)
     const int STAND_BY_TIMEOUT = 15000;
-    // 반복문을 한번 도는데 걸리는 시간 (밀리초)
-    const int LOOP_DELAY = 180;
 
     // 바리케이드 인식 거리 허용 오차 (밀리미터)
     const int MEASURING_ERROR = 10;
@@ -120,14 +120,14 @@ static bool _approachHorizontalBarricade(void) {
     
     const int APPROACH_MAX_DISTANCE = 300;
 
-    int elapsedTime = 0;
+    uint64_t startTime = getTime();
     int distance = 0;
     int tempDistance1 = 0;
     int tempDistance2 = 0;
     while ((distance == 0) || (distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR)) {
+        uint64_t elapsedTime = (getTime() - startTime) / 1000;
         if (elapsedTime >= STAND_BY_TIMEOUT)
             return false;
-        elapsedTime += LOOP_DELAY;
 
         tempDistance1 = tempDistance2;
         tempDistance2 = measureHorizontalBarricadeDistance();
@@ -146,7 +146,7 @@ static bool _approachHorizontalBarricade(void) {
             walkingDistance = MIN(walkingDistance, APPROACH_MAX_DISTANCE);
             walkForward(walkingDistance);
 
-            elapsedTime = 0;
+            startTime = getTime();
         }
     }
 
@@ -156,18 +156,16 @@ static bool _approachHorizontalBarricade(void) {
 static bool _waitHorizontalBarricadeUp(void) {
     // 제한 시간 (밀리초)
     const int STAND_BY_TIMEOUT = 15000;
-    // 반복문을 한번 도는데 걸리는 시간 (밀리초)
-    const int LOOP_DELAY = 180;
 
     // 사진을 MAX_COUNT회 찍어 바리케이드가 계속 없다면 사라졌다고 판단한다.
     const int MAX_COUNT = 2;
 
-    int elapsedTime = 0;
+    uint64_t startTime = getTime();
     int count = 0;
     while (count < MAX_COUNT) {
+        uint64_t elapsedTime = (getTime() - startTime) / 1000;
         if (elapsedTime >= STAND_BY_TIMEOUT)
             return false;
-        elapsedTime += LOOP_DELAY;
 
         bool isExists = (measureHorizontalBarricadeDistance() > 0);
         if (!isExists)
