@@ -3,7 +3,7 @@
 #include "log.h"
 
 #define _TIMER_ID           2
-#define _TIMER_INTERVAL     1000
+#define _TIMER_INTERVAL     10
 
 static bool _isOpened = false;
 
