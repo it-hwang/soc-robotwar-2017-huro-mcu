@@ -157,8 +157,8 @@ static void _walkToLocation(Vector3_t* pTargetLoc, double errorX, double errorY)
 
 static bool _findObjects(Vector3_t* pBallLoc, Vector3_t* pHoleLoc, bool precise) {    
     const int HEAD_HORIZONTAL_DEGREES[] = {   0,   0, -40,  40 };
-    const int HEAD_VERTICAL_DEGREES[]   = { -67, -40, -40, -40 };
-    const Vector3_t HEAD_OFFSET = { -0.040, -0.020, 0.296 };
+    const int HEAD_VERTICAL_DEGREES[]   = { -65, -40, -40, -40 };
+    const Vector3_t HEAD_OFFSET = { -0.040, -0.020, 0.295 };
 
     setServoSpeed(10);
     runMotion(MOTION_BASIC_STANCE);
@@ -367,9 +367,15 @@ static double _getGolfBallCorrelation(Matrix16_t* pLabelMatrix, Object_t* pObjec
 
 // TODO: 함수를 제대로 구현해야한다.
 static double _getGolfHoleCorrelation(Matrix16_t* pLabelMatrix, Object_t* pObject) {
-    const int MIN_COUNT = 20;
+    const double MAX_DENSITY    = 0.50;
+    const int    MIN_COUNT      = 20;
 
     if (pObject->cnt < MIN_COUNT) return 0.;
+    
+    int objectWidth = pObject->maxX - pObject->minX + 1;
+    int objectHeight = pObject->maxY - pObject->minY + 1;
+    double density = (double)pObject->cnt / (objectWidth * objectHeight);
+    if (density > MAX_DENSITY) return 0.;
 
     int width = pLabelMatrix->width;
     int height = pLabelMatrix->height;
