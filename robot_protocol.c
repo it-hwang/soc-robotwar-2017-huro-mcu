@@ -240,22 +240,22 @@ bool turnLeft(int degrees) {
     float remainingDegrees = degrees;
 
     int nSteps;	
-    nSteps = remainingDegrees / 30.;
+    nSteps = remainingDegrees / 27.5;
     for (int i = 0; i < nSteps; ++i) {
-        runMotion(MOTION_TURN_LEFT_30DEG);
-        remainingDegrees -= 30.;
+        runMotion(MOTION_TURN_LEFT_27DEG);
+        remainingDegrees -= 27.5;
     }
 
-    nSteps = remainingDegrees / 9.;
+    nSteps = remainingDegrees / 6.4;
     for (int i = 0; i < nSteps; ++i) {
-        runMotion(MOTION_TURN_LEFT_9DEG);
-        remainingDegrees -= 9.;
+        runMotion(MOTION_TURN_LEFT_6DEG);
+        remainingDegrees -= 6.4;
     }
 
-    nSteps = remainingDegrees / 4.1;
+    nSteps = remainingDegrees / 4.5;
     for (int i = 0; i < nSteps; ++i) {
         runMotion(MOTION_TURN_LEFT_4DEG);
-        remainingDegrees -= 4.1;
+        remainingDegrees -= 4.5;
     }
 
     return true;
@@ -269,22 +269,22 @@ bool turnRight(int degrees) {
     float remainingDegrees = degrees;
 
     int nSteps;	
-    nSteps = remainingDegrees / 30.;
+    nSteps = remainingDegrees / 27.5;
     for (int i = 0; i < nSteps; ++i) {
-        runMotion(MOTION_TURN_RIGHT_30DEG);
-        remainingDegrees -= 30.;
+        runMotion(MOTION_TURN_RIGHT_27DEG);
+        remainingDegrees -= 27.5;
     }
 
-    nSteps = remainingDegrees / 9.;
+    nSteps = remainingDegrees / 6.4;
     for (int i = 0; i < nSteps; ++i) {
-        runMotion(MOTION_TURN_RIGHT_9DEG);
-        remainingDegrees -= 9.;
+        runMotion(MOTION_TURN_RIGHT_6DEG);
+        remainingDegrees -= 6.4;
     }
 
-    nSteps = remainingDegrees / 4.1;
+    nSteps = remainingDegrees / 4.5;
     for (int i = 0; i < nSteps; ++i) {
         runMotion(MOTION_TURN_RIGHT_4DEG);
-        remainingDegrees -= 4.1;
+        remainingDegrees -= 4.5;
     }
     
     return true;
