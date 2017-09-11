@@ -189,7 +189,7 @@ Color_t _convertRedColorV1(PixelData_t pixelData) {
     // i > ((a / (s - b)) + c)
     float a = 0.02;
     float b = 0.28;
-    float c = -0.02;
+    float c = 0.12;
 
 	if (h < 20 || h >= 330) {
         if (s <= b)
