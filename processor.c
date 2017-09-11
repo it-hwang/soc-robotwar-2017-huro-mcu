@@ -42,7 +42,7 @@
 #define RAD_TO_DEG  (180 / PI)
 
 static const char* _WHITE_BALANCE_TABLE_PATH = "./data/white_balance.lut";
-static ObstacleId_t* _obstacleSequence;
+static ObstacleSequence_t* _pObstacleSequence;
 
 
 static void _runHuroC(void);
@@ -88,7 +88,7 @@ int openProcessor(void) {
     }
 
 	_defineObstacle();
-	_obstacleSequence = loadObstaclesFile("/mnt/f0/obstacles.txt");
+	_pObstacleSequence = loadObstaclesFile("./data/obstacles.txt");
 
     return 0;
 }
@@ -100,7 +100,7 @@ void closeProcessor(void) {
     finalizeColor();
     resetDefaultWhiteBalanceTable();
     
-    free(_obstacleSequence);
+    destroyObstacleSequence(_pObstacleSequence);
 }
 
 int runProcessor(int command) {
@@ -146,14 +146,28 @@ static void _runHuroC(void) {
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
     
-    ObstacleId_t id = 0;
+    int index = 0;
+    int lastIndex = 0;
+    int walkCount = 0;
     while (true) {
-        if (runSolveObstacle(id))
+        ObstacleId_t id = _pObstacleSequence->elements[index];
+        if (runSolveObstacle(id)) {
             checkCenterMain();
+            lastIndex = index;
+            walkCount = 0;
+        }
     
-        id++;
-        if (id >= OBSTACLE_SIZE)
-            id = 0;
+        index++;
+        if (index >= _pObstacleSequence->size)
+            index = 0;
+        
+        if (index == lastIndex) {
+            walkForward(128);
+            walkCount++;
+
+            if (walkCount % 4 == 0) 
+                checkCenterMain();
+        }
     }
 
 }
