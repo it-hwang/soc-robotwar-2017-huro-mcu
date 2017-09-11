@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 //장애물 번호 정의
-typedef enum {
+enum {
     OBSTACLE_VERTICAL_BARRICADE,
     OBSTACLE_RED_BRIDGE,
     OBSTACLE_MINE,
@@ -17,13 +17,20 @@ typedef enum {
     OBSTACLE_TRAP,
     OBSTACLE_HORIZONTAL_BARRICADE,
     OBSTACLE_SIZE
-} ObstacleId_t;
+};
+typedef uint8_t ObstacleId_t;
 
 typedef struct {
     bool (*pObstacleFunc)(void);
-}Obstacle_t;
+} Obstacle_t;
 
-ObstacleId_t* loadObstaclesFile(const char* fileName);
+typedef struct {
+    ObstacleId_t* elements;
+    int size;
+} ObstacleSequence_t;
+
+ObstacleSequence_t* loadObstaclesFile(const char* fileName);
+void destroyObstacleSequence(ObstacleSequence_t* pObstacleSequence);
 
 inline bool runSolveObstacle(ObstacleId_t obstacleId);
 inline void registerObstacle(ObstacleId_t obstacleId, bool (*pFunc)(void));
