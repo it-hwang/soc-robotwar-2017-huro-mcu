@@ -1,4 +1,4 @@
-#define DEBUG
+// #define DEBUG
 
 #include <stdlib.h>
 #include <string.h>
@@ -96,6 +96,8 @@ bool solveHurdle(void) {
     //runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
 
     _crossHurdle();
+
+    return true;
 }
 
 
@@ -121,7 +123,7 @@ static bool _approachHurdle(void) {
 
 static bool _crossHurdle(void) {
     runMotion(MOTION_HURDLE);
-
+    return true;
 }
 
 static bool _searchHurdle(Screen_t* pInputScreen, Object_t* pReturnedObject, double* pCorrelation) {

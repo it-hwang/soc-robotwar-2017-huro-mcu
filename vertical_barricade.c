@@ -310,8 +310,8 @@ int measureVerticalBarricadeDistance(void) {
 
 
 bool verticalBarricadeMain(void) {
-    if (measureVerticalBarricadeDistance() <= 0)
-        return false;
+    //if (measureVerticalBarricadeDistance() <= 0)
+    //    return false;
 
     return solveVerticalBarricade();
 }

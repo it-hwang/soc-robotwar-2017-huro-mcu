@@ -8,7 +8,7 @@
 #define COLOR_RECOGNITION_USE_TYPE_CHECKING     true
 
 
-typedef enum {
+enum {
     COLOR_NONE = 0,
     COLOR_BLACK,
     COLOR_WHITE,
@@ -18,7 +18,8 @@ typedef enum {
     COLOR_YELLOW,
     COLOR_ORANGE,
     MAX_COLOR
-} Color_t;
+};
+typedef uint8_t Color_t;
 
 typedef LookUpTable8_t ColorTable_t;
 typedef Color_t (ColorTableFunc_t)(PixelData_t);
