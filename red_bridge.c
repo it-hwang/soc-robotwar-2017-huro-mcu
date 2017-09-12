@@ -75,6 +75,8 @@ int measureRedBridgeDistance(void) {
 
 bool solveRedBridge(void) {
     _approachRedBridge();
+    _walkForwardQuickly(80);
+    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
     _approachRedBridgeUp();
     _climbUp();
     _approachRedBridgeDown();
@@ -243,16 +245,16 @@ static bool _approachRedBridgeDown(void) {
     const int NUMBER_OF_HEAD_DEGREES = (sizeof(HEAD_HORIZONTAL_DEGREES) / sizeof(HEAD_HORIZONTAL_DEGREES[0]));
 
     // 빨간 다리를 발견하지 못할 경우 다시 찍는 횟수
-    static const int MAX_TRIES = 10;
+    static const int MAX_TRIES = 2;
 
     // 각도 정렬 허용 오차 (도)
     static const double ALIGN_ANGLE_ERROR = 3.;
     // 좌우 정렬 허용 오차 (밀리미터)
     static const int ALIGN_DISTANCE_ERROR = 20;
     // 장애물에 다가갈 거리 (밀리미터)
-    static const int APPROACH_DISTANCE = 30;
+    static const int APPROACH_DISTANCE = 40;
     // 장애물에 최대로 다가갈 거리 (밀리미터)
-    static const int APPROACH_MAX_WALK_DISTANCE = 300;
+    static const int APPROACH_MAX_WALK_DISTANCE = 272;
     // 거리 허용 오차 (밀리미터)
     static const int APPROACH_DISTANCE_ERROR = 10;
     
@@ -267,9 +269,7 @@ static bool _approachRedBridgeDown(void) {
 
             mdelay(200);
             hasFound = _findRedBridge(&object, &polygon);
-            if (!hasFound)
-                break;
-            else if (object.minY > 0)
+            if (hasFound && object.minY > 0)
                 break; 
         }
         if (!hasFound)
@@ -306,12 +306,13 @@ static bool _approachRedBridgeDown(void) {
         
         if (!isClose) {
             int walkDistance = dy - APPROACH_DISTANCE;
-            //walkDistance = MIN(walkDistance, APPROACH_MAX_WALK_DISTANCE);
+            walkDistance = MIN(walkDistance, APPROACH_MAX_WALK_DISTANCE);
             _setHead(0, 0);
             walkForward(walkDistance);
             mdelay(200);
             nTries = 0;
-            return true;
+            if (walkDistance < APPROACH_MAX_WALK_DISTANCE)
+                return true;
             continue;
         }
 
