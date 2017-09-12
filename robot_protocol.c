@@ -166,10 +166,10 @@ bool walkForward(int millimeters) {
     float remainingDistance = millimeters;
 
     int nSteps;	
-    nSteps = remainingDistance / 32.;
+    nSteps = remainingDistance / 34.;
     if (nSteps >= 2) {
         runWalk(ROBOT_WALK_RUN_FORWARD_32MM, nSteps);
-        remainingDistance -= (float)nSteps * 32.;
+        remainingDistance -= (float)nSteps * 34.;
     }
 
     nSteps = remainingDistance / 3.;
