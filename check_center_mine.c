@@ -40,7 +40,7 @@ static bool _arrangeAngle(int headDirection, bool doHeadSet);
 static int _getZeroGradient(int headDirection);
 static void _moveForSetGradient(int lineGradient);
 
-bool checkCenterMain(void) {
+bool checkCenterMineMain(void) {
     int headDirection = _searchLine();
     bool doHeadSet = false;
 
@@ -49,19 +49,6 @@ bool checkCenterMain(void) {
         _setStandardStand();
         return false;
     }
-
-    if( !_arrangeAngle(headDirection, doHeadSet) ) {
-        printDebug("각도를 정렬에 실패했다.\n");
-        _setStandardStand();
-        return false;
-    }
-
-    if( !_approachLine(headDirection, doHeadSet) ) {
-        printDebug("선에 접근 할 수 없다.\n");
-        _setStandardStand();
-        return false;
-    }
-    
 
     if( !_arrangeAngle(headDirection, doHeadSet) ) {
         printDebug("각도를 정렬에 실패했다.\n");
@@ -157,7 +144,7 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
         
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
-    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 70, 0, 89, 110);
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 50, 0, 89, 110);
 
     _setBoundaryWhite(pSubMatrix);
     
@@ -185,7 +172,7 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
-    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 90, 0, 109, 110);
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 90, 0, 129, 110);
 
     _setBoundaryWhite(pSubMatrix);
     
