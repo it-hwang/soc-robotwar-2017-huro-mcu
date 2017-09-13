@@ -179,7 +179,7 @@ static bool _approachRedBridgeUp(void) {
     // 장애물에 최대로 다가갈 거리 (밀리미터)
     static const int APPROACH_MAX_WALK_DISTANCE = 300;
     // 거리 허용 오차 (밀리미터)
-    static const int APPROACH_DISTANCE_ERROR = 20;
+    static const int APPROACH_DISTANCE_ERROR = 30;
     
     int nTries;
     for (nTries = 0; nTries < MAX_TRIES; ++nTries) {
@@ -201,6 +201,17 @@ static bool _approachRedBridgeUp(void) {
         double angle = pLine->theta;
         free(pLine);
         
+        if (dy > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
+            int walkDistance = dy - APPROACH_DISTANCE;
+            walkDistance = MIN(walkDistance, APPROACH_MAX_WALK_DISTANCE);
+            _setHead(0, 0);
+            _walkForwardQuickly(walkDistance);
+            runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+            mdelay(200);
+            nTries = 0;
+            continue;
+        }
+        
         if (fabs(angle) > ALIGN_ANGLE_ERROR) {
             if (angle < 0) turnLeft(fabs(angle));
             else turnRight(fabs(angle));
@@ -214,17 +225,6 @@ static bool _approachRedBridgeUp(void) {
             nTries = 0;
             continue;
         }
-        
-        if (dy > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
-            int walkDistance = dy - APPROACH_DISTANCE;
-            walkDistance = MIN(walkDistance, APPROACH_MAX_WALK_DISTANCE);
-            _setHead(0, 0);
-            _walkForwardQuickly(walkDistance);
-            runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
-            mdelay(200);
-            nTries = 0;
-            continue;
-        }
 
         return true;
     }
@@ -235,6 +235,7 @@ static bool _approachRedBridgeUp(void) {
 
 static bool _climbUp(void) {
     runMotion(MOTION_CLIMB_UP_RED_BRIDGE);
+    runMotion(MOTION_BASIC_STANCE);
     return true;
 }
 
