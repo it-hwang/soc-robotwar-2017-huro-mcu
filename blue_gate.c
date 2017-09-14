@@ -17,6 +17,7 @@
 #include "white_balance.h"
 #include "camera.h"
 #include "boundary.h"
+#include "math.h"
 #include "log.h"
 #include "debug.h"
 
@@ -78,6 +79,8 @@ static bool _approchBlueGate(void) {
     static const int APPROACH_DISTANCE = 150;
     // 거리 허용 오차 (밀리미터)
     static const int APPROACH_DISTANCE_ERROR = 50;
+    // 최대 걷기 거리 (밀리미터)
+    static const int APPROACH_MAX_DISTANCE = 34 * 10;
     
     int nTries;
     for (nTries = 0; nTries < MAX_TRIES; ++nTries) {    
@@ -86,6 +89,11 @@ static bool _approchBlueGate(void) {
         int leftDistance = measureLeftBlueGateDistance();
 
         int distance = (rightDistance + leftDistance) / 2;
+
+        if(rightDistance == 0)
+            distance = leftDistance;
+        else if(leftDistance == 0)
+            distance = rightDistance;
 
         bool hasFound = (distance != 0);
         if (!hasFound)
@@ -98,7 +106,9 @@ static bool _approchBlueGate(void) {
         else {
             printDebug("전진보행으로 이동하자. (거리: %d)\n", distance);
             _setStandardStand();
-            walkForward(distance - APPROACH_DISTANCE);
+            int walkDistance = distance - APPROACH_DISTANCE;
+            walkDistance = MIN(walkDistance, APPROACH_MAX_DISTANCE);
+            walkForward(walkDistance);
             mdelay(500);
             nTries = 0;
         }
@@ -117,9 +127,6 @@ int measureRightBlueGateDistance(void) {
     //static const int HEAD_HORIZONTAL_DEGREES = 0;
     //static const int HEAD_VERTICAL_DEGREES = -50;
     const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
-    
-    CameraParameters_t camParameter;
-    readCameraParameters(&camParameter, &HEAD_OFFSET);
         
     _setHeadRight();
 
@@ -141,12 +148,14 @@ int measureRightBlueGateDistance(void) {
 
         // 화면 상의 위치로 실제 거리를 추측한다.
         //int distance = pObject->maxY;
-        
+        CameraParameters_t camParameter;
+        readCameraParameters(&camParameter, &HEAD_OFFSET);
+
         PixelLocation_t trapLoc = {pObject->centerX, pObject->maxY};
         Vector3_t worldLoc;
         convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
 
-        millimeters = (int)worldLoc.y * 1000;
+        millimeters = (int)(worldLoc.y * 1000);
         //millimeters = 0.0357*distance*distance - 11.558*distance + 849.66;
         // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
         if (millimeters <= 0)
@@ -167,9 +176,6 @@ int measureLeftBlueGateDistance(void) {
     //static const int HEAD_VERTICAL_DEGREES = -50;
 
     const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
-    
-    CameraParameters_t camParameter;
-    readCameraParameters(&camParameter, &HEAD_OFFSET);
 
     _setHeadLeft();
 
@@ -191,12 +197,14 @@ int measureLeftBlueGateDistance(void) {
 
         // 화면 상의 위치로 실제 거리를 추측한다.
         // int distance = pObject->maxY;
-        
+        CameraParameters_t camParameter;
+        readCameraParameters(&camParameter, &HEAD_OFFSET);
+
         PixelLocation_t trapLoc = {pObject->centerX, pObject->maxY};
         Vector3_t worldLoc;
         convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
 
-        millimeters = (int)worldLoc.y * 1000;
+        millimeters = (int)(worldLoc.y * 1000);
 
         // millimeters = 0.0502*distance*distance - 12.867*distance + 842.13;
         // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
@@ -353,8 +361,10 @@ static bool _solveBluegate(void) {
 
 static bool _balanceToSolveBlueGate(void) {
 
-    if( !_arrangeAngle(HEAD_DIRECTION_RIGHT, true) )
-        _arrangeAngle(HEAD_DIRECTION_LEFT, true);
+    // if( !_arrangeAngle(HEAD_DIRECTION_RIGHT, true) )
+    //     _arrangeAngle(HEAD_DIRECTION_LEFT, true);
+
+    checkCenterMain();
 
     if( !_arrangeDistanceBalance() ) {
         return false;
@@ -525,9 +535,6 @@ static void _moveForSetGradient(int lineGradient) {
 static bool _arrangeDistanceBalance(void) {
     const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
     
-    CameraParameters_t camParameter;
-    readCameraParameters(&camParameter, &HEAD_OFFSET);
-    
     int rightTryCount = 0;
     int leftTryCount = 0;
 
@@ -545,11 +552,14 @@ static bool _arrangeDistanceBalance(void) {
                 rightTryCount = 0;
 
                 // int rightDistance = rightBlueGate->minX;
+                CameraParameters_t camParameter;
+                readCameraParameters(&camParameter, &HEAD_OFFSET);
+                
                 PixelLocation_t trapLoc = {rightBlueGate->minX, rightBlueGate->maxY};
                 Vector3_t worldLoc;
                 convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
-                int rightDistance = (int)worldLoc.x * 1000;
-                if(rightDistance >= 140)
+                int rightDistance = (int)(worldLoc.x * 1000);
+                if(rightDistance >= 180)
                     right = true;
                 else {
                     walkLeft(140 - rightDistance);
@@ -567,11 +577,14 @@ static bool _arrangeDistanceBalance(void) {
         if(leftBlueGate != NULL) {
             leftTryCount = 0;
             //int leftDistance = leftBlueGate->maxX;
+            CameraParameters_t camParameter;
+            readCameraParameters(&camParameter, &HEAD_OFFSET);
+
             PixelLocation_t trapLoc = {leftBlueGate->minX, leftBlueGate->maxY};
             Vector3_t worldLoc;
             convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
-            int leftDistance = (int)worldLoc.x * 1000;
-            if(leftDistance <= -140) {
+            int leftDistance = (int)(worldLoc.x * 1000);
+            if(leftDistance <= -180) {
                 left = true;
                 ing = false;
             }
@@ -621,5 +634,5 @@ static void _passThroughBlueGate(void) {
     
     _setStandardStand();
 
-    walkForward(100);
+    walkForward(34 * 9);
 }
