@@ -548,7 +548,7 @@ static bool _arrangeDistanceBalance(void) {
                 PixelLocation_t trapLoc = {rightBlueGate->minX, rightBlueGate->maxY};
                 Vector3_t worldLoc;
                 convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
-                rightDistance = (int)worldLoc.x * 1000;
+                int rightDistance = (int)worldLoc.x * 1000;
                 if(rightDistance >= 140)
                     right = true;
                 else {
@@ -567,7 +567,7 @@ static bool _arrangeDistanceBalance(void) {
         if(leftBlueGate != NULL) {
             leftTryCount = 0;
             //int leftDistance = leftBlueGate->maxX;
-            PixelLocation_t trapLoc = {leftDistance->minX, leftDistance->maxY};
+            PixelLocation_t trapLoc = {leftBlueGate->minX, leftBlueGate->maxY};
             Vector3_t worldLoc;
             convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
             int leftDistance = (int)worldLoc.x * 1000;
