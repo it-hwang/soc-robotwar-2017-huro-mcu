@@ -11,6 +11,7 @@
 #include "white_balance.h"
 #include "image_filter.h"
 #include "object_detection.h"
+#include "check_center_mine.h"
 #include "color.h"
 #include "debug.h"
 
@@ -109,7 +110,8 @@ bool solveMine(void) {
         }
         else {
             printDebug("아무 것도 안보여. 직진해보자.\n", __func__);
-            walkForward(128);
+            walkForward(34*4);
+            checkCenterMineMain();
         }
 
         if (pMine) free(pMine);
@@ -331,14 +333,14 @@ static Object_t* _searchOtherObstacle(Screen_t* pScreen) {
 // pMine의 위치에 따라 행해야 할 행동이다.
 static bool _actForMine(Object_t* pMine) {
     // 최대 전진보행 거리
-    static const int MAX_WALK_FORWARD_DISTANCE = 128;
+    static const int MAX_WALK_FORWARD_DISTANCE = 34 * 4;
     // 장애물에 다가갈 거리 (밀리미터)
     static const int APPROACH_DISTANCE = 30;
     // 거리 허용 오차 (밀리미터)
     static const int APPROACH_DISTANCE_ERROR = 30;
     
-    static const int ALIGN_STANDARD_LEFT_X  = 78;
-    static const int ALIGN_STANDARD_RIGHT_X = 114;
+    static const int ALIGN_STANDARD_LEFT_X  = 90;
+    static const int ALIGN_STANDARD_RIGHT_X = 89;
 
     static const int ALIGN_ROBOT_CENTER_X   = 96;
     static const int ALIGN_ROBOT_LEFT_X     = 54;
@@ -359,44 +361,49 @@ static bool _actForMine(Object_t* pMine) {
             walkDistance = MAX_WALK_FORWARD_DISTANCE;
         printDebug("지뢰가 멀리 있다. 접근하자. (distanceY: %d, walkDistance: %d)\n", __func__, distanceY, walkDistance);
         walkForward(walkDistance);
+        checkCenterMineMain();
         return true;
     }
 
-
-    bool isCenterAligned = (abs(centerX - ALIGN_ROBOT_CENTER_X) <= ALIGN_ROBOT_ERROR);
-    if (isCenterAligned) {
-        printDebug("지뢰 중앙 정렬 완료. 달린다. (centerX: %d)\n", __func__, centerX);
-        runMotion(MOTION_MINE_WALK);
-        return true;
-    }
+    // bool isCenterAligned = (abs(centerX - ALIGN_ROBOT_CENTER_X) <= ALIGN_ROBOT_ERROR);
+    // if (isCenterAligned) {
+    //     printDebug("지뢰 중앙 정렬 완료. 달린다. (centerX: %d)\n", __func__, centerX);
+    //     runMotion(MOTION_MINE_WALK);
+    //     return true;
+    // }
     bool isLeftAligned = (maxX <= ALIGN_ROBOT_LEFT_X + ALIGN_ROBOT_ERROR);
     if (isLeftAligned) {
         printDebug("지뢰 왼쪽 정렬 완료. 달린다. (maxX: %d)\n", __func__, maxX);
-        walkForward(64);
+        walkForward(34*2);
+        checkCenterMineMain();
         return true;
     }
     bool isRightAligned = (minX >= ALIGN_ROBOT_RIGHT_X - ALIGN_ROBOT_ERROR);
     if (isRightAligned) {
         printDebug("지뢰 오른쪽 정렬 완료. 달린다. (minX: %d)\n", __func__, minX);
-        walkForward(64);
+        walkForward(34*2);
+        checkCenterMineMain();
         return true;
     }
 
     if (centerX < ALIGN_STANDARD_LEFT_X) {
         int walkDistance = fabs(maxX - ALIGN_ROBOT_LEFT_X) * _MILLIMETERS_PER_PIXEL;
         printDebug("지뢰가 왼쪽에 있다. 오른쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
+        _setHead(0, 0);
         walkRight(walkDistance);
         return true;
     }
     else if (centerX > ALIGN_STANDARD_RIGHT_X) {
         int walkDistance = fabs(minX - ALIGN_ROBOT_RIGHT_X) * _MILLIMETERS_PER_PIXEL;
         printDebug("지뢰가 오른쪽에 있다. 왼쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
+        _setHead(0, 0);
         walkLeft(walkDistance);
         return true;
     }
     else {
         int walkDistance = (float)(centerX - ALIGN_ROBOT_CENTER_X) * _MILLIMETERS_PER_PIXEL;
         printDebug("지뢰가 가운데에 있다. 중앙으로 정렬하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
+        _setHead(0, 0);
         if (walkDistance < 0)
             walkLeft(walkDistance * -1);
         else
