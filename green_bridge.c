@@ -194,8 +194,9 @@ static bool _approachUpStair(void) {
 
 static bool _climbUpStair(void) {
     _setHead(0, 0);
-    mdelay(1000);
-    return runMotion(MOTION_CLIMB_UP_STAIR);
+    bool isSuccess = runMotion(MOTION_CLIMB_UP_STAIR);
+    runWalk(ROBOT_WALK_FORWARD, 1);
+    return isSuccess;
 }
 
 
@@ -260,7 +261,7 @@ static bool _crossGreenBridge(void) {
         }
 
         printDebug("walk.\n");
-        walkForward(256);
+        walkForward(34*6);
         mdelay(200);
     }
     
