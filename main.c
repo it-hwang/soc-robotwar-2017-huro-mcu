@@ -12,7 +12,8 @@
 
 #define _MENU_TIMEOUT_MILLISECONDS		3000
 
-int main(void);
+// 느려짐 방지용 용량 늘리기
+static char _dummyMemory[200000] = {0,};
 
 static void _displayLogo(void);
 static int _chooseMenu(unsigned int milliseconds);
@@ -20,8 +21,7 @@ static bool _findNextLogFileName(char* filePath);
 static void _initLog(void);
 
 
-int main(void)
-{
+int main(void) {
     _displayLogo();
     
     _initLog();
@@ -40,6 +40,10 @@ int main(void)
     }
     else if (errorCode == PROCESSOR_ROBOT_PORT_ERROR) {
         printLog("[Error] Unable to open robot port.\n");
+        return 1;
+    }
+    else if (errorCode == PROCESSOR_TIMER_ERROR) {
+        printLog("[Error] Unable to open timer.\n");
         return 1;
     }
 

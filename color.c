@@ -189,7 +189,7 @@ Color_t _convertRedColorV1(PixelData_t pixelData) {
     // i > ((a / (s - b)) + c)
     float a = 0.02;
     float b = 0.28;
-    float c = -0.02;
+    float c = 0.12;
 
 	if (h < 20 || h >= 330) {
         if (s <= b)
@@ -231,11 +231,11 @@ Color_t _convertBlueColorV1(PixelData_t pixelData) {
     _calculateHSV(pixelData, &h, &s, &v);
 
     // i > ((a / (s - b)) + c)
-    float a = 0.02;
-    float b = 0.28;
-    float c = -0.02;
+    float a = 0.16;
+    float b = 0.00;
+    float c = -0.04;
 
-	if (h >= 190 && h < 275) {
+	if (h >= 180 && h < 275) {
         if (s <= b)
             return COLOR_NONE;
         else if (v > (a / (s - b)) + c)
@@ -275,11 +275,11 @@ Color_t _convertOrangeColorV1(PixelData_t pixelData) {
     _calculateHSV(pixelData, &h, &s, &v);
 
     // i > ((a / (s - b)) + c)
-    float a = 0.12;
-    float b = 0.12;
-    float c = -0.06;
+    float a = 0.20;
+    float b = 0.10;
+    float c = 0.10;
 
-	if (h >= 10 && h < 32) {
+	if (h >= 350 || h < 30) {
         if (s <= b)
             return COLOR_NONE;
         else if (v > (a / (s - b)) + c)

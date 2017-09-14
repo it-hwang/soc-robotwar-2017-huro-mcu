@@ -1,7 +1,10 @@
+// #define DEBUG
+
 #include <stdlib.h>
 #include <math.h>
 
 #include "polygon_detection.h"
+#include "debug.h"
 
 #define _CONTOURLIST_DEFAULT_SIZE   1024
 
@@ -36,6 +39,7 @@ Polygon_t* createPolygon(Matrix16_t* pLabelMatrix, Object_t* pObject, int thresh
     if (!pObject) return NULL;
 
     _ContourList_t* pContourList = _findContours(pLabelMatrix, pObject);
+    printDebug("%d\n", pContourList->size);
 
     int nVertices = 0;
     // 최초의 점을 찾는다.
@@ -91,12 +95,14 @@ static _ContourList_t* _findContours(Matrix16_t* pLabelMatrix, Object_t* pObject
 
             if (cnt >= 8) {
                 _insertContour(pContourList, nContours, &currentLoc);
+                printDebug("x: %d, y: %d\n", currentLoc.x, currentLoc.y);
                 nContours++;
                 break;
             }
         }
         else {
             _insertContour(pContourList, nContours, &currentLoc);
+            printDebug("x: %d, y: %d\n", currentLoc.x, currentLoc.y);
             nContours++;
             currentLoc = nextLoc;
             direction = (direction + 6) % 8;    // direction = direction - 2
@@ -107,6 +113,7 @@ static _ContourList_t* _findContours(Matrix16_t* pLabelMatrix, Object_t* pObject
             break;
     }
 
+    printDebug("%d\n", nContours);
     pContourList->elements = realloc(pContourList->elements, nContours * sizeof(PixelLocation_t));
     pContourList->size = nContours;
     return pContourList;
@@ -328,17 +335,20 @@ void destroyPolygon(Polygon_t* pPolygon) {
 }
 
 
+void drawPolygon(Screen_t* pScreen, Polygon_t* pPolygon, Rgab5515_t* pPointColor) {
+    Rgab5515_t cyanColor;
+    cyanColor.r = 0x00;
+    cyanColor.g = 0x1f;
+    cyanColor.b = 0x1f;
 
-//if (x1 == x2) {
-//    a = 1;
-//    b = 0;
-//    c = -x1;
-//}
-//else {
-//    a = y2 - y1;
-//    b = x1 - x2;
-//    c = x2*y1 - x1*y2;
-//}
-//
-//d = abs(a*x3 + b*y3 + c) / sqrt(a*a + b*b);
-//d = abs(a*x3 + b*y3 + c);
+    if (!pScreen) return;
+    if (!pPolygon) return;
+    if (!pPointColor)
+        pPointColor = &cyanColor;
+
+    for (int i = 0; i < pPolygon->size; ++i) {
+        PixelLocation_t* pVertexLoc = &(pPolygon->vertices[i]);
+        int index = pVertexLoc->y * pScreen->width + pVertexLoc->x;
+        pScreen->elements[index] = pPointColor->data;
+    }
+}

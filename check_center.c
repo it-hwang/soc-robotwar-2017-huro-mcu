@@ -13,10 +13,11 @@
 #include "log.h"
 #include "white_balance.h"
 #include "debug.h"
+#include "boundary.h"
 
 #define CENTER 50
 #define RIGHT_ZERO_GRADIENT 4
-#define LEFT_ZERO_GRADIENT -8
+#define LEFT_ZERO_GRADIENT -9
 #define HEAD_DIRECTION_ERROR -1
 #define HEAD_DIRECTION_RIGHT 0
 #define HEAD_DIRECTION_LEFT 1
@@ -28,6 +29,7 @@ static void _setStandardStand(void);
 static void _setHead(int headDirection);
 static Line_t* _captureRightLine(Screen_t* pScreen);
 static Line_t* _captureLeftLine(Screen_t* pScreen);
+static void _setBoundaryWhite(Screen_t* pScreen);
 static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY);
 static Line_t* _captureLine(Screen_t* pScreen, int headDirection);
 static bool _approachLine(int headDirection, bool doHeadSet);
@@ -157,12 +159,13 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
 
     Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 70, 0, 89, 110);
 
+    _setBoundaryWhite(pSubMatrix);
+    
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
                                 pColorTables[COLOR_BLACK]);
-    
-    applyFastDilationToMatrix8(pColorMatrix, 1);
-    applyFastErosionToMatrix8(pColorMatrix, 2);
-    applyFastDilationToMatrix8(pColorMatrix, 1);
+    // applyFastDilationToMatrix8(pColorMatrix, 2);
+    // applyFastErosionToMatrix8(pColorMatrix, 2);
+    // applyFastDilationToMatrix8(pColorMatrix, 1);
     
     Line_t* returnLine = lineDetection(pColorMatrix);
     
@@ -181,15 +184,17 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
 static Line_t* _captureLeftLine(Screen_t* pScreen) {
     
     readFpgaVideoDataWithWhiteBalance(pScreen);
-    
+
     Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 90, 0, 109, 110);
 
+    _setBoundaryWhite(pSubMatrix);
+    
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
                                 pColorTables[COLOR_BLACK]);
 
-    applyFastDilationToMatrix8(pColorMatrix, 1);
-    applyFastErosionToMatrix8(pColorMatrix, 2);
-    applyFastDilationToMatrix8(pColorMatrix, 1);
+    // applyFastDilationToMatrix8(pColorMatrix, 2);
+    // applyFastErosionToMatrix8(pColorMatrix, 2);
+    // applyFastDilationToMatrix8(pColorMatrix, 1);
     
     Line_t* returnLine = lineDetection(pColorMatrix);
     
@@ -203,6 +208,23 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     destroyMatrix16(pSubMatrix);
     
     return returnLine;
+}
+
+static void _setBoundaryWhite(Screen_t* pScreen) {
+    Matrix8_t* pWhiteMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
+    
+    applyFastErosionToMatrix8(pWhiteMatrix, 1);
+    applyFastDilationToMatrix8(pWhiteMatrix, 2);
+    applyFastErosionToMatrix8(pWhiteMatrix, 1);
+
+    Matrix8_t* pBoundaryMatrix = establishBoundary(pWhiteMatrix);
+
+    applyFastDilationToMatrix8(pBoundaryMatrix, 8);
+
+    applyBoundary(pScreen, pBoundaryMatrix);
+
+    destroyMatrix8(pWhiteMatrix);
+    destroyMatrix8(pBoundaryMatrix);
 }
 
 static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {

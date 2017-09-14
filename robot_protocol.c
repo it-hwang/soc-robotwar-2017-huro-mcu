@@ -3,10 +3,15 @@
 
 #include "robot_protocol.h"
 #include "uart_api.h"
+#include "timer.h"
 
 #define _UART_BAUD_RATE		9600
 #define _UART_BITS			8
 #define _UART_STOPS			1
+
+
+static void _setHeadVertical(int degrees);
+static void _setHeadHorizontal(int degrees);
 
 
 int openRobotPort(void) {
@@ -100,6 +105,22 @@ int getHeadVertical(void) {
 }
 
 void setHeadVertical(int degrees) {
+    _setHeadVertical(degrees);
+    runMotion(ROBOT_WAIT_SERVO_OFFSET);
+}
+
+void setHeadHorizontal(int degrees) {
+    _setHeadHorizontal(degrees);
+    runMotion(ROBOT_WAIT_SERVO_OFFSET);
+}
+
+void setHead(int horizontalDegrees, int verticalDegrees) {
+    _setHeadHorizontal(horizontalDegrees);
+    _setHeadVertical(verticalDegrees);
+    runMotion(ROBOT_WAIT_SERVO_OFFSET);
+}
+
+static void _setHeadVertical(int degrees) {
     if (degrees < -90 || degrees > 90)
         return;
 
@@ -107,17 +128,12 @@ void setHeadVertical(int degrees) {
     setServoOffset(SERVO_HEAD_VERTICAL, offset);
 }
 
-void setHeadHorizontal(int degrees) {
+static void _setHeadHorizontal(int degrees) {
     if (degrees < -90 || degrees > 90)
         return;
 
     int offset = degrees + 100;
     setServoOffset(SERVO_HEAD_HORIZONTAL, offset);
-}
-
-void setHead(int horizontalDegrees, int verticalDegrees) {
-    setHeadHorizontal(horizontalDegrees);
-    setHeadVertical(verticalDegrees);
 }
 
 
@@ -150,10 +166,10 @@ bool walkForward(int millimeters) {
     float remainingDistance = millimeters;
 
     int nSteps;	
-    nSteps = remainingDistance / 32.;
+    nSteps = remainingDistance / 34.;
     if (nSteps >= 2) {
         runWalk(ROBOT_WALK_RUN_FORWARD_32MM, nSteps);
-        remainingDistance -= (float)nSteps * 32.;
+        remainingDistance -= (float)nSteps * 34.;
     }
 
     nSteps = remainingDistance / 3.;
@@ -185,10 +201,10 @@ bool walkLeft(int millimeters) {
             millimeters -= 30;
         }
         
-        while (millimeters >= 20) {
+        while (millimeters >= 15) {
             if (!runMotion(MOTION_MOVE_LEFT_LIGHT))
                 return false;
-            millimeters -= 20;
+            millimeters -= 15;
         }
     }
     
@@ -206,10 +222,10 @@ bool walkRight(int millimeters) {
             millimeters -= 30;
         }
         
-        while (millimeters >= 20) {
+        while (millimeters >= 15) {
             if (!runMotion(MOTION_MOVE_RIGHT_LIGHT))
                 return false;
-            millimeters -= 20;
+            millimeters -= 15;
         }
     }
     
@@ -217,20 +233,58 @@ bool walkRight(int millimeters) {
 }
 
 bool turnLeft(int degrees) {
-    while (degrees > 0) {
-        if (!runMotion(MOTION_TURN_LEFT_MIDDLE))
-            return false;
-        degrees -= 20;
+    if (degrees < 5) {
+        degrees = 5;
     }
-    
+
+    float remainingDegrees = degrees;
+
+    int nSteps;	
+    nSteps = remainingDegrees / 27.5;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_LEFT_27DEG);
+        remainingDegrees -= 27.5;
+    }
+
+    nSteps = remainingDegrees / 6.4;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_LEFT_6DEG);
+        remainingDegrees -= 6.4;
+    }
+
+    nSteps = remainingDegrees / 4.5;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_LEFT_4DEG);
+        remainingDegrees -= 4.5;
+    }
+
     return true;
 }
 
 bool turnRight(int degrees) {
-    while (degrees > 0) {
-        if (!runMotion(MOTION_TURN_RIGHT_MIDDLE))
-            return false;
-        degrees -= 20;
+    if (degrees < 5) {
+        degrees = 5;
+    }
+
+    float remainingDegrees = degrees;
+
+    int nSteps;	
+    nSteps = remainingDegrees / 27.5;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_RIGHT_27DEG);
+        remainingDegrees -= 27.5;
+    }
+
+    nSteps = remainingDegrees / 6.4;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_RIGHT_6DEG);
+        remainingDegrees -= 6.4;
+    }
+
+    nSteps = remainingDegrees / 4.5;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_RIGHT_4DEG);
+        remainingDegrees -= 4.5;
     }
     
     return true;
@@ -238,9 +292,15 @@ bool turnRight(int degrees) {
 
 
 void udelay(uint64_t microseconds) {
-    uint64_t counter = 18.4162 * microseconds;
-    while (counter) {
-        counter--;
+    if (isTimerOpened()) {
+        uint64_t endTime = getTime() + microseconds;
+        while (getTime() < endTime);
+    }
+    else {
+        uint64_t counter = 18.4162 * microseconds;
+        while (counter) {
+            counter--;
+        }
     }
 }
 
