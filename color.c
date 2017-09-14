@@ -340,7 +340,7 @@ Color_t _convertYellowColorV1(PixelData_t pixelData) {
     float b = 0.12;
     float c = -0.06;
 
-	if (h >= 46 && h < 70) {
+	if (h >= 26 && h < 70) {
         if (s <= b)
             return COLOR_NONE;
         else if (v > (a / (s - b)) + c)

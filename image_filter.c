@@ -270,7 +270,6 @@ void applyFastWidthErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
 }
 
 void applyFastErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
-
     applyFastWidthErosionToMatrix8(pBinaryMatrix, n);
     applyFastHeightErosionToMatrix8(pBinaryMatrix, n);
 }

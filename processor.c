@@ -28,6 +28,7 @@
 #include "boundary.h"
 #include "white_balance.h"
 #include "mine.h"
+#include "trap.h"
 #include "hurdle.h"
 #include "blue_gate.h"
 #include "golf.h"
@@ -575,8 +576,24 @@ static void _runTest(void) {
 
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
+    
+    // for(int i = 0; i < 5000; ++i) {
+        trapMain();
+    // }
+}
 
-    blueGateMain();
+static void _testBoundary(void) {
+    Screen_t* pScreen = createDefaultScreen();
+
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+
+    Matrix8_t* pWhiteColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
+    Matrix8_t* pBlueColorMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLUE]);
+
+    Matrix8_t* pMergedColorMatrix = 
+             overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
+
+    trapMain();
 }
 
 static void _testWorldLoc(void) {

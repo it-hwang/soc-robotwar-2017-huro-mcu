@@ -229,8 +229,9 @@ static void _establishBoundary(Screen_t* pScreen) {
     overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
 
     applyFastErosionToMatrix8(pMergedColorMatrix, 1);
-    applyFastDilationToMatrix8(pMergedColorMatrix, 1);
-
+    applyFastDilationToMatrix8(pMergedColorMatrix, 2);
+    applyFastErosionToMatrix8(pMergedColorMatrix, 1);
+    
     Matrix8_t* pBoundaryMatrix = establishBoundary(pMergedColorMatrix);
 
     applyBoundary(pScreen, pBoundaryMatrix);
