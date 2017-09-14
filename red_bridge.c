@@ -75,7 +75,7 @@ int measureRedBridgeDistance(void) {
 
 bool solveRedBridge(void) {
     _approachRedBridge();
-    _walkForwardQuickly(80);
+    _walkForwardQuickly(160);
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
     _approachRedBridgeUp();
     _climbUp();
@@ -173,7 +173,7 @@ static bool _approachRedBridgeUp(void) {
     // 각도 정렬 허용 오차 (도)
     static const double ALIGN_ANGLE_ERROR = 5.;
     // 좌우 정렬 허용 오차 (밀리미터)
-    static const int ALIGN_DISTANCE_ERROR = 20;
+    static const int ALIGN_DISTANCE_ERROR = 40;
     // 장애물에 다가갈 거리 (밀리미터)
     static const int APPROACH_DISTANCE = -10;
     // 장애물에 최대로 다가갈 거리 (밀리미터)
@@ -201,20 +201,20 @@ static bool _approachRedBridgeUp(void) {
         double angle = pLine->theta;
         free(pLine);
         
-        if (dy > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
-            int walkDistance = dy - APPROACH_DISTANCE;
-            walkDistance = MIN(walkDistance, APPROACH_MAX_WALK_DISTANCE);
-            _setHead(0, 0);
-            _walkForwardQuickly(walkDistance);
-            runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
-            mdelay(200);
-            nTries = 0;
-            continue;
-        }
+        // if (dy > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
+        //     int walkDistance = dy - APPROACH_DISTANCE;
+        //     walkDistance = MIN(walkDistance, APPROACH_MAX_WALK_DISTANCE);
+        //     _walkForwardQuickly(walkDistance);
+        //     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+        //     mdelay(200);
+        //     nTries = 0;
+        //     continue;
+        // }
         
         if (fabs(angle) > ALIGN_ANGLE_ERROR) {
-            if (angle < 0) turnLeft(fabs(angle));
-            else turnRight(fabs(angle));
+            // if (angle < 0) turnLeft(fabs(angle));
+            // else turnRight(fabs(angle));
+            runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
             nTries = 0;
             continue;
         }
@@ -251,7 +251,7 @@ static bool _approachRedBridgeDown(void) {
     // 각도 정렬 허용 오차 (도)
     static const double ALIGN_ANGLE_ERROR = 3.;
     // 좌우 정렬 허용 오차 (밀리미터)
-    static const int ALIGN_DISTANCE_ERROR = 20;
+    static const int ALIGN_DISTANCE_ERROR = 40;
     // 장애물에 다가갈 거리 (밀리미터)
     static const int APPROACH_DISTANCE = 40;
     // 장애물에 최대로 다가갈 거리 (밀리미터)
@@ -480,6 +480,8 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
 static void _walkForwardQuickly(int distance) {
     // 종종걸음의 보폭 (밀리미터)
     static const int WALK_FORWARD_QUICK_DISTANCE_PER_STEP = 20;
+
+    _setHead(0, 0);
 
     int nSteps = distance / WALK_FORWARD_QUICK_DISTANCE_PER_STEP;
     if (nSteps < 1) nSteps = 1;

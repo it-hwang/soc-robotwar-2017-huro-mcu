@@ -13,6 +13,7 @@
 #include "object_detection.h"
 #include "polygon_detection.h"
 #include "line_detection.h"
+#include "camera.h"
 #include "log.h"
 #include "debug.h"
 
@@ -50,7 +51,7 @@ bool greenBridgeMain(void) {
     //_testMeasurement();
     solveGreenBridge();
 
-    return false;
+    return true;
 }
 
 
@@ -96,7 +97,7 @@ bool solveGreenBridge(void) {
     _approachDownStair();
     _climbDownStair();
 
-    return false;
+    return true;
 }
 
 static bool _approachUpStair(void) {
@@ -109,7 +110,7 @@ static bool _approachUpStair(void) {
     const int APPROACH_DISTANCE_ERROR = 30;
 
     const int ALIGN_OFFSET_X = 4;
-    const double MILLIMETERS_PER_PIXELS = 2.;
+    const double MILLIMETERS_PER_PIXELS = 2.5;
     
     int nTries;
     for (nTries = 0; nTries < MAX_TRIES; ++nTries) {
@@ -192,7 +193,10 @@ static bool _approachUpStair(void) {
 
 
 static bool _climbUpStair(void) {
-    return runMotion(MOTION_CLIMB_UP_STAIR);
+    _setHead(0, 0);
+    bool isSuccess = runMotion(MOTION_CLIMB_UP_STAIR);
+    runWalk(ROBOT_WALK_FORWARD, 1);
+    return isSuccess;
 }
 
 
@@ -205,13 +209,12 @@ static bool _crossGreenBridge(void) {
     // 각도 허용 오차 (도)
     const double ALIGN_FACING_ERROR = 5.;
     // 좌우 정렬 허용 오차 (밀리미터)
-    const double ALIGN_CENTER_X_ERROR = 10.;
+    const double ALIGN_CENTER_X_ERROR = 5.;
     // 각도 정렬 제한 회전 각도 (도)
     const double ALIGN_TURN_DEGREES_LIMIT = 20.;
     // 좌우 정렬 제한 이동 거리 (밀리미터)
     const double ALIGN_WALK_DISTANCE_LIMIT = 30.;
 
-    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
 
     Screen_t* pScreen = createDefaultScreen();
     Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
@@ -219,7 +222,9 @@ static bool _crossGreenBridge(void) {
     while (true) {
         Object_t bridge;
         
+        _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
         readFpgaVideoDataWithWhiteBalance(pScreen);
+        _setHead(0, 0);
 
         bool isOnBridge = _searchGreenBridge(pScreen, &bridge, pLabelMatrix);
         if (!isOnBridge)
@@ -229,7 +234,10 @@ static bool _crossGreenBridge(void) {
         if (isEndOfBridge)
             break;
 
-        int screenCenterX = pScreen->width / 2;
+        CameraParameters_t camParams;
+        readCameraParameters(&camParams, NULL);
+        int screenCenterX = (int)camParams.cx;
+        
         double bridgeAngle = _calculateBridgeAngle(pLabelMatrix, &bridge);
         double dx = (bridge.centerX - screenCenterX) * MILLIMETERS_PER_PIXELS;
         printDebug("angle: %f, dx: %f\n", bridgeAngle, dx);
@@ -253,7 +261,7 @@ static bool _crossGreenBridge(void) {
         }
 
         printDebug("walk.\n");
-        walkForward(256);
+        walkForward(34*6);
         mdelay(200);
     }
     
@@ -283,14 +291,13 @@ static bool _approachDownStair(void) {
     // 브라켓이 가려서 영상에서 최대한 달라붙어도 10mm 오차가 생긴다. 때문에 접근할 때 10mm 더 간다.
     const double APPROACH_ADD_WALK_DISTANCE = 10.;
 
-    _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
-
     Screen_t* pScreen = createDefaultScreen();
     Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
 
     while (true) {
         Object_t blackLine;
         
+        _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
         readFpgaVideoDataWithWhiteBalance(pScreen);
 
         bool isOnStair = _searchBlackLine(pScreen, &blackLine, pLabelMatrix);
@@ -327,6 +334,7 @@ static bool _approachDownStair(void) {
 
 
 static bool _climbDownStair(void) {
+    _setHead(0, 0);
     return runMotion(MOTION_CLIMB_DOWN_STAIR);
 }
 
@@ -582,7 +590,7 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     setServoSpeed(30);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
-    mdelay(800);
+    mdelay(200);
 }
 
 static void _testMeasurement(void) {

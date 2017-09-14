@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdlib.h>
 
 #include "camera.h"
 #include "robot_protocol.h"
@@ -14,6 +15,10 @@ static void _undistortPixel(const CameraParameters_t* pCamParams, int* pX, int* 
 
 // TODO: 설정 파일의 내용을 읽어오도록 변경할 필요가 있다.
 void readCameraParameters(CameraParameters_t* pCamParams, const Vector3_t* pHeadOffset) {
+    Vector3_t defaultHeadOffset = { 0., 0., 0. };
+    if (pHeadOffset == NULL)
+        pHeadOffset = &defaultHeadOffset;
+
     // 목에서 카메라 초점까지의 거리 (meters)
     double cameraOffsetX = 0.0000;
     double cameraOffsetY = 0.0095;
