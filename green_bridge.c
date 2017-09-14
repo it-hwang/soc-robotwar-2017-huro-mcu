@@ -13,6 +13,7 @@
 #include "object_detection.h"
 #include "polygon_detection.h"
 #include "line_detection.h"
+#include "camera.h"
 #include "log.h"
 #include "debug.h"
 
@@ -50,7 +51,7 @@ bool greenBridgeMain(void) {
     //_testMeasurement();
     solveGreenBridge();
 
-    return false;
+    return true;
 }
 
 
@@ -96,7 +97,7 @@ bool solveGreenBridge(void) {
     _approachDownStair();
     _climbDownStair();
 
-    return false;
+    return true;
 }
 
 static bool _approachUpStair(void) {
@@ -207,7 +208,7 @@ static bool _crossGreenBridge(void) {
     // 각도 허용 오차 (도)
     const double ALIGN_FACING_ERROR = 5.;
     // 좌우 정렬 허용 오차 (밀리미터)
-    const double ALIGN_CENTER_X_ERROR = 10.;
+    const double ALIGN_CENTER_X_ERROR = 5.;
     // 각도 정렬 제한 회전 각도 (도)
     const double ALIGN_TURN_DEGREES_LIMIT = 20.;
     // 좌우 정렬 제한 이동 거리 (밀리미터)
@@ -232,7 +233,10 @@ static bool _crossGreenBridge(void) {
         if (isEndOfBridge)
             break;
 
-        int screenCenterX = pScreen->width / 2;
+        CameraParameters_t camParams;
+        readCameraParameters(&camParams, NULL);
+        int screenCenterX = (int)camParams.cx;
+        
         double bridgeAngle = _calculateBridgeAngle(pLabelMatrix, &bridge);
         double dx = (bridge.centerX - screenCenterX) * MILLIMETERS_PER_PIXELS;
         printDebug("angle: %f, dx: %f\n", bridgeAngle, dx);

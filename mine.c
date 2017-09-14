@@ -31,6 +31,8 @@
 #define _DETECTION_MAX_Y        (_DETECTION_MIN_Y + _DETECTION_HEIGHT - 1)
 
 
+static int _count = 0;
+
 static void _captureScreen(Screen_t* pScreen);
 static void _setHead(int horizontalDegrees, int verticalDegrees);
 static int _calculateObjectDistance(Object_t* pObject);
@@ -111,7 +113,7 @@ bool solveMine(void) {
         else {
             printDebug("아무 것도 안보여. 직진해보자.\n", __func__);
             walkForward(34*4);
-            checkCenterMineMain();
+            if ((++_count) % 3 == 0) checkCenterMineMain();
         }
 
         if (pMine) free(pMine);
@@ -361,7 +363,7 @@ static bool _actForMine(Object_t* pMine) {
             walkDistance = MAX_WALK_FORWARD_DISTANCE;
         printDebug("지뢰가 멀리 있다. 접근하자. (distanceY: %d, walkDistance: %d)\n", __func__, distanceY, walkDistance);
         walkForward(walkDistance);
-        checkCenterMineMain();
+        if ((++_count) % 3 == 0) checkCenterMineMain();
         return true;
     }
 
@@ -375,14 +377,14 @@ static bool _actForMine(Object_t* pMine) {
     if (isLeftAligned) {
         printDebug("지뢰 왼쪽 정렬 완료. 달린다. (maxX: %d)\n", __func__, maxX);
         walkForward(34*2);
-        checkCenterMineMain();
+        if ((++_count) % 3 == 0) checkCenterMineMain();
         return true;
     }
     bool isRightAligned = (minX >= ALIGN_ROBOT_RIGHT_X - ALIGN_ROBOT_ERROR);
     if (isRightAligned) {
         printDebug("지뢰 오른쪽 정렬 완료. 달린다. (minX: %d)\n", __func__, minX);
         walkForward(34*2);
-        checkCenterMineMain();
+        if ((++_count) % 3 == 0) checkCenterMineMain();
         return true;
     }
 
