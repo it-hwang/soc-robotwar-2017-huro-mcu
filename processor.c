@@ -152,7 +152,8 @@ static void _runHuroC(void) {
     while (true) {
         ObstacleId_t id = _pObstacleSequence->elements[index];
         if (runSolveObstacle(id)) {
-            checkCenterMain();
+            if (id != OBSTACLE_MINE && id != OBSTACLE_BLUE_GATE)
+                checkCenterMain();
             lastIndex = index;
             walkCount = 0;
         }
