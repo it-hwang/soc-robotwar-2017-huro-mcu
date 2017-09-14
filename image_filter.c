@@ -27,7 +27,7 @@ void applyMeanFilter(Screen_t* pScreen, PixelCoordinate_t n) {
     int forwardPosition;
     Rgab5515_t* pBackwardPixel;
     Rgab5515_t* pForwardPixel;
-    
+
     // 가로 방향 연산 수행
     for (y = 0; y < height; ++y) {
         // 행 초기화
@@ -66,7 +66,7 @@ void applyMeanFilter(Screen_t* pScreen, PixelCoordinate_t n) {
             pCurrentPixel++;
         }
     }
-    
+
     // 세로 방향 연산 수행
     for (x = 0; x < width; ++x) {
         // 열 초기화
@@ -126,8 +126,8 @@ void applyErosionToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
             if (x >= n && x < width - n) {
                 if (*pMatrixPixel) {
                     for (i = -n; i <= n; ++i) {
-                        *pMatrixPixel &= 
-                                pComparator->elements[y * width + x + i];
+                        *pMatrixPixel &=
+                            pComparator->elements[y * width + x + i];
                     }
                 }
             }
@@ -146,8 +146,8 @@ void applyErosionToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
             if (y >= n && y < height - n) {
                 if (*pMatrixPixel) {
                     for (i = -n; i <= n; ++i) {
-                        *pMatrixPixel &= 
-                                pComparator->elements[(y + i) * width + x];
+                        *pMatrixPixel &=
+                            pComparator->elements[(y + i) * width + x];
                     }
                 }
             }
@@ -175,8 +175,8 @@ void applyDilationToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
             uint8_t* pMatrixPixel = &(pMatrix->elements[y * width + x]);
             for (i = -n; i <= n; ++i) {
                 if (x + i >= 0 && x + i < width) {
-                    *pMatrixPixel |= 
-                            pComparator->elements[y * width + x + i];
+                    *pMatrixPixel |=
+                        pComparator->elements[y * width + x + i];
                 }
             }
         }
@@ -190,8 +190,8 @@ void applyDilationToMatrix8(Matrix8_t* pMatrix, uint8_t n) {
             uint8_t* pMatrixPixel = &(pMatrix->elements[y * width + x]);
             for (i = -n; i <= n; ++i) {
                 if (y + i >= 0 && y + i < height) {
-                    *pMatrixPixel |= 
-                            pComparator->elements[(y + i) * width + x];
+                    *pMatrixPixel |=
+                        pComparator->elements[(y + i) * width + x];
                 }
             }
         }
@@ -213,7 +213,7 @@ void applyFastHeightErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
         count = 0;
         for (y = 0; y < height; ++y) {
             needErosion = pBinaryMatrix->elements[y * width + x] == 0;
-            
+
             if (count > 0) {
                 if (y - n - 1 >= 0)
                     pBinaryMatrix->elements[(y - n - 1) * width + x] = 0;
@@ -248,7 +248,7 @@ void applyFastWidthErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
         count = 0;
         for (x = 0; x < width; ++x) {
             needErosion = pBinaryMatrix->elements[y * width + x] == 0;
-            
+
             if (count > 0) {
                 if (x - n - 1 >= 0)
                     pBinaryMatrix->elements[y * width + x - n - 1] = 0;
@@ -270,7 +270,6 @@ void applyFastWidthErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
 }
 
 void applyFastErosionToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
-    
     applyFastWidthErosionToMatrix8(pBinaryMatrix, n);
     applyFastHeightErosionToMatrix8(pBinaryMatrix, n);
 }
@@ -294,7 +293,7 @@ void applyFastWidthDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
             needErosion = element != 0;
             if (needErosion)
                 value = element;
-            
+
             if (count > 0) {
                 if (x - n - 1 >= 0)
                     pBinaryMatrix->elements[y * width + x - n - 1] = value;
@@ -334,7 +333,7 @@ void applyFastHeightDilationToMatrix8(Matrix8_t* pBinaryMatrix, uint8_t n) {
             needErosion = element != 0;
             if (needErosion)
                 value = element;
-            
+
             if (count > 0) {
                 if (y - n - 1 >= 0)
                     pBinaryMatrix->elements[(y - n - 1) * width + x] = value;

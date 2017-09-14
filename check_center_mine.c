@@ -5,19 +5,19 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "check_bridge_center.h"
+#include "check_center.h"
 #include "object_detection.h"
 #include "graphic_interface.h"
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "log.h"
 #include "white_balance.h"
-#include "line_detection.h"
 #include "debug.h"
+#include "boundary.h"
 
-#define CENTER 65
+#define CENTER 50
 #define RIGHT_ZERO_GRADIENT 4
-#define LEFT_ZERO_GRADIENT -8
+#define LEFT_ZERO_GRADIENT -9
 #define HEAD_DIRECTION_ERROR -1
 #define HEAD_DIRECTION_RIGHT 0
 #define HEAD_DIRECTION_LEFT 1
@@ -29,6 +29,7 @@ static void _setStandardStand(void);
 static void _setHead(int headDirection);
 static Line_t* _captureRightLine(Screen_t* pScreen);
 static Line_t* _captureLeftLine(Screen_t* pScreen);
+static void _setBoundaryWhite(Screen_t* pScreen);
 static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY);
 static Line_t* _captureLine(Screen_t* pScreen, int headDirection);
 static bool _approachLine(int headDirection, bool doHeadSet);
@@ -38,12 +39,8 @@ static void _walkSameDirection(int headDirection);
 static bool _arrangeAngle(int headDirection, bool doHeadSet);
 static int _getZeroGradient(int headDirection);
 static void _moveForSetGradient(int lineGradient);
-static void _notMatrix8(Matrix8_t* pMatrix);
 
-static Color_t _bridgeColor = COLOR_NONE;
-
-bool checkBridgeCenterMain(Color_t bridgeColor) {
-    _bridgeColor = bridgeColor;
+bool checkCenterMineMain(void) {
     int headDirection = _searchLine();
     bool doHeadSet = false;
 
@@ -52,19 +49,6 @@ bool checkBridgeCenterMain(Color_t bridgeColor) {
         _setStandardStand();
         return false;
     }
-
-    if( !_arrangeAngle(headDirection, doHeadSet) ) {
-        printDebug("각도를 정렬에 실패했다.\n");
-        _setStandardStand();
-        return false;
-    }
-
-    if( !_approachLine(headDirection, doHeadSet) ) {
-        printDebug("선에 접근 할 수 없다.\n");
-        _setStandardStand();
-        return false;
-    }
-    
 
     if( !_arrangeAngle(headDirection, doHeadSet) ) {
         printDebug("각도를 정렬에 실패했다.\n");
@@ -160,19 +144,17 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
         
     readFpgaVideoDataWithWhiteBalance(pScreen);
 
-    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 70, 0, 89, 110);
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 50, 0, 89, 110);
 
+    _setBoundaryWhite(pSubMatrix);
+    
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
-                                pColorTables[_bridgeColor]);
+                                pColorTables[COLOR_BLACK]);
+    // applyFastDilationToMatrix8(pColorMatrix, 2);
+    // applyFastErosionToMatrix8(pColorMatrix, 2);
+    // applyFastDilationToMatrix8(pColorMatrix, 1);
     
-    applyFastDilationToMatrix8(pColorMatrix, 1);
-    applyFastErosionToMatrix8(pColorMatrix, 2);
-    applyFastDilationToMatrix8(pColorMatrix, 1);
-
-    Matrix8_t* pLineMatrix = cloneMatrix8(pColorMatrix);
-    _notMatrix8(pLineMatrix);
-    
-    Line_t* returnLine = lineDetection(pLineMatrix);
+    Line_t* returnLine = lineDetection(pColorMatrix);
     
     drawColorMatrix(pSubMatrix, pColorMatrix);
     overlapMatrix16(pSubMatrix, pScreen, 70, 0);
@@ -180,7 +162,6 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
     _drawLine(pScreen, returnLine, 70, 0);
     displayScreen(pScreen);
     
-    destroyMatrix8(pLineMatrix);
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
 
@@ -190,20 +171,19 @@ static Line_t* _captureRightLine(Screen_t* pScreen) {
 static Line_t* _captureLeftLine(Screen_t* pScreen) {
     
     readFpgaVideoDataWithWhiteBalance(pScreen);
-    
-    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 90, 0, 109, 110);
 
+    Matrix16_t* pSubMatrix = createSubMatrix16(pScreen, 90, 0, 129, 110);
+
+    _setBoundaryWhite(pSubMatrix);
+    
     Matrix8_t* pColorMatrix = createColorMatrix(pSubMatrix, 
-                                pColorTables[_bridgeColor]);
+                                pColorTables[COLOR_BLACK]);
 
-    applyFastDilationToMatrix8(pColorMatrix, 1);
-    applyFastErosionToMatrix8(pColorMatrix, 2);
-    applyFastDilationToMatrix8(pColorMatrix, 1);
-
-    Matrix8_t* pLineMatrix = cloneMatrix8(pColorMatrix);
-    _notMatrix8(pLineMatrix);
+    // applyFastDilationToMatrix8(pColorMatrix, 2);
+    // applyFastErosionToMatrix8(pColorMatrix, 2);
+    // applyFastDilationToMatrix8(pColorMatrix, 1);
     
-    Line_t* returnLine = lineDetection(pLineMatrix);
+    Line_t* returnLine = lineDetection(pColorMatrix);
     
     drawColorMatrix(pSubMatrix, pColorMatrix);
     overlapMatrix16(pSubMatrix, pScreen, 90, 0);
@@ -211,11 +191,27 @@ static Line_t* _captureLeftLine(Screen_t* pScreen) {
     _drawLine(pScreen, returnLine, 90, 0);
     displayScreen(pScreen);
 
-    destroyMatrix8(pLineMatrix);
     destroyMatrix8(pColorMatrix);
     destroyMatrix16(pSubMatrix);
     
     return returnLine;
+}
+
+static void _setBoundaryWhite(Screen_t* pScreen) {
+    Matrix8_t* pWhiteMatrix = createColorMatrix(pScreen, pColorTables[COLOR_WHITE]);
+    
+    applyFastErosionToMatrix8(pWhiteMatrix, 1);
+    applyFastDilationToMatrix8(pWhiteMatrix, 2);
+    applyFastErosionToMatrix8(pWhiteMatrix, 1);
+
+    Matrix8_t* pBoundaryMatrix = establishBoundary(pWhiteMatrix);
+
+    applyFastDilationToMatrix8(pBoundaryMatrix, 8);
+
+    applyBoundary(pScreen, pBoundaryMatrix);
+
+    destroyMatrix8(pWhiteMatrix);
+    destroyMatrix8(pBoundaryMatrix);
 }
 
 static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
@@ -229,14 +225,14 @@ static void _drawLine(Screen_t* pScreen, Line_t* pLine, int minX, int minY) {
         int y = (int)pLine->leftPoint.y + minY;
         int index = y * pScreen->width + x;
         uint16_t* pOutput = (uint16_t*)&pixels[index];
-        *pOutput = 0xF81F;
+        *pOutput = 0xF800;
     }
 
     for(int x = minX + pLine->rightPoint.x; x >= centerX; --x) {
         int y = (int)pLine->rightPoint.y + minY;
         int index = y * pScreen->width + x;
         uint16_t* pOutput = (uint16_t*)&pixels[index];
-        *pOutput = 0xF81F;
+        *pOutput = 0xF800;
     }
 }
 
@@ -399,15 +395,5 @@ static void _moveForSetGradient(int lineGradient) {
     } else {
         printDebug("오른쪽으로 회전. 기울기(%d)\n", lineGradient);
         turnRight(lineGradient);
-    }
-}
-
-static void _notMatrix8(Matrix8_t* pMatrix) {
-    int length = pMatrix->width * pMatrix->height;
-
-    uint8_t* pElement = pMatrix->elements;
-    for (int i = 0; i < length; ++i) {
-        *pElement = !(*pElement);
-        pElement++;
     }
 }

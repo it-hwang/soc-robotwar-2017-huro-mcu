@@ -42,6 +42,14 @@ void destroyScreen(Screen_t* pScreen) {
 
 void readFpgaVideoData(Screen_t* pDefaultScreen) {
     read_fpga_video_data(pDefaultScreen->elements);
+    // 모든 색상을 유효한 색상으로 변환
+    int length = pDefaultScreen->height * pDefaultScreen->width;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)pDefaultScreen->elements;
+    for (int i = 0; i < length; ++i) {
+        pRgab5515->a = 1;
+        pRgab5515++;
+    }
+    // 왼쪽 픽셀 제거
     for(int i = 0; i < pDefaultScreen->height; ++i){
         pDefaultScreen->elements[i * pDefaultScreen->width + 0] = 0x7bcf;
         pDefaultScreen->elements[i * pDefaultScreen->width + 1] = 0x7bcf;

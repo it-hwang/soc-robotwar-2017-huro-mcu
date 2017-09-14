@@ -19,7 +19,7 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
     //static uint16_t equalLabelList[_LABEL_SIZE];
     //static int labelCntList[_LABEL_SIZE];
     int* labelCntList = (int*)calloc(_LABEL_SIZE, sizeof(int));
-    uint16_t* equalLabelList = (int*)calloc(_LABEL_SIZE, sizeof(uint16_t));
+    uint16_t* equalLabelList = (uint16_t*)calloc(_LABEL_SIZE, sizeof(uint16_t));
 
     int x;
     int y;
