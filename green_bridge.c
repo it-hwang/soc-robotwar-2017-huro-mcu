@@ -110,7 +110,7 @@ static bool _approachUpStair(void) {
     const int APPROACH_DISTANCE_ERROR = 30;
 
     const int ALIGN_OFFSET_X = 4;
-    const double MILLIMETERS_PER_PIXELS = 2.;
+    const double MILLIMETERS_PER_PIXELS = 2.5;
     
     int nTries;
     for (nTries = 0; nTries < MAX_TRIES; ++nTries) {
