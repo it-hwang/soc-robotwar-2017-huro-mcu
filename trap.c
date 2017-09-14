@@ -498,10 +498,10 @@ static bool _approachBlackLine(void) {
 
         if(pObject->maxY >= pScreen->height-10){
             pLine = findTopLine(pPolygon);
-            isTopLine = 1;
+            // isTopLine = 1;
         } else {
             pLine = findBottomLine(pPolygon);
-            isTopLine = 0;
+            // isTopLine = 0;
         }
         
         drawLine(pScreen, pLine, NULL);
