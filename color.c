@@ -130,6 +130,10 @@ Color_t _convertCommonColorV1(PixelData_t pixelData) {
 
 // y=1/x 함수 형태
 Color_t _convertBlackColorV1(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
     float h;    // hue
     float s;    // saturation
     float v;    // value
@@ -156,7 +160,42 @@ Color_t _convertBlackColorV1(PixelData_t pixelData) {
 }
 
 // y=1/x 함수 형태
+Color_t _convertBlackColorV2(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
+    float h;    // hue
+    float s;    // saturation
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
+
+    // i > ((a / (s - b)) + c)
+    //float a = 0.04;
+    //float b = 0.18;
+    //float c = 0.14;
+    float a = 0.02;
+    float b = 0.28;
+    float c = 0.18;
+
+    bool isGray = false;
+    if (s <= b)
+        isGray = true;
+    else if (v <= (a / (s - b)) + c)
+        isGray = true;
+    
+    if (isGray && v < 0.30)
+        return COLOR_BLACK;
+    
+    return COLOR_NONE;
+}
+
+// y=1/x 함수 형태
 Color_t _convertWhiteColorV1(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
     float h;    // hue
     float s;    // saturation
     float v;    // value
@@ -180,7 +219,39 @@ Color_t _convertWhiteColorV1(PixelData_t pixelData) {
 }
 
 // y=1/x 함수 형태
+Color_t _convertWhiteColorV2(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
+    float h;    // hue
+    float s;    // saturation
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
+
+    // i > ((a / (s - b)) + c)
+    float a = 0.04;
+    float b = 0.38;
+    float c = -0.20;
+
+    bool isGray = false;
+    if (s <= b)
+        isGray = true;
+    else if (v <= (a / (s - b)) + c)
+        isGray = true;
+    
+    if (isGray && v >= 0.40)
+        return COLOR_WHITE;
+    
+    return COLOR_NONE;
+}
+
+// y=1/x 함수 형태
 Color_t _convertRedColorV1(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
     float h;    // hue
     float s;    // saturation
     float v;    // value
@@ -203,6 +274,10 @@ Color_t _convertRedColorV1(PixelData_t pixelData) {
 
 // y=1/x 함수 형태
 Color_t _convertGreenColorV1(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
     float h;    // hue
     float s;    // saturation
     float v;    // value
@@ -225,6 +300,10 @@ Color_t _convertGreenColorV1(PixelData_t pixelData) {
 
 // y=1/x 함수 형태
 Color_t _convertBlueColorV1(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
     float h;    // hue
     float s;    // saturation
     float v;    // value
@@ -247,6 +326,10 @@ Color_t _convertBlueColorV1(PixelData_t pixelData) {
 
 // y=1/x 함수 형태
 Color_t _convertYellowColorV1(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
     float h;    // hue
     float s;    // saturation
     float v;    // value
@@ -268,7 +351,37 @@ Color_t _convertYellowColorV1(PixelData_t pixelData) {
 }
 
 // y=1/x 함수 형태
+Color_t _convertYellowColorV2(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
+    float h;    // hue
+    float s;    // saturation
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
+
+    // i > ((a / (s - b)) + c)
+    float a = 0.12;
+    float b = 0.20;
+    float c = 0.00;
+
+	if (h >= 34 && h < 65) {
+        if (s <= b)
+            return COLOR_NONE;
+        else if (v > (a / (s - b)) + c)
+	    	return COLOR_YELLOW;
+    }
+    
+    return COLOR_NONE;
+}
+
+// y=1/x 함수 형태
 Color_t _convertOrangeColorV1(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
     float h;    // hue
     float s;    // saturation
     float v;    // value
@@ -277,6 +390,32 @@ Color_t _convertOrangeColorV1(PixelData_t pixelData) {
     // i > ((a / (s - b)) + c)
     float a = 0.20;
     float b = 0.10;
+    float c = 0.10;
+
+	if (h >= 350 || h < 30) {
+        if (s <= b)
+            return COLOR_NONE;
+        else if (v > (a / (s - b)) + c)
+	    	return COLOR_ORANGE;
+    }
+    
+    return COLOR_NONE;
+}
+
+// y=1/x 함수 형태
+Color_t _convertOrangeColorV2(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
+    float h;    // hue
+    float s;    // saturation
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
+
+    // i > ((a / (s - b)) + c)
+    float a = 0.20;
+    float b = 0.25;
     float c = 0.10;
 
 	if (h >= 350 || h < 30) {
@@ -305,46 +444,55 @@ uint16_t _convertColorToRgb5515(uint32_t colorData) {
             rgba.r = 0x7f;
             rgba.g = 0x7f;
             rgba.b = 0x7f;
+            rgba.a = 0x00;
             break;
         case COLOR_BLACK:
             rgba.r = 0x00;
             rgba.g = 0x00;
             rgba.b = 0x00;
+            rgba.a = 0xff;
             break;
         case COLOR_WHITE:
             rgba.r = 0xff;
             rgba.g = 0xff;
             rgba.b = 0xff;
+            rgba.a = 0xff;
             break;
         case COLOR_RED:
             rgba.r = 0xff;
             rgba.g = 0x00;
             rgba.b = 0x00;
+            rgba.a = 0xff;
             break;
         case COLOR_GREEN:
             rgba.r = 0x00;
             rgba.g = 0xff;
             rgba.b = 0x00;
+            rgba.a = 0xff;
             break;
         case COLOR_BLUE:
             rgba.r = 0x00;
             rgba.g = 0x00;
             rgba.b = 0xff;
+            rgba.a = 0xff;
             break;
         case COLOR_YELLOW:
             rgba.r = 0xff;
             rgba.g = 0xff;
             rgba.b = 0x00;
+            rgba.a = 0xff;
             break;
         case COLOR_ORANGE:
             rgba.r = 0xff;
             rgba.g = 0x7f;
             rgba.b = 0x27;
+            rgba.a = 0xff;
             break;
         default:
             rgba.r = 0x7f;
             rgba.g = 0x7f;
             rgba.b = 0x7f;
+            rgba.a = 0x00;
     }
 
     return rgbaToRgab5515Data(&rgba);
@@ -369,20 +517,28 @@ void initializeColor(void) {
     mkdir("./data", 0755);
     pCommonColorTable = _createColorTable("./data/common_v1.lut",
                             _convertCommonColorV1, false);
-    pColorTables[COLOR_BLACK] = _createColorTable("./data/black_v1.lut",
-                                                _convertBlackColorV1, false);
-    pColorTables[COLOR_WHITE] = _createColorTable("./data/white_v1.lut",
-                                                _convertWhiteColorV1, false);
+    // pColorTables[COLOR_BLACK] = _createColorTable("./data/black_v1.lut",
+    //                                             _convertBlackColorV1, false);
+    pColorTables[COLOR_BLACK] = _createColorTable("./data/black_v2.lut",
+                                                _convertBlackColorV2, false);
+    // pColorTables[COLOR_WHITE] = _createColorTable("./data/white_v2.lut",
+    //                                             _convertWhiteColorV2, false);
+    pColorTables[COLOR_WHITE] = _createColorTable("./data/white_v2.lut",
+                                                _convertWhiteColorV2, false);
     pColorTables[COLOR_RED] = _createColorTable("./data/red_v1.lut",
                                                 _convertRedColorV1, false);
     pColorTables[COLOR_GREEN] = _createColorTable("./data/green_v1.lut",
                                                 _convertGreenColorV1, false);
     pColorTables[COLOR_BLUE] = _createColorTable("./data/blue_v1.lut",
                                                 _convertBlueColorV1, false);
-    pColorTables[COLOR_YELLOW] = _createColorTable("./data/yellow_v1.lut",
-                                                _convertYellowColorV1, false);
-    pColorTables[COLOR_ORANGE] = _createColorTable("./data/orange_v1.lut",
-                                                _convertOrangeColorV1, false);
+    // pColorTables[COLOR_YELLOW] = _createColorTable("./data/yellow_v1.lut",
+    //                                             _convertYellowColorV1, false);
+    pColorTables[COLOR_YELLOW] = _createColorTable("./data/yellow_v2.lut",
+                                                _convertYellowColorV2, false);
+    // pColorTables[COLOR_ORANGE] = _createColorTable("./data/orange_v1.lut",
+    //                                             _convertOrangeColorV1, false);
+    pColorTables[COLOR_ORANGE] = _createColorTable("./data/orange_v2.lut",
+                                                _convertOrangeColorV2, false);
 
     uint32_t length;
     length = pow(2, sizeof(PixelData_t) * 8);
