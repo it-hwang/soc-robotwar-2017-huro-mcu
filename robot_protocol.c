@@ -10,6 +10,9 @@
 #define _UART_STOPS			1
 
 
+static int _headVertical = 0;
+static int _headHorizontal = 0;
+
 static void _setHeadVertical(int degrees);
 static void _setHeadHorizontal(int degrees);
 
@@ -93,15 +96,17 @@ uint8_t getServoOffset(uint8_t servoId) {
 
 
 int getHeadHorizontal(void) {
-    int offset = getServoOffset(SERVO_HEAD_HORIZONTAL);
-    int degrees = offset - 100;
-    return degrees;
+    // int offset = getServoOffset(SERVO_HEAD_HORIZONTAL);
+    // int degrees = offset - 100;
+    // return degrees;
+    return _headHorizontal;
 }
 
 int getHeadVertical(void) {
-    int offset = getServoOffset(SERVO_HEAD_VERTICAL);
-    int degrees = offset - 100;
-    return degrees;
+    // int offset = getServoOffset(SERVO_HEAD_VERTICAL);
+    // int degrees = offset - 100;
+    // return degrees;
+    return _headVertical;
 }
 
 void setHeadVertical(int degrees) {
@@ -126,6 +131,7 @@ static void _setHeadVertical(int degrees) {
 
     int offset = degrees + 100;
     setServoOffset(SERVO_HEAD_VERTICAL, offset);
+    _headVertical = degrees;
 }
 
 static void _setHeadHorizontal(int degrees) {
@@ -134,6 +140,7 @@ static void _setHeadHorizontal(int degrees) {
 
     int offset = degrees + 100;
     setServoOffset(SERVO_HEAD_HORIZONTAL, offset);
+    _headHorizontal = degrees;
 }
 
 
