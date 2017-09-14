@@ -159,6 +159,9 @@ bool runWalk(uint8_t walkId, uint8_t steps) {
 //  - 전진보행_빠른_바리케이드: 빠른전진보행으로 길게 전진 (40cm)
 //  - 전진보행_빠른_바리케이드_멀리: 빠른전진보행으로 길게 전진 (56cm)
 bool walkForward(int millimeters) {
+    setServoSpeed(30);
+    setHead(0, 0);
+
     if (millimeters < 6) {
         millimeters = 6;
     }
