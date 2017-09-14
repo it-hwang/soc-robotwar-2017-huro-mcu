@@ -201,42 +201,47 @@ bool walkBackward(int millimeters) {
 }
 
 bool walkLeft(int millimeters) {
-    if (millimeters < 20) {
-        return runMotion(MOTION_MOVE_LEFT_LIGHT);
+    if (millimeters < 10) millimeters = 10;
+
+    while (millimeters >= 30) {
+        if (!runMotion(MOTION_MOVE_LEFT_30MM))
+            return false;
+        millimeters -= 30;
     }
-    else {
-        while (millimeters >= 30) {
-            if (!runMotion(MOTION_MOVE_LEFT_MIDDLE))
-                return false;
-            millimeters -= 30;
-        }
-        
-        while (millimeters >= 15) {
-            if (!runMotion(MOTION_MOVE_LEFT_LIGHT))
-                return false;
-            millimeters -= 15;
-        }
+    
+    while (millimeters >= 20) {
+        if (!runMotion(MOTION_MOVE_LEFT_20MM))
+            return false;
+        millimeters -= 20;
+    }
+    while (millimeters >= 10) {
+        if (!runMotion(MOTION_MOVE_LEFT_10MM))
+            return false;
+        millimeters -= 10;
     }
     
     return true;
 }
 
 bool walkRight(int millimeters) {
-    if (millimeters < 20) {
-        return runMotion(MOTION_MOVE_RIGHT_LIGHT);
+    if (millimeters < 10) millimeters = 10;
+    
+    while (millimeters >= 30) {
+        if (!runMotion(MOTION_MOVE_RIGHT_30MM))
+            return false;
+        millimeters -= 30;
     }
-    else {
-        while (millimeters >= 30) {
-            if (!runMotion(MOTION_MOVE_RIGHT_MIDDLE))
-                return false;
-            millimeters -= 30;
-        }
-        
-        while (millimeters >= 15) {
-            if (!runMotion(MOTION_MOVE_RIGHT_LIGHT))
-                return false;
-            millimeters -= 15;
-        }
+    
+    while (millimeters >= 20) {
+        if (!runMotion(MOTION_MOVE_RIGHT_20MM))
+            return false;
+        millimeters -= 20;
+    }
+    
+    while (millimeters >= 10) {
+        if (!runMotion(MOTION_MOVE_RIGHT_10MM))
+            return false;
+        millimeters -= 10;
     }
     
     return true;
