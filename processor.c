@@ -577,10 +577,6 @@ static void _runTest(void) {
     // 바로 움직이면 위험하므로 잠시 대기한다.
     sdelay(3);
     
-    setHead(0, -35);
-    
-    mdelay(1000);
-    
     // for(int i = 0; i < 5000; ++i) {
         trapMain();
     // }
@@ -597,7 +593,7 @@ static void _testBoundary(void) {
     Matrix8_t* pMergedColorMatrix = 
              overlapColorMatrix(pBlueColorMatrix, pWhiteColorMatrix);
 
-    blueGateMain();
+    trapMain();
 }
 
 static void _testWorldLoc(void) {

@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,10 +43,10 @@ static bool _forwardRoll(void);
 
 bool trapMain(void) {
 
-    // if( !_searchTrap() )
-        // return false;
+    if( !_searchTrap() )
+        return false;
 
-    // _climbUpTrap();
+    _climbUpTrap();
     _setPositionOnTrap();
     _approachBlackLine();
     _forwardRoll();
@@ -67,7 +67,10 @@ static bool _searchTrap(void) {
     Screen_t* pScreen = createDefaultScreen();
 
     for(int nTries = 0; nTries < MAX_TRIES; ++nTries) {
-        
+        setServoSpeed(30);
+        setHead(0, -35);
+        mdelay(200);
+
         if( !_setBoundary(pScreen) )
             continue;
             
@@ -299,8 +302,8 @@ static Matrix8_t* _createBlackMatrix2(Screen_t* pScreen) {
     Matrix8_t* pBlackMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLACK]);
     
     // applyFastErosionToMatrix8(pBlackMatrix, 1);
-    // applyFastDilationToMatrix8(pBlackMatrix, 1);
-    // applyFastErosionToMatrix8(pBlackMatrix, 1);
+    applyFastDilationToMatrix8(pBlackMatrix, 1);
+    applyFastErosionToMatrix8(pBlackMatrix, 1);
 
     return pBlackMatrix;
 }
@@ -320,7 +323,8 @@ static double _measureObjectDistance(Object_t* pTrapObject, Vector3_t* pWorldLoc
 
 static void _approachObject(Vector3_t* pVector, int approachDistance) {
     const double X_ERROR = 0.02;
-    
+    const int MAX_WALK_DISTANCE = 300;
+
     if( pVector->x > fabs(X_ERROR) ) {
         if(pVector->x < 0)
             walkLeft(pVector->x * -1000);
@@ -329,7 +333,9 @@ static void _approachObject(Vector3_t* pVector, int approachDistance) {
     }
 
     printDebug("y값 %f\n", pVector->y);
-    walkForward(pVector->y * 1000 - approachDistance);
+    int walkDistance = pVector->y * 1000 - approachDistance;
+    walkDistance = MIN(walkDistance, MAX_WALK_DISTANCE);
+    walkForward(walkDistance);
 }
 
 static void _approachObject2(Vector3_t* pVector, int approachDistance) {
@@ -351,7 +357,7 @@ static void _approachObject2(Vector3_t* pVector, int approachDistance) {
 }
 
 static bool _approachTrap(Object_t* pTrap) {
-    const int APPROACH_DISTANCE = 20;
+    const int APPROACH_DISTANCE = 30;
     
     const int APPROACH_DISTANCE_ERROR = 30;
 
@@ -361,6 +367,11 @@ static bool _approachTrap(Object_t* pTrap) {
     Vector3_t trapVector;
     double distance =  _measureObjectDistance(pTrap, &trapVector, TRAP_HEIGHT);
     printDebug("함정과의 거리 %f\n", distance);
+
+    if(pTrap->maxY >= DEFAULT_SCREEN_HEIGHT - 1) {
+        printDebug("거리판단 불가.\n");
+        return true;
+    }
 
     if(distance < APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR){
         printDebug("함정과 가깝습니다.\n");
@@ -373,8 +384,12 @@ static bool _approachTrap(Object_t* pTrap) {
 }
 
 static bool _climbUpTrap(void) {
-    
-    return runMotion(MOTION_CLIMB_UP_STAIR);
+    checkCenterMain();
+    runWalk(ROBOT_WALK_FORWARD_QUICK, 20);
+    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+    setHead(0, 0);
+    runMotion(MOTION_CLIMB_UP_TRAP);
+    return runWalk(ROBOT_WALK_FORWARD, 1);
 }
 
 static bool _setPositionOnTrap(void) {
@@ -479,12 +494,14 @@ static bool _approachBlackLine(void) {
 
     const double TRAP_HEIGHT = 0.0;
 
-    setHead(0, -70);
-
     Screen_t* pScreen = createDefaultScreen();
     Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
 
     while(true) {
+        setServoSpeed(30);
+        setHead(0, -70);
+        mdelay(200);
+
         readFpgaVideoDataWithWhiteBalance(pScreen);
         
         Object_t* pObject = _getLargestBlackObject(pScreen, pLabelMatrix);
