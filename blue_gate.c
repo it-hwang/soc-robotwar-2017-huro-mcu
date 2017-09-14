@@ -15,6 +15,7 @@
 #include "robot_protocol.h"
 #include "image_filter.h"
 #include "white_balance.h"
+#include "camera.h"
 #include "boundary.h"
 #include "log.h"
 #include "debug.h"
@@ -115,7 +116,11 @@ int measureRightBlueGateDistance(void) {
     // 거리 측정에 사용되는 머리 각도
     //static const int HEAD_HORIZONTAL_DEGREES = 0;
     //static const int HEAD_VERTICAL_DEGREES = -50;
-
+    const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
+    
+    CameraParameters_t camParameter;
+    readCameraParameters(&camParameter, &HEAD_OFFSET);
+        
     _setHeadRight();
 
     Screen_t* pScreen = createDefaultScreen();
@@ -135,9 +140,14 @@ int measureRightBlueGateDistance(void) {
         pObject->minX, pObject->centerX, pObject->maxX, pObject->minY, pObject->centerY, pObject->maxY);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
-        int distance = pObject->maxY;
+        //int distance = pObject->maxY;
         
-        millimeters = 0.0357*distance*distance - 11.558*distance + 849.66;
+        PixelLocation_t trapLoc = {pObject->centerX, pObject->maxY};
+        Vector3_t worldLoc;
+        convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
+
+        millimeters = (int)worldLoc.y * 1000;
+        //millimeters = 0.0357*distance*distance - 11.558*distance + 849.66;
         // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
         if (millimeters <= 0)
             millimeters = 1;
@@ -155,6 +165,11 @@ int measureLeftBlueGateDistance(void) {
     // 거리 측정에 사용되는 머리 각도
     //static const int HEAD_HORIZONTAL_DEGREES = 0;
     //static const int HEAD_VERTICAL_DEGREES = -50;
+
+    const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
+    
+    CameraParameters_t camParameter;
+    readCameraParameters(&camParameter, &HEAD_OFFSET);
 
     _setHeadLeft();
 
@@ -175,9 +190,15 @@ int measureLeftBlueGateDistance(void) {
                  pObject->minX, pObject->centerX, pObject->maxX, pObject->minY, pObject->centerY, pObject->maxY);
 
         // 화면 상의 위치로 실제 거리를 추측한다.
-        int distance = pObject->maxY;
+        // int distance = pObject->maxY;
         
-        millimeters = 0.0502*distance*distance - 12.867*distance + 842.13;
+        PixelLocation_t trapLoc = {pObject->centerX, pObject->maxY};
+        Vector3_t worldLoc;
+        convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
+
+        millimeters = (int)worldLoc.y * 1000;
+
+        // millimeters = 0.0502*distance*distance - 12.867*distance + 842.13;
         // 0을 반환하면 장애물이 없다고 생각할 수도 있기 때문에 1mm로 반환한다. 
         if (millimeters <= 0)
             millimeters = 1;
@@ -502,6 +523,10 @@ static void _moveForSetGradient(int lineGradient) {
 }
 
 static bool _arrangeDistanceBalance(void) {
+    const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
+    
+    CameraParameters_t camParameter;
+    readCameraParameters(&camParameter, &HEAD_OFFSET);
     
     int rightTryCount = 0;
     int leftTryCount = 0;
@@ -519,11 +544,15 @@ static bool _arrangeDistanceBalance(void) {
             if(rightBlueGate != NULL) {
                 rightTryCount = 0;
 
-                int rightDistance = rightBlueGate->minX;
-                if(rightDistance >= 100)
+                // int rightDistance = rightBlueGate->minX;
+                PixelLocation_t trapLoc = {rightBlueGate->minX, rightBlueGate->maxY};
+                Vector3_t worldLoc;
+                convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
+                rightDistance = (int)worldLoc.x * 1000;
+                if(rightDistance >= 140)
                     right = true;
                 else {
-                    walkLeft(5);
+                    walkLeft(140 - rightDistance);
                     right = false;
                     left = false;
                     continue;
@@ -537,13 +566,17 @@ static bool _arrangeDistanceBalance(void) {
 
         if(leftBlueGate != NULL) {
             leftTryCount = 0;
-            int leftDistance = leftBlueGate->maxX;
-            if(leftDistance <= 80) {
+            //int leftDistance = leftBlueGate->maxX;
+            PixelLocation_t trapLoc = {leftDistance->minX, leftDistance->maxY};
+            Vector3_t worldLoc;
+            convertScreenLocationToWorldLocation(&camParameter, &trapLoc, 0, &worldLoc);
+            int leftDistance = (int)worldLoc.x * 1000;
+            if(leftDistance <= -140) {
                 left = true;
                 ing = false;
             }
             else {
-                walkRight(5);
+                walkRight(140 + leftDistance);
                 right = false;
                 left = false;
                 ing = true;
