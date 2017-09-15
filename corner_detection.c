@@ -34,7 +34,8 @@ static bool _moveUntilSeeLine(void);
 static void _moveToDestination(int turnWhere);
 
 bool cornerDetectionMain(void) {
-    int turnWhere = _lookAround();
+    // int turnWhere = _lookAround();
+    int turnWhere = LEFT_SIDE_CLEAR;
 
     _setHeadForward();
 
@@ -135,7 +136,7 @@ static void _setHeadForward(void) {
     setServoSpeed(30);
     runMotion(MOTION_BASIC_STANCE);
     setHead(0, -50);
-    mdelay(1000);
+    mdelay(300);
     resetServoSpeed();
 }
 
