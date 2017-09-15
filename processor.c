@@ -579,11 +579,11 @@ static void _runTest(void) {
     sdelay(3);
     
     // for(int i = 0; i < 5000; ++i) {
-        golfMain();
+        // golfMain();
         cornerDetectionMain();
-        trapMain();
+        // trapMain();
         blueGateMain();
-        horizontalBarricadeMain();
+        // horizontalBarricadeMain();
     // }
 }
 

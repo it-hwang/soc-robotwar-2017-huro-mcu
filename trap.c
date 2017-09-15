@@ -399,6 +399,10 @@ static bool _setPositionOnTrap(void) {
     Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
 
     while(true) {
+        setServoSpeed(30);
+        setHead(0, -35);
+        mdelay(200);
+        
         readFpgaVideoDataWithWhiteBalance(pScreen);
     
         Object_t* pObject = _getLargestYellowObject(pScreen, pLabelMatrix);
