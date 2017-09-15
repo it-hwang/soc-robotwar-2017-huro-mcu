@@ -376,6 +376,12 @@ static bool _searchRedBridge(Screen_t* pInputScreen, Object_t* pOutputObject, Ma
     else
         pObjectList = detectObjectsLocation(pRedMatrix);
     
+    if (pObjectList == NULL) {
+        destroyMatrix8(pRedMatrix);
+        destroyScreen(pScreen);
+        return false;
+    }
+
     removeSmallObjects(pObjectList, MIN_AREA);
 
     // 유사도가 가장 큰 오브젝트를 찾는다.
