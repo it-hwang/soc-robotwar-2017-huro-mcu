@@ -353,10 +353,11 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
 
 static bool _solveBluegate(void) {
 
-    if( _balanceToSolveBlueGate() ) {
-        _passThroughBlueGate();
-    }
-
+    // if( _balanceToSolveBlueGate() ) {
+    //     _passThroughBlueGate();
+    // }
+    checkCenterMain();
+    _passThroughBlueGate();
     return true;
 }
 
