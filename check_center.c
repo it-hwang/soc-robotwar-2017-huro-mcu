@@ -122,25 +122,25 @@ static int _searchLine(void) {
 
 static void _setHeadRight(void) {
     setServoSpeed(30);
-    runMotion(MOTION_CHECK_SIDELINE_STANCE);
     setHead(85, -50);
-    mdelay(1000);
+    runMotion(MOTION_CHECK_SIDELINE_STANCE);
+    mdelay(200);
     resetServoSpeed();
 }
 
 static void _setHeadLeft(void) {
     setServoSpeed(30);
-    runMotion(MOTION_CHECK_SIDELINE_STANCE);
     setHead(-85, -50);
-    mdelay(1000);
+    runMotion(MOTION_CHECK_SIDELINE_STANCE);
+    mdelay(200);
     resetServoSpeed();
 }
 
 static void _setStandardStand(void) {
     setServoSpeed(30);
-    runMotion(MOTION_BASIC_STANCE);
     setHead(0, 0);
-    mdelay(1000);
+    runMotion(MOTION_BASIC_STANCE);
+    mdelay(200);
     resetServoSpeed();
 }
 
@@ -325,18 +325,18 @@ static void _moveForSetDistance(int lineDistanceFromRobot, int headDirection) {
 
 static void _walkDifferentDirection(int headDirection) {
     if(headDirection == HEAD_DIRECTION_RIGHT)
-        walkLeft(5);
+        walkLeft(20);
     else if( headDirection == HEAD_DIRECTION_LEFT)
-        walkRight(5);
+        walkRight(20);
     else
         printDebug("잘못된 매개 변수 값!(%d)\n", headDirection);
 }
 
 static void _walkSameDirection(int headDirection) {
     if(headDirection == HEAD_DIRECTION_RIGHT)
-        walkRight(5);
+        walkRight(20);
     else if( headDirection == HEAD_DIRECTION_LEFT)
-        walkLeft(5);
+        walkLeft(20);
     else 
         printDebug("잘못된 매개 변수 값!(%d)\n", headDirection);
 }
