@@ -277,6 +277,9 @@ static bool _approachRedBridgeDown(void) {
             continue;
 
         Line_t* pLine = findTopLine(&polygon);
+        if (pLine == NULL) {
+            return false;
+        }
         PixelLocation_t screenLoc = { (int)object.centerX, pLine->centerPoint.y };
         Vector3_t worldLoc;
         _convertWorldLoc(&screenLoc, 0.000, &worldLoc);
@@ -342,6 +345,7 @@ static bool _findRedBridge(Object_t* pOutputObject, Polygon_t* pOutputPolygon) {
         return false;
     }
 
+    printDebug("find\n");
     Polygon_t* pPolygon = createPolygon(pLabelMatrix, &object, 8);
     if (pOutputObject)
         memcpy(pOutputObject, &object, sizeof(Object_t));
@@ -351,6 +355,7 @@ static bool _findRedBridge(Object_t* pOutputObject, Polygon_t* pOutputPolygon) {
     destroyPolygon(pPolygon);
     destroyMatrix16(pLabelMatrix);
     destroyScreen(pScreen);
+    printDebug("return\n");
     return true;
 }
 
