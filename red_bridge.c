@@ -281,8 +281,8 @@ static bool _approachRedBridgeDown(void) {
         if (pLine == NULL) {
             return false;
         }
-        //PixelLocation_t screenLoc = { (int)object.centerX, pLine->centerPoint.y };
-        PixelLocation_t screenLoc = { (int)object.centerX, (int)object.minY };
+        PixelLocation_t screenLoc = { (int)object.centerX, pLine->centerPoint.y };
+        //PixelLocation_t screenLoc = { (int)object.centerX, (int)object.minY };
         Vector3_t worldLoc;
         _convertWorldLoc(&screenLoc, 0.000, &worldLoc);
         int dx = worldLoc.x * 1000;

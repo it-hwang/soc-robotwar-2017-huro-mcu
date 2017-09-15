@@ -325,18 +325,22 @@ static void _moveForSetDistance(int lineDistanceFromRobot, int headDirection) {
 
 static void _walkDifferentDirection(int headDirection) {
     if(headDirection == HEAD_DIRECTION_RIGHT)
-        walkLeft(20);
+        // walkLeft(20);
+        runMotion(MOTION_MOVE_LEFT_FAST_30MM);
     else if( headDirection == HEAD_DIRECTION_LEFT)
-        walkRight(20);
+        // walkRight(20);
+        runMotion(MOTION_MOVE_RIGHT_FAST_30MM);
     else
         printDebug("잘못된 매개 변수 값!(%d)\n", headDirection);
 }
 
 static void _walkSameDirection(int headDirection) {
     if(headDirection == HEAD_DIRECTION_RIGHT)
-        walkRight(20);
+        // walkRight(20);
+        runMotion(MOTION_MOVE_RIGHT_FAST_30MM);
     else if( headDirection == HEAD_DIRECTION_LEFT)
-        walkLeft(20);
+        // walkLeft(20);
+        runMotion(MOTION_MOVE_LEFT_FAST_30MM);
     else 
         printDebug("잘못된 매개 변수 값!(%d)\n", headDirection);
 }
