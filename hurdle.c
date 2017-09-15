@@ -113,7 +113,8 @@ static bool _approachHurdle(void) {
     while (distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
         int walkDistance = distance - APPROACH_DISTANCE;
         walkDistance = MIN(walkDistance, APPROACH_MAX_DISTANCE);
-        walkForward(walkDistance);
+        //walkForward(walkDistance);
+        runWalk(ROBOT_WALK_FORWARD_QUICK, 20);
 
         distance = measureHurdleDistance();
     }

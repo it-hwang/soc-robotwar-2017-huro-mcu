@@ -32,6 +32,7 @@
 
 
 static int _count = 0;
+static int _sideCount = 0;
 
 static void _captureScreen(Screen_t* pScreen);
 static void _setHead(int horizontalDegrees, int verticalDegrees);
@@ -135,6 +136,7 @@ static void _captureScreen(Screen_t* pScreen) {
 
     _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
     readFpgaVideoDataWithWhiteBalance(pScreen);
+    _setHead(0, 0);
 }
 
 static void _setHead(int horizontalDegrees, int verticalDegrees) {
@@ -152,7 +154,7 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     setServoSpeed(30);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
-    mdelay(800);
+    mdelay(300);
 }
 
 
@@ -363,7 +365,10 @@ static bool _actForMine(Object_t* pMine) {
             walkDistance = MAX_WALK_FORWARD_DISTANCE;
         printDebug("지뢰가 멀리 있다. 접근하자. (distanceY: %d, walkDistance: %d)\n", __func__, distanceY, walkDistance);
         walkForward(walkDistance);
-        if ((++_count) % 3 == 0) checkCenterMineMain();
+        if ((++_count) % 3 == 0) {
+            checkCenterMineMain();
+        }
+        _sideCount = 0;
         return true;
     }
 
@@ -377,14 +382,20 @@ static bool _actForMine(Object_t* pMine) {
     if (isLeftAligned) {
         printDebug("지뢰 왼쪽 정렬 완료. 달린다. (maxX: %d)\n", __func__, maxX);
         walkForward(34*2);
-        if ((++_count) % 3 == 0) checkCenterMineMain();
+        if ((++_count) % 3 == 0) {
+            checkCenterMineMain();
+        }
+        _sideCount = 0;
         return true;
     }
     bool isRightAligned = (minX >= ALIGN_ROBOT_RIGHT_X - ALIGN_ROBOT_ERROR);
     if (isRightAligned) {
         printDebug("지뢰 오른쪽 정렬 완료. 달린다. (minX: %d)\n", __func__, minX);
         walkForward(34*2);
-        if ((++_count) % 3 == 0) checkCenterMineMain();
+        if ((++_count) % 3 == 0) {
+            checkCenterMineMain();
+        }
+        _sideCount = 0;
         return true;
     }
 
@@ -393,6 +404,10 @@ static bool _actForMine(Object_t* pMine) {
         printDebug("지뢰가 왼쪽에 있다. 오른쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
         _setHead(0, 0);
         walkRight(walkDistance);
+        if ((++_sideCount) % 5 == 0) {
+            walkForward(34*4);
+            if ((++_count) % 5 == 0) checkCenterMineMain();
+        }
         return true;
     }
     else if (centerX > ALIGN_STANDARD_RIGHT_X) {
@@ -400,6 +415,10 @@ static bool _actForMine(Object_t* pMine) {
         printDebug("지뢰가 오른쪽에 있다. 왼쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
         _setHead(0, 0);
         walkLeft(walkDistance);
+        if ((++_sideCount) % 5 == 0) {
+            walkForward(34*4);
+            if ((++_count) % 5 == 0) checkCenterMineMain();
+        }
         return true;
     }
     else {
@@ -410,6 +429,11 @@ static bool _actForMine(Object_t* pMine) {
             walkLeft(walkDistance * -1);
         else
             walkRight(walkDistance);
+        
+        if ((++_sideCount) % 5 == 0) {
+            walkForward(34*4);
+            if ((++_count) % 5 == 0) checkCenterMineMain();
+        }
         return true;
     }
 }

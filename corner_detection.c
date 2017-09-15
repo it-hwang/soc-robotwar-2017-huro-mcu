@@ -57,6 +57,9 @@ bool cornerDetectionMain(void) {
 
     _moveToDestination(turnWhere);
 
+    checkCenterMain();
+    runWalk(ROBOT_WALK_FORWARD, 4);
+
     return true;
 }
 

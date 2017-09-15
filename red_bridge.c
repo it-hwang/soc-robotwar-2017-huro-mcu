@@ -99,7 +99,7 @@ static bool _approachRedBridge(void) {
     // 좌우 정렬 허용 오차 (밀리미터)
     static const int ALIGN_DISTANCE_ERROR = 100;
     // 장애물에 다가갈 거리 (밀리미터)
-    static const int APPROACH_DISTANCE = 30;
+    static const int APPROACH_DISTANCE = 70;
     // 장애물에 최대로 다가갈 거리 (밀리미터)
     static const int APPROACH_MAX_WALK_DISTANCE = 300;
     // 거리 허용 오차 (밀리미터)
@@ -253,7 +253,7 @@ static bool _approachRedBridgeDown(void) {
     // 좌우 정렬 허용 오차 (밀리미터)
     static const int ALIGN_DISTANCE_ERROR = 40;
     // 장애물에 다가갈 거리 (밀리미터)
-    static const int APPROACH_DISTANCE = 40;
+    static const int APPROACH_DISTANCE = 45;
     // 장애물에 최대로 다가갈 거리 (밀리미터)
     static const int APPROACH_MAX_WALK_DISTANCE = 34 * 9;
     // 거리 허용 오차 (밀리미터)
