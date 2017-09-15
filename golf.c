@@ -401,7 +401,7 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     setServoSpeed(30);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
-    mdelay(800);
+    mdelay(200);
 }
 
 static bool _turnLeft(int degrees) {
