@@ -63,7 +63,7 @@ static void _defineObstacle(void) {
 	registerObstacle(OBSTACLE_BLUE_GATE, blueGateMain);
 	registerObstacle(OBSTACLE_GREEN_BRIDGE, greenBridgeMain);
 	registerObstacle(OBSTACLE_GOLF, golfMain);
-	//registerObstacle(OBSTACLE_TRAP, trapMain);
+	registerObstacle(OBSTACLE_TRAP, trapMain);
 	registerObstacle(OBSTACLE_HORIZONTAL_BARRICADE, horizontalBarricadeMain);
 }
 
