@@ -85,7 +85,7 @@ int measureHurdleDistance(void) {
 
 bool solveHurdle(void) {
     _approachHurdle();
-    runWalk(ROBOT_WALK_FORWARD_QUICK, 20);
+    runWalk(ROBOT_WALK_FORWARD_QUICK, 6);
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
     mdelay(500);
 

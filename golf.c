@@ -35,6 +35,8 @@ static void _setHead(int horizontalDegrees, int verticalDegrees);
 static bool _turnLeft(int degrees);
 static bool _turnRight(int degrees);
 static void _drawColorMatrixAdditive(Screen_t* pScreen, Matrix8_t* pColorMatrix);
+static bool _turnLeftSmall(int degrees);
+static bool _turnRightSmall(int degrees);
 
 
 bool golfMain(void) {
@@ -130,8 +132,8 @@ static bool _aimToHole(void) {
         _walkToLocation(&targetLoc, APPROACH_ERROR_X, APPROACH_ERROR_Y);
 
         if (fabs(facing) > APPROACH_ERROR_ANGLE) {
-            if (facing > 0) _turnLeft(fabs(facing));
-            else _turnRight(fabs(facing));
+            if (facing > 0) _turnLeftSmall(fabs(facing));
+            else _turnRightSmall(fabs(facing));
         }
     }
     printLog("[%s] timeout.\n", __func__);
@@ -456,4 +458,38 @@ static void _drawColorMatrixAdditive(Screen_t* pScreen, Matrix8_t* pColorMatrix)
         pScreenPixel++;
         pColorPixel++;
     }
+}
+
+static bool _turnLeftSmall(int degrees) {
+    if (degrees < 5) {
+        degrees = 5;
+    }
+
+    float remainingDegrees = degrees;
+
+    int nSteps;
+    nSteps = remainingDegrees / 4.5;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_LEFT_4DEG);
+        remainingDegrees -= 4.5;
+    }
+
+    return true;
+}
+
+static bool _turnRightSmall(int degrees) {
+    if (degrees < 5) {
+        degrees = 5;
+    }
+
+    float remainingDegrees = degrees;
+
+    int nSteps;
+    nSteps = remainingDegrees / 4.5;
+    for (int i = 0; i < nSteps; ++i) {
+        runMotion(MOTION_TURN_RIGHT_4DEG);
+        remainingDegrees -= 4.5;
+    }
+    
+    return true;
 }

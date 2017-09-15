@@ -351,7 +351,7 @@ static bool _actForMine(Object_t* pMine) {
     static const int ALIGN_ROBOT_RIGHT_X    = 136;
     static const int ALIGN_ROBOT_ERROR      = 3;
     
-    static const float _MILLIMETERS_PER_PIXEL = 2.;
+    static const float _MILLIMETERS_PER_PIXEL = 2.5;
     
     int distanceY = _calculateObjectDistance(pMine);
     int centerX = pMine->centerX;
@@ -359,7 +359,9 @@ static bool _actForMine(Object_t* pMine) {
     int maxX = pMine->maxX;
 
     bool isFar = (distanceY > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR);
-    if (isFar) {
+    bool isLeftAligned = (maxX <= ALIGN_ROBOT_LEFT_X + ALIGN_ROBOT_ERROR);
+    bool isRightAligned = (minX >= ALIGN_ROBOT_RIGHT_X - ALIGN_ROBOT_ERROR);
+    if (isFar && !isLeftAligned && !isRightAligned) {
         int walkDistance = distanceY - APPROACH_DISTANCE;
         if (walkDistance > MAX_WALK_FORWARD_DISTANCE)
             walkDistance = MAX_WALK_FORWARD_DISTANCE;
@@ -378,7 +380,6 @@ static bool _actForMine(Object_t* pMine) {
     //     runMotion(MOTION_MINE_WALK);
     //     return true;
     // }
-    bool isLeftAligned = (maxX <= ALIGN_ROBOT_LEFT_X + ALIGN_ROBOT_ERROR);
     if (isLeftAligned) {
         printDebug("지뢰 왼쪽 정렬 완료. 달린다. (maxX: %d)\n", __func__, maxX);
         walkForward(34*2);
@@ -388,7 +389,6 @@ static bool _actForMine(Object_t* pMine) {
         _sideCount = 0;
         return true;
     }
-    bool isRightAligned = (minX >= ALIGN_ROBOT_RIGHT_X - ALIGN_ROBOT_ERROR);
     if (isRightAligned) {
         printDebug("지뢰 오른쪽 정렬 완료. 달린다. (minX: %d)\n", __func__, minX);
         walkForward(34*2);

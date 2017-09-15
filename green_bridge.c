@@ -66,8 +66,6 @@ int measureGreenBridgeDistance(void) {
 
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoDataWithWhiteBalance(pScreen);
-    _setHead(0, 0);
-    
 
     Object_t object;
     bool hasFound = _searchGreenBridge(pScreen, &object, NULL);
@@ -124,6 +122,7 @@ static bool _approachUpStair(void) {
         
         // 앞뒤 정렬
         int distance = measureGreenBridgeDistance();
+        _setHead(0, 0);
         hasFound = (distance != 0);
         if (!hasFound)
             continue;
@@ -169,6 +168,7 @@ static bool _approachUpStair(void) {
         
         // 좌우 정렬
         int offsetX = _measureGreenBridgeCenterOffsetX();
+        _setHead(0, 0);
         if (offsetX < ALIGN_OFFSET_X * -1) {
             int millimeters = abs(offsetX) * MILLIMETERS_PER_PIXELS;
             printDebug("offsetX: %d, Go left.\n", offsetX);
@@ -353,10 +353,12 @@ static bool _approachDownStair(void) {
 
 static bool _climbDownStair(void) {
     _setHead(0, 0);
+    mdelay(1000);
     runMotion(MOTION_CLIMB_DOWN_STAIR);
 
     checkCenterMain();
-    runWalk(ROBOT_WALK_FORWARD, 4);
+    //runWalk(ROBOT_WALK_FORWARD, 4);
+    walkForward(34 * 6);
 
     return true;
 }
@@ -407,7 +409,6 @@ static int _measureGreenBridgeCenterOffsetX(void) {
 
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoDataWithWhiteBalance(pScreen);
-    _setHead(0, 0);
 
     Object_t object;
     bool hasFound = _searchGreenBridge(pScreen, &object, NULL);

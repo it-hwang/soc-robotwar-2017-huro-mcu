@@ -77,7 +77,7 @@ int measureRedBridgeDistance(void) {
 bool solveRedBridge(void) {
     _approachRedBridge();
     _walkForwardQuickly(240);
-    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 2);
     _approachRedBridgeUp();
     _climbUp();
     _approachRedBridgeDown();
@@ -237,6 +237,7 @@ static bool _approachRedBridgeUp(void) {
 static bool _climbUp(void) {
     runMotion(MOTION_CLIMB_UP_RED_BRIDGE);
     runMotion(MOTION_BASIC_STANCE);
+    mdelay(2000);
     return true;
 }
 
@@ -250,7 +251,7 @@ static bool _approachRedBridgeDown(void) {
     static const int MAX_TRIES = 2;
 
     // 각도 정렬 허용 오차 (도)
-    static const double ALIGN_ANGLE_ERROR = 3.;
+    static const double ALIGN_ANGLE_ERROR = 8.;
     // 좌우 정렬 허용 오차 (밀리미터)
     static const int ALIGN_DISTANCE_ERROR = 40;
     // 장애물에 다가갈 거리 (밀리미터)
@@ -269,7 +270,6 @@ static bool _approachRedBridgeDown(void) {
         for (int i = 0; i < NUMBER_OF_HEAD_DEGREES; ++i) {
             _setHead(HEAD_HORIZONTAL_DEGREES[i], HEAD_VERTICAL_DEGREES[i]);
 
-            mdelay(400);
             hasFound = _findRedBridge(&object, &polygon);
             if (hasFound && object.minY > 0)
                 break; 
@@ -281,7 +281,8 @@ static bool _approachRedBridgeDown(void) {
         if (pLine == NULL) {
             return false;
         }
-        PixelLocation_t screenLoc = { (int)object.centerX, pLine->centerPoint.y };
+        //PixelLocation_t screenLoc = { (int)object.centerX, pLine->centerPoint.y };
+        PixelLocation_t screenLoc = { (int)object.centerX, (int)object.minY };
         Vector3_t worldLoc;
         _convertWorldLoc(&screenLoc, 0.000, &worldLoc);
         int dx = worldLoc.x * 1000;
@@ -314,7 +315,7 @@ static bool _approachRedBridgeDown(void) {
             walkDistance = MIN(walkDistance, APPROACH_MAX_WALK_DISTANCE);
             _setHead(0, 0);
             walkForward(walkDistance);
-            mdelay(200);
+            mdelay(400);
             nTries = 0;
             //if (walkDistance < APPROACH_MAX_WALK_DISTANCE)
                 return true;
