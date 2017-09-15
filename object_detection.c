@@ -69,6 +69,7 @@ ObjectList_t* _detectObjectsLocation(Matrix8_t* pMatrix,
                     ++lastLabel;
 
                     if (lastLabel > _LABEL_SIZE) {
+                        printLog("[obj_det] out of index!\n");
                         destroyMatrix16(pLabelMatrix);
                         free(labelLocationInfo);
                         free(labelCntList);
