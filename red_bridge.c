@@ -17,6 +17,7 @@
 #include "polygon_detection.h"
 #include "camera.h"
 #include "line_detection.h"
+#include "check_center.h"
 #include "math.h"
 #include "log.h"
 #include "debug.h"
@@ -75,7 +76,7 @@ int measureRedBridgeDistance(void) {
 
 bool solveRedBridge(void) {
     _approachRedBridge();
-    _walkForwardQuickly(160);
+    _walkForwardQuickly(240);
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
     _approachRedBridgeUp();
     _climbUp();
@@ -99,7 +100,7 @@ static bool _approachRedBridge(void) {
     // 좌우 정렬 허용 오차 (밀리미터)
     static const int ALIGN_DISTANCE_ERROR = 100;
     // 장애물에 다가갈 거리 (밀리미터)
-    static const int APPROACH_DISTANCE = 30;
+    static const int APPROACH_DISTANCE = 70;
     // 장애물에 최대로 다가갈 거리 (밀리미터)
     static const int APPROACH_MAX_WALK_DISTANCE = 300;
     // 거리 허용 오차 (밀리미터)
@@ -253,9 +254,9 @@ static bool _approachRedBridgeDown(void) {
     // 좌우 정렬 허용 오차 (밀리미터)
     static const int ALIGN_DISTANCE_ERROR = 40;
     // 장애물에 다가갈 거리 (밀리미터)
-    static const int APPROACH_DISTANCE = 40;
+    static const int APPROACH_DISTANCE = 45;
     // 장애물에 최대로 다가갈 거리 (밀리미터)
-    static const int APPROACH_MAX_WALK_DISTANCE = 272;
+    static const int APPROACH_MAX_WALK_DISTANCE = 34 * 9;
     // 거리 허용 오차 (밀리미터)
     static const int APPROACH_DISTANCE_ERROR = 10;
     
@@ -268,7 +269,7 @@ static bool _approachRedBridgeDown(void) {
         for (int i = 0; i < NUMBER_OF_HEAD_DEGREES; ++i) {
             _setHead(HEAD_HORIZONTAL_DEGREES[i], HEAD_VERTICAL_DEGREES[i]);
 
-            mdelay(200);
+            mdelay(400);
             hasFound = _findRedBridge(&object, &polygon);
             if (hasFound && object.minY > 0)
                 break; 
@@ -277,6 +278,9 @@ static bool _approachRedBridgeDown(void) {
             continue;
 
         Line_t* pLine = findTopLine(&polygon);
+        if (pLine == NULL) {
+            return false;
+        }
         PixelLocation_t screenLoc = { (int)object.centerX, pLine->centerPoint.y };
         Vector3_t worldLoc;
         _convertWorldLoc(&screenLoc, 0.000, &worldLoc);
@@ -312,9 +316,9 @@ static bool _approachRedBridgeDown(void) {
             walkForward(walkDistance);
             mdelay(200);
             nTries = 0;
-            if (walkDistance < APPROACH_MAX_WALK_DISTANCE)
+            //if (walkDistance < APPROACH_MAX_WALK_DISTANCE)
                 return true;
-            continue;
+            //continue;
         }
 
         return true;
@@ -342,6 +346,7 @@ static bool _findRedBridge(Object_t* pOutputObject, Polygon_t* pOutputPolygon) {
         return false;
     }
 
+    printDebug("find\n");
     Polygon_t* pPolygon = createPolygon(pLabelMatrix, &object, 8);
     if (pOutputObject)
         memcpy(pOutputObject, &object, sizeof(Object_t));
@@ -351,6 +356,7 @@ static bool _findRedBridge(Object_t* pOutputObject, Polygon_t* pOutputPolygon) {
     destroyPolygon(pPolygon);
     destroyMatrix16(pLabelMatrix);
     destroyScreen(pScreen);
+    printDebug("return\n");
     return true;
 }
 
@@ -376,6 +382,12 @@ static bool _searchRedBridge(Screen_t* pInputScreen, Object_t* pOutputObject, Ma
     else
         pObjectList = detectObjectsLocation(pRedMatrix);
     
+    if (pObjectList == NULL) {
+        destroyMatrix8(pRedMatrix);
+        destroyScreen(pScreen);
+        return false;
+    }
+
     removeSmallObjects(pObjectList, MIN_AREA);
 
     // 유사도가 가장 큰 오브젝트를 찾는다.

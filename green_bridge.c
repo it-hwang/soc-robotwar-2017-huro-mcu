@@ -14,6 +14,7 @@
 #include "polygon_detection.h"
 #include "line_detection.h"
 #include "camera.h"
+#include "math.h"
 #include "log.h"
 #include "debug.h"
 
@@ -111,6 +112,8 @@ static bool _approachUpStair(void) {
 
     const int ALIGN_OFFSET_X = 4;
     const double MILLIMETERS_PER_PIXELS = 2.5;
+
+    const int APPROACH_MAX_DISTANCE = 300;
     
     int nTries;
     for (nTries = 0; nTries < MAX_TRIES; ++nTries) {
@@ -124,7 +127,9 @@ static bool _approachUpStair(void) {
         
         if (distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
             printDebug("전진보행으로 이동하자. (거리: %d)\n", distance);
-            walkForward(distance - APPROACH_DISTANCE);
+            int walkDistance = distance - APPROACH_DISTANCE;
+            walkDistance = MIN(walkDistance, APPROACH_MAX_DISTANCE);
+            walkForward(walkDistance);
             mdelay(300);
             nTries = 0;
             continue;
@@ -205,7 +210,7 @@ static bool _crossGreenBridge(void) {
     const int HEAD_HORIZONTAL_DEGREES = 0;
     const int HEAD_VERTICAL_DEGREES = -80;
 
-    const double MILLIMETERS_PER_PIXELS = 1.;
+    const double MILLIMETERS_PER_PIXELS = 2.5;
     // 각도 허용 오차 (도)
     const double ALIGN_FACING_ERROR = 5.;
     // 좌우 정렬 허용 오차 (밀리미터)
@@ -283,11 +288,11 @@ static bool _approachDownStair(void) {
     // 최대 회전 각도 (도)
     const double ALIGN_TURN_DEGREES_LIMIT = 20.;
     // 전진보행 접근 거리 (밀리미터)
-    const double APPROACH_DISTANCE = 0.;
+    const double APPROACH_DISTANCE = 5.;
     // 전진보행 허용 오차 (밀리미터)
     const double APPROACH_DISTANCE_ERROR = 0.;
     // 전진보행으로 갈 수 있는 최대 제한 거리 (밀리미터)
-    const double APPROACH_WALK_DISTANCE_LIMIT = 150.;
+    const double APPROACH_WALK_DISTANCE_LIMIT = 34 * 2;
     // 브라켓이 가려서 영상에서 최대한 달라붙어도 10mm 오차가 생긴다. 때문에 접근할 때 10mm 더 간다.
     const double APPROACH_ADD_WALK_DISTANCE = 10.;
 
@@ -298,6 +303,7 @@ static bool _approachDownStair(void) {
         Object_t blackLine;
         
         _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
+        mdelay(500);
         readFpgaVideoDataWithWhiteBalance(pScreen);
 
         bool isOnStair = _searchBlackLine(pScreen, &blackLine, pLabelMatrix);
@@ -335,7 +341,17 @@ static bool _approachDownStair(void) {
 
 static bool _climbDownStair(void) {
     _setHead(0, 0);
-    return runMotion(MOTION_CLIMB_DOWN_STAIR);
+    runMotion(MOTION_CLIMB_DOWN_STAIR);
+
+    Screen_t* pScreen = createDefaultScreen();
+    readFpgaVideoDataWithWhiteBalance(pScreen);
+    displayScreen(pScreen);
+    destroyScreen(pScreen);
+    pScreen = NULL;
+    checkCenterMain();
+    runWalk(ROBOT_WALK_FORWARD, 4);
+
+    return true;
 }
 
 

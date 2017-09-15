@@ -93,12 +93,13 @@ static bool _aimToHole(void) {
     const double APPROACH_ERROR_X = 0.010;
     const double APPROACH_ERROR_Y = 0.010;
     const double APPROACH_ERROR_ANGLE = 5.;    // degrees
-    const double APPROACH_MAX_DISTANCE = 0.200;
+    const double APPROACH_MAX_DISTANCE = 0.050;
 
     Vector3_t ballLoc;
     Vector3_t holeLoc;
 
     for (int i = 0; i < MAX_TRIES; ++i) {
+        mdelay(500);
         bool hasFound = _findObjects(&ballLoc, &holeLoc, false);
         if (!hasFound) {
             printLog("[%s] Failed.\n", __func__);
@@ -369,7 +370,7 @@ static double _getGolfBallCorrelation(Matrix16_t* pLabelMatrix, Object_t* pObjec
 
 // TODO: 함수를 제대로 구현해야한다.
 static double _getGolfHoleCorrelation(Matrix16_t* pLabelMatrix, Object_t* pObject) {
-    const double MAX_DENSITY    = 0.50;
+    const double MAX_DENSITY    = 0.80;
     const int    MIN_COUNT      = 20;
 
     if (pObject->cnt < MIN_COUNT) return 0.;
@@ -401,7 +402,7 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     setServoSpeed(30);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
-    mdelay(800);
+    mdelay(200);
 }
 
 static bool _turnLeft(int degrees) {

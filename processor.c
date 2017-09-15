@@ -63,7 +63,7 @@ static void _defineObstacle(void) {
 	registerObstacle(OBSTACLE_BLUE_GATE, blueGateMain);
 	registerObstacle(OBSTACLE_GREEN_BRIDGE, greenBridgeMain);
 	registerObstacle(OBSTACLE_GOLF, golfMain);
-	//registerObstacle(OBSTACLE_TRAP, trapMain);
+	registerObstacle(OBSTACLE_TRAP, trapMain);
 	registerObstacle(OBSTACLE_HORIZONTAL_BARRICADE, horizontalBarricadeMain);
 }
 
@@ -410,6 +410,7 @@ static void _testColorTable(void) {
     printf("5. COLOR_BLUE\n");
     printf("6. COLOR_YELLOW\n");
     printf("7. COLOR_ORANGE\n");
+    printf("8. COLOR_BLACK2\n");
     printf(">> ");
     scanf("%d", &color);
 
@@ -578,7 +579,11 @@ static void _runTest(void) {
     sdelay(3);
     
     // for(int i = 0; i < 5000; ++i) {
+        golfMain();
+        cornerDetectionMain();
         trapMain();
+        blueGateMain();
+        horizontalBarricadeMain();
     // }
 }
 
