@@ -17,6 +17,7 @@ enum {
     COLOR_BLUE,
     COLOR_YELLOW,
     COLOR_ORANGE,
+    COLOR_BLACK2,
     MAX_COLOR
 };
 typedef uint8_t Color_t;

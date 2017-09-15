@@ -17,6 +17,7 @@
 #include "polygon_detection.h"
 #include "camera.h"
 #include "line_detection.h"
+#include "check_center.h"
 #include "math.h"
 #include "log.h"
 #include "debug.h"

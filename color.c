@@ -191,6 +191,37 @@ Color_t _convertBlackColorV2(PixelData_t pixelData) {
 }
 
 // y=1/x 함수 형태
+Color_t _convertBlack2ColorV1(PixelData_t pixelData) {
+    uint16_t rgab5515Data = pixelData;
+    Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
+    if (pRgab5515->a == 0) return COLOR_NONE;
+
+    float h;    // hue
+    float s;    // saturation
+    float v;    // value
+    _calculateHSV(pixelData, &h, &s, &v);
+
+    // i > ((a / (s - b)) + c)
+    //float a = 0.04;
+    //float b = 0.18;
+    //float c = 0.14;
+    float a = 0.02;
+    float b = -0.86;
+    float c = 0.42;
+
+    bool isGray = false;
+    if (s <= b)
+        isGray = true;
+    else if (v <= (a / (s - b)) + c)
+        isGray = true;
+
+    if (isGray && v < 0.40)
+        return COLOR_BLACK;
+
+    return COLOR_NONE;
+}
+
+// y=1/x 함수 형태
 Color_t _convertWhiteColorV1(PixelData_t pixelData) {
     uint16_t rgab5515Data = pixelData;
     Rgab5515_t* pRgab5515 = (Rgab5515_t*)&rgab5515Data;
@@ -595,6 +626,8 @@ void initializeColor(void) {
     //     _convertOrangeColorV2, false);
     pColorTables[COLOR_ORANGE] = _createColorTable("./data/orange_v3.lut",
         _convertOrangeColorV3, false);
+    pColorTables[COLOR_BLACK2] = _createColorTable("./data/black2_v1.lut",
+        _convertBlack2ColorV1, false);
 
     uint32_t length;
     length = pow(2, sizeof(PixelData_t) * 8);
@@ -618,6 +651,7 @@ void finalizeColor(void) {
     _destroyColorTable(pColorTables[COLOR_BLUE]);
     _destroyColorTable(pColorTables[COLOR_YELLOW]);
     _destroyColorTable(pColorTables[COLOR_ORANGE]);
+    _destroyColorTable(pColorTables[COLOR_BLACK2]);
     destroyLookUpTable16(pRgab5515Table);
     destroyLookUpTable8(pGrayScaleTable);
 }

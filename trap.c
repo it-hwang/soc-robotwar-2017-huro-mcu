@@ -14,6 +14,7 @@
 #include "object_detection.h"
 #include "line_detection.h"
 #include "polygon_detection.h"
+#include "check_center.h"
 #include "boundary.h"
 #include "color.h"
 #include "camera.h"
@@ -299,7 +300,7 @@ static Matrix8_t* _createBlackMatrix(Screen_t* pScreen) {
 }
 
 static Matrix8_t* _createBlackMatrix2(Screen_t* pScreen) {
-    Matrix8_t* pBlackMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLACK]);
+    Matrix8_t* pBlackMatrix = createColorMatrix(pScreen, pColorTables[COLOR_BLACK2]);
     
     // applyFastErosionToMatrix8(pBlackMatrix, 1);
     applyFastDilationToMatrix8(pBlackMatrix, 1);
@@ -389,7 +390,7 @@ static bool _climbUpTrap(void) {
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
     setHead(0, 0);
     runMotion(MOTION_CLIMB_UP_TRAP);
-    return runWalk(ROBOT_WALK_FORWARD, 1);
+    return runWalk(ROBOT_WALK_FORWARD, 2);
 }
 
 static bool _setPositionOnTrap(void) {

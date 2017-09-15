@@ -370,7 +370,7 @@ static double _getGolfBallCorrelation(Matrix16_t* pLabelMatrix, Object_t* pObjec
 
 // TODO: 함수를 제대로 구현해야한다.
 static double _getGolfHoleCorrelation(Matrix16_t* pLabelMatrix, Object_t* pObject) {
-    const double MAX_DENSITY    = 0.50;
+    const double MAX_DENSITY    = 0.80;
     const int    MIN_COUNT      = 20;
 
     if (pObject->cnt < MIN_COUNT) return 0.;

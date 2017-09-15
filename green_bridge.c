@@ -288,7 +288,7 @@ static bool _approachDownStair(void) {
     // 최대 회전 각도 (도)
     const double ALIGN_TURN_DEGREES_LIMIT = 20.;
     // 전진보행 접근 거리 (밀리미터)
-    const double APPROACH_DISTANCE = 0.;
+    const double APPROACH_DISTANCE = 5.;
     // 전진보행 허용 오차 (밀리미터)
     const double APPROACH_DISTANCE_ERROR = 0.;
     // 전진보행으로 갈 수 있는 최대 제한 거리 (밀리미터)

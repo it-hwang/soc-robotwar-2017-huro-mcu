@@ -410,6 +410,7 @@ static void _testColorTable(void) {
     printf("5. COLOR_BLUE\n");
     printf("6. COLOR_YELLOW\n");
     printf("7. COLOR_ORANGE\n");
+    printf("8. COLOR_BLACK2\n");
     printf(">> ");
     scanf("%d", &color);
 
