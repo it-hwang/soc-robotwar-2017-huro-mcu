@@ -75,7 +75,7 @@ int measureRedBridgeDistance(void) {
 
 bool solveRedBridge(void) {
     _approachRedBridge();
-    _walkForwardQuickly(160);
+    _walkForwardQuickly(240);
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
     _approachRedBridgeUp();
     _climbUp();
@@ -255,7 +255,7 @@ static bool _approachRedBridgeDown(void) {
     // 장애물에 다가갈 거리 (밀리미터)
     static const int APPROACH_DISTANCE = 40;
     // 장애물에 최대로 다가갈 거리 (밀리미터)
-    static const int APPROACH_MAX_WALK_DISTANCE = 272;
+    static const int APPROACH_MAX_WALK_DISTANCE = 34 * 9;
     // 거리 허용 오차 (밀리미터)
     static const int APPROACH_DISTANCE_ERROR = 10;
     
@@ -268,7 +268,7 @@ static bool _approachRedBridgeDown(void) {
         for (int i = 0; i < NUMBER_OF_HEAD_DEGREES; ++i) {
             _setHead(HEAD_HORIZONTAL_DEGREES[i], HEAD_VERTICAL_DEGREES[i]);
 
-            mdelay(200);
+            mdelay(400);
             hasFound = _findRedBridge(&object, &polygon);
             if (hasFound && object.minY > 0)
                 break; 
@@ -315,9 +315,9 @@ static bool _approachRedBridgeDown(void) {
             walkForward(walkDistance);
             mdelay(200);
             nTries = 0;
-            if (walkDistance < APPROACH_MAX_WALK_DISTANCE)
+            //if (walkDistance < APPROACH_MAX_WALK_DISTANCE)
                 return true;
-            continue;
+            //continue;
         }
 
         return true;
