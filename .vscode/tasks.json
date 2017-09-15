@@ -1,0 +1,117 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "taskName": "build",
+            "command": "${config:cygwin.home}\\bin\\env.exe CHERE_INVOKING=1 ${config:cygwin.home}\\bin\\bash.exe -lc \"make\"",
+            "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "taskName": "clean build",
+            "command": "${config:cygwin.home}\\bin\\env.exe CHERE_INVOKING=1 ${config:cygwin.home}\\bin\\bash.exe -lc \"make clean\"",
+            "type": "shell",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "taskName": "download",
+            "command": "${config:cygwin.home}\\bin\\env.exe CHERE_INVOKING=1 ${config:cygwin.home}\\bin\\bash.exe -lc \"./tools/download.sh ${config:serial.port} ${config:serial.speed}\"",
+            "type": "shell",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "taskName": "run",
+            "command": "${config:cygwin.home}\\bin\\env.exe CHERE_INVOKING=1 ${config:cygwin.home}\\bin\\bash.exe -lc \"./tools/launch.sh ${config:serial.port} ${config:serial.speed}\"",
+            "type": "shell",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "taskName": "download & run",
+            "command": "${config:cygwin.home}\\bin\\env.exe CHERE_INVOKING=1 ${config:cygwin.home}\\bin\\bash.exe -lc \"./tools/download.sh ${config:serial.port} ${config:serial.speed} && ./tools/launch.sh ${config:serial.port} ${config:serial.speed}\"",
+            "type": "shell",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "taskName": "build & download & run",
+            "command": "${config:cygwin.home}\\bin\\env.exe CHERE_INVOKING=1 ${config:cygwin.home}\\bin\\bash.exe -lc \"make && ./tools/download.sh ${config:serial.port} ${config:serial.speed} && ./tools/launch.sh ${config:serial.port} ${config:serial.speed}\"",
+            "type": "shell",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "taskName": "open terminal",
+            "command": ".\\tools\\putty.exe",
+            "type": "shell",
+            "args": [
+                "-serial ${config:serial.port}",
+                "-sercfg ${config:serial.speed},8,n,1,N"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        }
+    ]
+}

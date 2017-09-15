@@ -1,0 +1,5 @@
+# ignore build outputs.
+*.o
+*.dbg
+*.elf
+main
