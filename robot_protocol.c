@@ -191,6 +191,20 @@ bool walkForward(int millimeters) {
     return true;
 }
 
+bool walkForwardQuickly(int millimeters) {
+    const int WALK_FORWARD_QUICK_DISTANCE_PER_STEP = 12;
+
+    setServoSpeed(30);
+    setHead(0, 0);
+
+    int nSteps = millimeters / WALK_FORWARD_QUICK_DISTANCE_PER_STEP;
+    if (nSteps < 1) nSteps = 1;
+
+    runWalk(ROBOT_WALK_FORWARD_QUICK, nSteps);
+
+    return true;
+}
+
 bool walkBackward(int millimeters) {
     if (millimeters > 35)
         runWalk(ROBOT_WALK_BACKWARD, millimeters / 35);

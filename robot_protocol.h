@@ -81,6 +81,7 @@ void setHead(int horizontalDegrees, int verticalDegrees);
 
 bool runWalk(uint8_t walkId, uint8_t steps);
 bool walkForward(int millimeters);
+bool walkForwardQuickly(int millimeters);
 bool walkBackward(int millimeters);
 bool walkLeft(int millimeters);
 bool walkRight(int millimeters);

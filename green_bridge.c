@@ -13,6 +13,7 @@
 #include "object_detection.h"
 #include "polygon_detection.h"
 #include "line_detection.h"
+#include "check_center.h"
 #include "camera.h"
 #include "math.h"
 #include "log.h"
@@ -65,6 +66,8 @@ int measureGreenBridgeDistance(void) {
 
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoDataWithWhiteBalance(pScreen);
+    _setHead(0, 0);
+    
 
     Object_t object;
     bool hasFound = _searchGreenBridge(pScreen, &object, NULL);
@@ -110,7 +113,7 @@ static bool _approachUpStair(void) {
     // 거리 허용 오차 (밀리미터)
     const int APPROACH_DISTANCE_ERROR = 30;
 
-    const int ALIGN_OFFSET_X = 4;
+    const int ALIGN_OFFSET_X = 8;
     const double MILLIMETERS_PER_PIXELS = 2.5;
 
     const int APPROACH_MAX_DISTANCE = 300;
@@ -129,7 +132,7 @@ static bool _approachUpStair(void) {
             printDebug("전진보행으로 이동하자. (거리: %d)\n", distance);
             int walkDistance = distance - APPROACH_DISTANCE;
             walkDistance = MIN(walkDistance, APPROACH_MAX_DISTANCE);
-            walkForward(walkDistance);
+            walkForwardQuickly(walkDistance);
             mdelay(300);
             nTries = 0;
             continue;
@@ -144,7 +147,7 @@ static bool _approachUpStair(void) {
     }
     
     // 달라붙어 비비기
-    runWalk(ROBOT_WALK_FORWARD_QUICK, 12);
+    walkForwardQuickly(80);
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
 
     for (nTries = 0; nTries < MAX_TRIES; ++nTries) {
@@ -191,7 +194,8 @@ static bool _approachUpStair(void) {
         return false;
     }
     
-    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+    _setHead(0, 0);
+    runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 2);
     
     return true;
 }
@@ -200,7 +204,7 @@ static bool _approachUpStair(void) {
 static bool _climbUpStair(void) {
     _setHead(0, 0);
     bool isSuccess = runMotion(MOTION_CLIMB_UP_STAIR);
-    runWalk(ROBOT_WALK_FORWARD, 1);
+    runWalk(ROBOT_WALK_FORWARD, 2);
     return isSuccess;
 }
 
@@ -208,17 +212,18 @@ static bool _climbUpStair(void) {
 static bool _crossGreenBridge(void) {
     // 거리 측정에 사용되는 머리 각도
     const int HEAD_HORIZONTAL_DEGREES = 0;
-    const int HEAD_VERTICAL_DEGREES = -80;
+    const int HEAD_VERTICAL_DEGREES = -70;
 
-    const double MILLIMETERS_PER_PIXELS = 2.5;
+    const double MILLIMETERS_PER_PIXELS = 3.;
     // 각도 허용 오차 (도)
     const double ALIGN_FACING_ERROR = 5.;
     // 좌우 정렬 허용 오차 (밀리미터)
-    const double ALIGN_CENTER_X_ERROR = 5.;
+    const double ALIGN_CENTER_X_ERROR = 15.;
     // 각도 정렬 제한 회전 각도 (도)
     const double ALIGN_TURN_DEGREES_LIMIT = 20.;
     // 좌우 정렬 제한 이동 거리 (밀리미터)
     const double ALIGN_WALK_DISTANCE_LIMIT = 30.;
+    const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
 
 
     Screen_t* pScreen = createDefaultScreen();
@@ -234,18 +239,25 @@ static bool _crossGreenBridge(void) {
         bool isOnBridge = _searchGreenBridge(pScreen, &bridge, pLabelMatrix);
         if (!isOnBridge)
             break;
+        printDebug("minX: %d, centerX: %f, maxX: %d, minY: %d, centerY: %f, maxY: %d\n", bridge.minX, bridge.centerX, bridge.maxX, bridge.minY, bridge.centerY, bridge.maxY);
+            
 
         bool isEndOfBridge = (bridge.minY > pScreen->height * 0.3);
         if (isEndOfBridge)
             break;
 
         CameraParameters_t camParams;
-        readCameraParameters(&camParams, NULL);
-        int screenCenterX = (int)camParams.cx;
-        
+        readCameraParameters(&camParams, &HEAD_OFFSET);
+
+        // int bridgeCenterX = (bridge.minX + bridge.maxX) / 2;
+        // PixelLocation_t screenLoc = { bridgeCenterX, (int)bridge.maxY };
+        // Vector3_t worldLoc;
+        // convertScreenLocationToWorldLocation(&camParams, &screenLoc, 0., &worldLoc);
+        // double dx = worldLoc.x * 1000;
+
+        double screenCenterX = camParams.cx;
         double bridgeAngle = _calculateBridgeAngle(pLabelMatrix, &bridge);
         double dx = (bridge.centerX - screenCenterX) * MILLIMETERS_PER_PIXELS;
-        printDebug("angle: %f, dx: %f\n", bridgeAngle, dx);
 
         if (fabs(bridgeAngle) > ALIGN_FACING_ERROR) {
             if (bridgeAngle < 0)
@@ -266,7 +278,7 @@ static bool _crossGreenBridge(void) {
         }
 
         printDebug("walk.\n");
-        walkForward(34*6);
+        walkForward(34 * 6);
         mdelay(200);
     }
     
@@ -292,7 +304,7 @@ static bool _approachDownStair(void) {
     // 전진보행 허용 오차 (밀리미터)
     const double APPROACH_DISTANCE_ERROR = 0.;
     // 전진보행으로 갈 수 있는 최대 제한 거리 (밀리미터)
-    const double APPROACH_WALK_DISTANCE_LIMIT = 34 * 2;
+    const double APPROACH_WALK_DISTANCE_LIMIT = 34 * 4;
     // 브라켓이 가려서 영상에서 최대한 달라붙어도 10mm 오차가 생긴다. 때문에 접근할 때 10mm 더 간다.
     const double APPROACH_ADD_WALK_DISTANCE = 10.;
 
@@ -343,11 +355,6 @@ static bool _climbDownStair(void) {
     _setHead(0, 0);
     runMotion(MOTION_CLIMB_DOWN_STAIR);
 
-    Screen_t* pScreen = createDefaultScreen();
-    readFpgaVideoDataWithWhiteBalance(pScreen);
-    displayScreen(pScreen);
-    destroyScreen(pScreen);
-    pScreen = NULL;
     checkCenterMain();
     runWalk(ROBOT_WALK_FORWARD, 4);
 
@@ -400,6 +407,7 @@ static int _measureGreenBridgeCenterOffsetX(void) {
 
     Screen_t* pScreen = createDefaultScreen();
     readFpgaVideoDataWithWhiteBalance(pScreen);
+    _setHead(0, 0);
 
     Object_t object;
     bool hasFound = _searchGreenBridge(pScreen, &object, NULL);
@@ -603,7 +611,7 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     if (isAlreadySet)
         return;
 
-    setServoSpeed(30);
+    setServoSpeed(45);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
     mdelay(200);
