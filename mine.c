@@ -113,7 +113,7 @@ bool solveMine(void) {
         }
         else {
             printDebug("아무 것도 안보여. 직진해보자.\n", __func__);
-            walkForward(34*4);
+            walkForward(34*6);
             if ((++_count) % 3 == 0) checkCenterMineMain();
         }
 
@@ -136,7 +136,7 @@ static void _captureScreen(Screen_t* pScreen) {
 
     _setHead(HEAD_HORIZONTAL_DEGREES, HEAD_VERTICAL_DEGREES);
     readFpgaVideoDataWithWhiteBalance(pScreen);
-    _setHead(0, 0);
+    // _setHead(0, 0);
 }
 
 static void _setHead(int horizontalDegrees, int verticalDegrees) {
@@ -151,7 +151,7 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     if (isAlreadySet)
         return;
 
-    setServoSpeed(30);
+    setServoSpeed(15);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
     mdelay(300);
@@ -382,7 +382,7 @@ static bool _actForMine(Object_t* pMine) {
     // }
     if (isLeftAligned) {
         printDebug("지뢰 왼쪽 정렬 완료. 달린다. (maxX: %d)\n", __func__, maxX);
-        walkForward(34*2);
+        walkForward(34*6);
         if ((++_count) % 3 == 0) {
             checkCenterMineMain();
         }
@@ -391,7 +391,7 @@ static bool _actForMine(Object_t* pMine) {
     }
     if (isRightAligned) {
         printDebug("지뢰 오른쪽 정렬 완료. 달린다. (minX: %d)\n", __func__, minX);
-        walkForward(34*2);
+        walkForward(34*6);
         if ((++_count) % 3 == 0) {
             checkCenterMineMain();
         }
@@ -402,10 +402,10 @@ static bool _actForMine(Object_t* pMine) {
     if (centerX < ALIGN_STANDARD_LEFT_X) {
         int walkDistance = fabs(maxX - ALIGN_ROBOT_LEFT_X) * _MILLIMETERS_PER_PIXEL;
         printDebug("지뢰가 왼쪽에 있다. 오른쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
-        _setHead(0, 0);
+        // _setHead(0, 0);
         walkRight(walkDistance);
         if ((++_sideCount) % 5 == 0) {
-            walkForward(34*4);
+            walkForward(34*6);
             if ((++_count) % 5 == 0) checkCenterMineMain();
         }
         return true;
@@ -413,10 +413,10 @@ static bool _actForMine(Object_t* pMine) {
     else if (centerX > ALIGN_STANDARD_RIGHT_X) {
         int walkDistance = fabs(minX - ALIGN_ROBOT_RIGHT_X) * _MILLIMETERS_PER_PIXEL;
         printDebug("지뢰가 오른쪽에 있다. 왼쪽으로 피하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
-        _setHead(0, 0);
+        // _setHead(0, 0);
         walkLeft(walkDistance);
         if ((++_sideCount) % 5 == 0) {
-            walkForward(34*4);
+            walkForward(34*6);
             if ((++_count) % 5 == 0) checkCenterMineMain();
         }
         return true;
@@ -424,7 +424,7 @@ static bool _actForMine(Object_t* pMine) {
     else {
         int walkDistance = (float)(centerX - ALIGN_ROBOT_CENTER_X) * _MILLIMETERS_PER_PIXEL;
         printDebug("지뢰가 가운데에 있다. 중앙으로 정렬하자. (centerX: %d, walkDistance: %d)\n", __func__, centerX, walkDistance);
-        _setHead(0, 0);
+        // _setHead(0, 0);
         if (walkDistance < 0)
             walkLeft(walkDistance * -1);
         else

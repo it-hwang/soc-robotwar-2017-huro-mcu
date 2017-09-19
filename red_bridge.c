@@ -484,7 +484,7 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     if (isAlreadySet)
         return;
 
-    setServoSpeed(30);
+    setServoSpeed(15);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
     mdelay(200);

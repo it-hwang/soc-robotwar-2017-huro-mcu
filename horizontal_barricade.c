@@ -11,9 +11,9 @@
 #include "camera.h"
 #include "math.h"
 #include "timer.h"
+#include "check_center.h"
 #include "log.h"
 #include "debug.h"
-#include "screenio.h"
 
 
 static bool _approachHorizontalBarricade(void);
@@ -44,7 +44,8 @@ int measureHorizontalBarricadeDistance(void) {
         readFpgaVideoDataWithWhiteBalance(pScreen);
         
         hasFound = _searchHorizontalBarricade(pScreen, &obstacle, &correlation);
-        if (hasFound) break;
+        if (hasFound)
+            break;
     }
 
     int millimeters = 0;
@@ -81,10 +82,32 @@ int measureHorizontalBarricadeDistance(void) {
 
 
 bool horizontalBarricadeMain(void) {
-    //if (measureHorizontalBarricadeDistance() <= 0)
-    //    return false;
+    // if (measureHorizontalBarricadeDistance() <= 0) {
+    //     walkForward(34 * 4);
+    //     checkCenterMain();
+    //     // if (measureHorizontalBarricadeDistance() <= 0) {
+    //     //     return false;
+    //     // }
+    // }
 
-    return solveHorizontalBarricade();
+    checkCenterMain();
+    if (solveHorizontalBarricade()) {
+        return true;
+    }
+
+    walkForward(300);
+    checkCenterMain();
+    if (solveHorizontalBarricade()) {
+        return true;
+    }
+    
+    walkForward(300);
+    checkCenterMain();
+    if (solveHorizontalBarricade()) {
+        return true;
+    }
+
+    return false;
 }
 
 bool solveHorizontalBarricade(void) {
@@ -145,6 +168,7 @@ static bool _approachHorizontalBarricade(void) {
             int walkingDistance = distance - APPROACH_DISTANCE;
             walkingDistance = MIN(walkingDistance, APPROACH_MAX_DISTANCE);
             walkForward(walkingDistance);
+            checkCenterMain();
 
             startTime = getTime();
         }
@@ -258,5 +282,5 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     setServoSpeed(30);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
-    mdelay(200);
+    mdelay(400);
 }

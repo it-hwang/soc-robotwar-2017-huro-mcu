@@ -201,7 +201,7 @@ static bool _findObjects(Vector3_t* pBallLoc, Vector3_t* pHoleLoc, bool precise)
             double correlation;
             bool hasFound = _searchGolfHole(pScreen, &object, &correlation);
             if (hasFound && correlation > holeCorrelation) {
-                bool isOnBoundary = (object.minX <= 1 || object.maxX >= pScreen->width - 2 || object.minY <= 1);
+                bool isOnBoundary = (object.minX <= 1 || object.maxX >= pScreen->width - 2 || object.minY <= 1 || object.maxY >= pScreen->height - 2);
                 if (!isOnBoundary) {
                     CameraParameters_t camParams;
                     readCameraParameters(&camParams, &HEAD_OFFSET);
@@ -401,10 +401,10 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     if (isAlreadySet)
         return;
 
-    setServoSpeed(30);
+    setServoSpeed(10);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
-    mdelay(200);
+    mdelay(400);
 }
 
 static bool _turnLeft(int degrees) {

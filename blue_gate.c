@@ -18,6 +18,7 @@
 #include "camera.h"
 #include "boundary.h"
 #include "math.h"
+#include "check_center.h"
 #include "log.h"
 #include "debug.h"
 

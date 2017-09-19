@@ -215,23 +215,23 @@ bool walkBackward(int millimeters) {
 }
 
 bool walkLeft(int millimeters) {
-    if (millimeters < 10) millimeters = 10;
+    if (millimeters < 7) millimeters = 7;
 
-    while (millimeters >= 30) {
+    while (millimeters >= 25) {
         if (!runMotion(MOTION_MOVE_LEFT_30MM))
             return false;
-        millimeters -= 30;
+        millimeters -= 25;
     }
     
-    while (millimeters >= 20) {
+    while (millimeters >= 18) {
         if (!runMotion(MOTION_MOVE_LEFT_20MM))
             return false;
-        millimeters -= 20;
+        millimeters -= 18;
     }
-    while (millimeters >= 10) {
+    while (millimeters >= 7) {
         if (!runMotion(MOTION_MOVE_LEFT_10MM))
             return false;
-        millimeters -= 10;
+        millimeters -= 7;
     }
     
     return true;
@@ -240,10 +240,10 @@ bool walkLeft(int millimeters) {
 bool walkRight(int millimeters) {
     if (millimeters < 10) millimeters = 10;
     
-    while (millimeters >= 30) {
+    while (millimeters >= 25) {
         if (!runMotion(MOTION_MOVE_RIGHT_30MM))
             return false;
-        millimeters -= 30;
+        millimeters -= 25;
     }
     
     while (millimeters >= 20) {

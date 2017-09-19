@@ -107,9 +107,9 @@ static bool _approachUpStair(void) {
     const int MAX_TRIES = 10;
 
     // 장애물에 다가갈 거리 (밀리미터)
-    const int APPROACH_DISTANCE = 20;
+    const int APPROACH_DISTANCE = 0;
     // 거리 허용 오차 (밀리미터)
-    const int APPROACH_DISTANCE_ERROR = 30;
+    const int APPROACH_DISTANCE_ERROR = 70;
 
     const int ALIGN_OFFSET_X = 8;
     const double MILLIMETERS_PER_PIXELS = 2.5;
@@ -146,7 +146,7 @@ static bool _approachUpStair(void) {
     }
     
     // 달라붙어 비비기
-    walkForwardQuickly(80);
+    walkForwardQuickly(120);
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
 
     for (nTries = 0; nTries < MAX_TRIES; ++nTries) {
@@ -160,7 +160,7 @@ static bool _approachUpStair(void) {
         
         if (distance > APPROACH_DISTANCE + APPROACH_DISTANCE_ERROR) {
             printDebug("종종걸음으로 이동하자. (거리: %d)\n", distance);
-            runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
+            runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 2);
             mdelay(300);
             nTries = 0;
             continue;
@@ -222,7 +222,7 @@ static bool _crossGreenBridge(void) {
     // 각도 정렬 제한 회전 각도 (도)
     const double ALIGN_TURN_DEGREES_LIMIT = 20.;
     // 좌우 정렬 제한 이동 거리 (밀리미터)
-    const double ALIGN_WALK_DISTANCE_LIMIT = 30.;
+    const double ALIGN_WALK_DISTANCE_LIMIT = 50.;
     const Vector3_t HEAD_OFFSET = { 0.000, -0.020, 0.295 };
 
 
@@ -612,7 +612,7 @@ static void _setHead(int horizontalDegrees, int verticalDegrees) {
     if (isAlreadySet)
         return;
 
-    setServoSpeed(45);
+    setServoSpeed(15);
     setHead(horizontalDegrees, verticalDegrees);
     resetServoSpeed();
     mdelay(200);

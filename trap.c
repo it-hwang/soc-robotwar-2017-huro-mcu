@@ -41,6 +41,7 @@ static bool _climbUpTrap(void);
 static bool _setPositionOnTrap(void);
 static bool _approachBlackLine(void);
 static bool _forwardRoll(void);
+static void _setHead(int horizontalDegrees, int verticalDegrees);
 
 bool trapMain(void) {
 
@@ -68,9 +69,7 @@ static bool _searchTrap(void) {
     Screen_t* pScreen = createDefaultScreen();
 
     for(int nTries = 0; nTries < MAX_TRIES; ++nTries) {
-        setServoSpeed(30);
-        setHead(0, -35);
-        mdelay(200);
+        _setHead(0, -35);
 
         if( !_setBoundary(pScreen) )
             continue;
@@ -327,6 +326,7 @@ static void _approachObject(Vector3_t* pVector, int approachDistance) {
     const int MAX_WALK_DISTANCE = 300;
 
     if( pVector->x > fabs(X_ERROR) ) {
+        _setHead(0, 0);
         if(pVector->x < 0)
             walkLeft(pVector->x * -1000);
         else
@@ -336,6 +336,7 @@ static void _approachObject(Vector3_t* pVector, int approachDistance) {
     printDebug("y값 %f\n", pVector->y);
     int walkDistance = pVector->y * 1000 - approachDistance;
     walkDistance = MIN(walkDistance, MAX_WALK_DISTANCE);
+    _setHead(0, 0);
     walkForward(walkDistance);
 }
 
@@ -344,6 +345,7 @@ static void _approachObject2(Vector3_t* pVector, int approachDistance) {
     const int MAX_WALK_DISTANCE = 100;
 
     if( pVector->x > fabs(X_ERROR) ) {
+        _setHead(0, 0);
         if(pVector->x < 0)
             walkLeft(pVector->x * -1000);
         else
@@ -354,6 +356,7 @@ static void _approachObject2(Vector3_t* pVector, int approachDistance) {
     // runWalk(ROBOT_WALK_RUN_FORWARD_3MM, 10);
     int walkDistance = pVector->y * 1000 - approachDistance;
     walkDistance = MIN(walkDistance, MAX_WALK_DISTANCE);
+    _setHead(0, 0);
     walkForward(walkDistance);
 }
 
@@ -388,7 +391,7 @@ static bool _climbUpTrap(void) {
     checkCenterMain();
     runWalk(ROBOT_WALK_FORWARD_QUICK, 20);
     runWalk(ROBOT_WALK_FORWARD_QUICK_THRESHOLD, 4);
-    setHead(0, 0);
+    _setHead(0, 0);
     runMotion(MOTION_CLIMB_UP_TRAP);
     return runWalk(ROBOT_WALK_FORWARD, 2);
 }
@@ -399,9 +402,7 @@ static bool _setPositionOnTrap(void) {
     Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
 
     while(true) {
-        setServoSpeed(30);
-        setHead(0, -35);
-        mdelay(200);
+        _setHead(0, -35);
         
         readFpgaVideoDataWithWhiteBalance(pScreen);
     
@@ -422,6 +423,7 @@ static bool _setPositionOnTrap(void) {
             break;
         
         if(fabs(pLine->theta) > 3){
+            _setHead(0, 0);
             if(pLine->theta < 0) 
                 turnLeft(fabs(pLine->theta));
             else
@@ -434,6 +436,7 @@ static bool _setPositionOnTrap(void) {
         int screenCenterX = pScreen->width / 2;
         double dx = pLine->centerPoint.x - screenCenterX;
         if (fabs(dx) > 10) {
+            _setHead(0, 0);
             if (dx < 0)
                 walkLeft(fabs(dx));
             else
@@ -503,9 +506,7 @@ static bool _approachBlackLine(void) {
     Matrix16_t* pLabelMatrix = createMatrix16(pScreen->width, pScreen->height);
 
     while(true) {
-        setServoSpeed(30);
-        setHead(0, -70);
-        mdelay(200);
+        _setHead(0, -70);
 
         readFpgaVideoDataWithWhiteBalance(pScreen);
         
@@ -540,6 +541,7 @@ static bool _approachBlackLine(void) {
             break;
         
         if(fabs(pLine->theta) > 3){
+            _setHead(0, 0);
             if(pLine->theta < 0) 
                 turnLeft(fabs(pLine->theta));
             else
@@ -567,6 +569,7 @@ static bool _approachBlackLine(void) {
 
         int dx = lineWorldLoc.x * 1000;
         if (fabs(dx) > errorX) {
+            _setHead(0, 0);
             if (dx < 0)
                 walkLeft(fabs(dx));
             else
@@ -591,5 +594,24 @@ static bool _approachBlackLine(void) {
 }
 
 static bool _forwardRoll(void) {
+    _setHead(0, 0);
     return runMotion(MOTION_TRAP);
+}
+
+static void _setHead(int horizontalDegrees, int verticalDegrees) {
+    static const int ERROR_RANGE = 3;
+
+    bool isAlreadySet = true;
+    if (abs(getHeadHorizontal() - horizontalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
+    if (abs(getHeadVertical() - verticalDegrees) > ERROR_RANGE)
+        isAlreadySet = false;
+
+    if (isAlreadySet)
+        return;
+
+    setServoSpeed(30);
+    setHead(horizontalDegrees, verticalDegrees);
+    resetServoSpeed();
+    mdelay(200);
 }

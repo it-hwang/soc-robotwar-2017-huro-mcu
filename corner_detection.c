@@ -60,7 +60,7 @@ bool cornerDetectionMain(void) {
 
     checkCenterMain();
     //runWalk(ROBOT_WALK_FORWARD, 4);
-    walkForward(34 * 6);
+    walkForward(34 * 8);
 
     return true;
 }
